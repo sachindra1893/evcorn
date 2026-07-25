@@ -63,6 +63,10 @@ router.post('/upload', (req, res, next) => {
  * @access  Public
  */
 router.get('/upload-test', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Test endpoint disabled in production' });
+  }
+
   res.status(200).json({
     status: 'online',
     message: 'EVCorn Cloudinary Upload API is ready for Postman verification',

@@ -27,7 +27,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve development test static files (disabled in production)
+if (process.env.NODE_ENV !== 'production') {
+  app.use(express.static(path.join(__dirname, 'public')));
+}
 
 // Mount Cloudinary Single Image Upload Endpoint (POST /api/upload)
 const uploadRouter = require('./routes/upload');
