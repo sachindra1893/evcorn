@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Category, CarSpec, BlogDataService } from '../../services/blog-data.service';
 import { SeoService } from '../../services/seo.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
+import { getOptimizedImageUrl } from '../../utils/image.utils';
 
 @Component({
   selector: 'app-browse-evs',
@@ -88,8 +89,10 @@ import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
                 @for (car of getFilteredModels(); track car.id) {
                   <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card">
                     <div class="model-image-container">
-                      <img [src]="car.imageUrl || ('/assets/images/models/' + slugify(car.parentModel || car.name) + '.png')" 
+                      <img [src]="car.imageUrl ? getOptimizedUrl(car.imageUrl, 600) : ('/assets/images/models/' + slugify(car.parentModel || car.name) + '.png')" 
                            onerror="this.src='/assets/images/placeholder.png'; this.style.opacity='0.1'"
+                           loading="lazy"
+                           decoding="async"
                            class="model-thumb" alt="Vehicle Image">
                     </div>
                     <div class="model-info-row">
@@ -122,8 +125,10 @@ import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
                     </div>
 
                     <div class="model-image-container">
-                      <img [src]="car.imageUrl || ('/assets/images/models/' + slugify(car.parentModel || car.name) + '.png')" 
+                      <img [src]="car.imageUrl ? getOptimizedUrl(car.imageUrl, 600) : ('/assets/images/models/' + slugify(car.parentModel || car.name) + '.png')" 
                            onerror="this.src='/assets/images/placeholder.png'; this.style.opacity='0.1'"
+                           loading="lazy"
+                           decoding="async"
                            class="model-thumb" alt="Vehicle Image">
                     </div>
                     <div class="model-info-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
@@ -491,6 +496,10 @@ export class BrowseEvsComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  getOptimizedUrl(url: string | undefined | null, width?: number): string {
+    return getOptimizedImageUrl(url, width);
   }
 
   loadTopRangeEvs() {

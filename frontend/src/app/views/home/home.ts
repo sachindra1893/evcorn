@@ -4,6 +4,7 @@ import { SchemaService } from '../../services/schema.service';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { BlogDataService, Article } from '../../services/blog-data.service';
+import { getOptimizedImageUrl } from '../../utils/image.utils';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
@@ -53,10 +54,11 @@ import { RouterLink } from '@angular/router';
                       <div class="result-item article-item">
                         @if (art.imageUrl) {
                           <img 
-                            [src]="art.imageUrl" 
+                            [src]="getOptimizedUrl(art.imageUrl, 200)" 
                             class="result-img" 
                             alt="{{art.title}}"
                             loading="lazy"
+                            decoding="async"
                             width="60"
                             height="40"
                             onerror="this.style.display='none'; const sibling = this.parentNode.querySelector('.result-placeholder'); if(sibling) sibling.style.display='flex';"
@@ -1502,6 +1504,10 @@ export class HomeComponent implements OnInit {
         this.stopSimulation();
       }
     }, intervalMs);
+  }
+
+  getOptimizedUrl(url: string | undefined | null, width?: number): string {
+    return getOptimizedImageUrl(url, width);
   }
 
   stopSimulation() {

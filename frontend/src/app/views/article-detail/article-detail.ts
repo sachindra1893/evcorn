@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { BlogDataService, Article } from '../../services/blog-data.service';
+import { getOptimizedImageUrl } from '../../utils/image.utils';
 import { BlockRendererComponent } from '../../components/block-renderer/block-renderer.component';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { CommonModule } from '@angular/common';
@@ -18,7 +19,7 @@ import { CommonModule } from '@angular/common';
           <div class="article-container">
             @if (article.imageUrl) {
               <div class="banner-container">
-                <img [src]="article.imageUrl" class="banner-image" alt="{{article.title}}" fetchpriority="high">
+                <img [src]="getOptimizedUrl(article.imageUrl, 1200)" class="banner-image" alt="{{article.title}}" fetchpriority="high" decoding="async">
               </div>
             }
             <div class="article-content">
@@ -78,7 +79,7 @@ import { CommonModule } from '@angular/common';
                 <div class="related-grid">
                   <a *ngFor="let car of getRelatedCars(article)" [routerLink]="['/compare']" [queryParams]="{ model: car.model }" class="related-card">
                     <div class="related-img-wrapper" *ngIf="car.imageUrl">
-                      <img [src]="car.imageUrl" [alt]="car.brand + ' ' + car.model" loading="lazy" width="60" height="40" />
+                      <img [src]="getOptimizedUrl(car.imageUrl, 200)" [alt]="car.brand + ' ' + car.model" loading="lazy" decoding="async" width="60" height="40" />
                     </div>
                     <div class="related-card-content">
                       <h4>{{ car.brand }} {{ car.model }}</h4>
@@ -94,7 +95,7 @@ import { CommonModule } from '@angular/common';
                 <div class="related-grid">
                   <a *ngFor="let rel of getRelatedArticles(article)" [routerLink]="['/articles', rel.id]" class="related-card" (click)="scrollToTop()">
                     <div class="related-img-wrapper" *ngIf="rel.imageUrl">
-                      <img [src]="rel.imageUrl" [alt]="rel.title" loading="lazy" width="80" height="50" />
+                      <img [src]="getOptimizedUrl(rel.imageUrl, 300)" [alt]="rel.title" loading="lazy" decoding="async" width="80" height="50" />
                     </div>
                     <div class="related-card-content">
                       <h4>{{ rel.title }}</h4>
@@ -466,6 +467,10 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
     private seoService: SeoService,
     private schemaService: SchemaService
   ) {}
+
+  getOptimizedUrl(url: string | undefined | null, width?: number): string {
+    return getOptimizedImageUrl(url, width);
+  }
 
   ngOnInit() {
     console.log('ArticleDetailComponent: OnInit executed!');

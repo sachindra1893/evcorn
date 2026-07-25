@@ -7,6 +7,7 @@ import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
+import { getOptimizedImageUrl } from '../../utils/image.utils';
 import { combineLatest } from 'rxjs';
 
 interface OverviewData {
@@ -92,9 +93,11 @@ interface OverviewData {
               <div class="hero-visual" style="position: relative;">
                 <div class="gallery-container" style="position: relative; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 20px; background: #FAFAFC; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 12px 30px rgba(0,0,0,0.04);">
                   
-                  <img [src]="activeImageUrl ? activeImageUrl : ('/assets/images/models/' + slugify(modelName) + '.png')" 
+                  <img [src]="activeImageUrl ? getOptimizedUrl(activeImageUrl, 1200) : ('/assets/images/models/' + slugify(modelName) + '.png')" 
                        onerror="this.src='/assets/images/placeholder.png'; this.style.opacity='0.2'" 
                        class="hero-image" 
+                       loading="lazy"
+                       decoding="async"
                        [alt]="brand.name + ' ' + modelName"
                        style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease-in-out;" />
 
@@ -738,6 +741,10 @@ export class VehicleDetailComponent implements OnInit {
   modelImageUrl: string = '';
   galleryImages: string[] = [];
   activeImageIndex = 0;
+
+  getOptimizedUrl(url: string | undefined | null, width?: number): string {
+    return getOptimizedImageUrl(url, width);
+  }
 
   get activeImageUrl(): string {
     if (this.galleryImages.length > 0 && this.galleryImages[this.activeImageIndex]) {

@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { BlogDataService, Article, Category } from '../../services/blog-data.service';
 import { AuthService } from '../../services/auth.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
+import { getOptimizedImageUrl } from '../../utils/image.utils';
 
 @Component({
   selector: 'app-articles',
@@ -41,7 +42,7 @@ import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
                 <a [routerLink]="['/articles', heroArticle.id]" class="hero-article-link">
                   <div class="hero-article-card">
                     @if (heroArticle.imageUrl) {
-                      <img [src]="heroArticle.imageUrl" class="hero-image" alt="{{heroArticle.title}}" fetchpriority="high">
+                      <img [src]="getOptimizedUrl(heroArticle.imageUrl, 1200)" class="hero-image" alt="{{heroArticle.title}}" fetchpriority="high" decoding="async">
                     } @else {
                       <div class="hero-image-placeholder">⚡ EVCorn Featured</div>
                     }
@@ -63,7 +64,7 @@ import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
                     <a [routerLink]="['/articles', art.id]" class="trending-row-link">
                       <div class="trending-row">
                         @if (art.imageUrl) {
-                          <img [src]="art.imageUrl" class="trending-thumb" alt="{{art.title}}" loading="lazy" width="80" height="60">
+                          <img [src]="getOptimizedUrl(art.imageUrl, 300)" class="trending-thumb" alt="{{art.title}}" loading="lazy" decoding="async" width="80" height="60">
                         }
                         <div class="trending-info">
                           <span class="trending-badge">{{ getCategoryName(art.categoryId, art.title) }}</span>
@@ -90,7 +91,7 @@ import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
                     <a [routerLink]="['/articles', art.id]" class="feed-item-layout">
                       <div class="feed-media">
                         @if (art.imageUrl) {
-                          <img [src]="art.imageUrl" class="feed-thumb" alt="{{art.title}}" loading="lazy" width="280" height="180">
+                          <img [src]="getOptimizedUrl(art.imageUrl, 600)" class="feed-thumb" alt="{{art.title}}" loading="lazy" decoding="async" width="280" height="180">
                         } @else {
                           <div class="feed-thumb-placeholder">⚡</div>
                         }
@@ -118,7 +119,7 @@ import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
                     <div class="feed-item-layout coming-soon-layout" (click)="showComingSoonAlert(art.title)">
                       <div class="feed-media">
                         @if (art.imageUrl) {
-                          <img [src]="art.imageUrl" class="feed-thumb" alt="{{art.title}}" loading="lazy" width="280" height="180">
+                          <img [src]="getOptimizedUrl(art.imageUrl, 600)" class="feed-thumb" alt="{{art.title}}" loading="lazy" decoding="async" width="280" height="180">
                         } @else {
                           <div class="feed-thumb-placeholder">⚡</div>
                         }
@@ -176,6 +177,10 @@ export class ArticlesComponent implements OnInit {
     private schemaService: SchemaService,
     public authService: AuthService
   ) {}
+
+  getOptimizedUrl(url: string | undefined | null, width?: number): string {
+    return getOptimizedImageUrl(url, width);
+  }
 
   ngOnInit() {
     this.seoService.updateSeo({
