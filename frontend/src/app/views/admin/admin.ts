@@ -999,34 +999,22 @@ export class AdminComponent implements OnInit {
       const file = input.files[0];
       
       this.imageProcessing = true;
+      this.selectedFileName = file.name;
+      this.cdr.detectChanges();
       
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          const MAX_WIDTH = 1200;
-          if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          this.selectedFileName = file.name;
-          this.articleImageUrl = canvas.toDataURL('image/webp', 0.85);
+      this.dataService.uploadImage(file).subscribe({
+        next: (res: any) => {
+          this.articleImageUrl = res.url;
           this.imageProcessing = false;
           this.cdr.detectChanges();
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+        },
+        error: (err: any) => {
+          console.error('Cloudinary upload error:', err);
+          alert('Failed to upload image to Cloudinary: ' + (err.error?.error || err.message));
+          this.imageProcessing = false;
+          this.cdr.detectChanges();
+        }
+      });
     }
   }
 
@@ -1369,39 +1357,25 @@ export class AdminComponent implements OnInit {
       const file = input.files[0];
       
       this.vehImageProcessing = true;
+      this.cdr.detectChanges();
       
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          const MAX_WIDTH = 1200;
-          if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
+      this.dataService.uploadImage(file).subscribe({
+        next: (res: any) => {
+          this.vehGalleryImages[slotIndex] = res.url;
+          if (slotIndex === 0) {
+            this.vehImageUrl = res.url;
           }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const base64Data = canvas.toDataURL('image/jpeg', 0.85);
-            this.vehGalleryImages[slotIndex] = base64Data;
-            if (slotIndex === 0) {
-              this.vehImageUrl = base64Data;
-            }
-            this.isBorrowedImage = false;
-          }
+          this.isBorrowedImage = false;
           this.vehImageProcessing = false;
           this.cdr.detectChanges();
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+        },
+        error: (err: any) => {
+          console.error('Cloudinary upload error:', err);
+          alert('Failed to upload vehicle image to Cloudinary: ' + (err.error?.error || err.message));
+          this.vehImageProcessing = false;
+          this.cdr.detectChanges();
+        }
+      });
     }
   }
 

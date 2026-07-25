@@ -87,6 +87,18 @@ export class BlogDataService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Upload single image file to Cloudinary via POST /api/upload
+   */
+  uploadImage(file: File): Observable<{ url: string; public_id: string; width: number; height: number; format: string; original_filename: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string; public_id: string; width: number; height: number; format: string; original_filename: string }>(
+      `${this.apiUrl}/upload`,
+      formData
+    );
+  }
+
   // Helper to construct authorization headers for Admin actions
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({
