@@ -1,0 +1,60 @@
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const { uploadBuffer } = require('../services/cloudinary.service');
+
+// Configure Multer with memory storage (max 10MB per file)
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+/**
+ * @route   POST /api/upload
+ * @desc    Upload single image to Cloudinary (multipart/form-data)
+ * @access  Public
+ * @returns {JSON} Object containing url, public_id, width, height, format, original_filename
+ */
+router.post('/upload', (req, res, next) => {
+  // Support field names: 'file' or 'image'
+  const uploadSingle = upload.fields([
+    { name: 'file', maxCount: 1 },
+    { name: 'image', maxCount: 1 }
+  ]);
+
+  uploadSingle(req, res, async (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: `Upload error: ${err.message}` });
+      }
+      return res.status(500).json({ error: err.message });
+    }
+
+    try {
+      const fileField = (req.files && req.files.file) ? req.files.file[0] : (req.files && req.files.image) ? req.files.image[0] : null;
+
+      if (!fileField) {
+        return res.status(400).json({ error: 'No file provided in request. Use field name "file" or "image".' });
+      }
+
+      // Upload memory buffer directly to Cloudinary
+      const originalName = fileField.originalname ? fileField.originalname.split('.')[0] : '';
+      const result = await uploadBuffer(fileField.buffer, 'evcorn');
+
+      return res.status(200).json({
+        url: result.url,
+        public_id: result.public_id,
+        width: result.width,
+        height: result.height,
+        format: result.format,
+        original_filename: result.original_filename || originalName
+      });
+    } catch (error) {
+      console.error('API Upload Handler Error:', error);
+      return res.status(500).json({ error: 'Cloudinary upload failed: ' + error.message });
+    }
+  });
+});
+
+module.exports = router;

@@ -39,6 +39,41 @@ const uploadImage = async (fileInput, folderName = 'evcorn') => {
 };
 
 /**
+ * Reusable Cloudinary Buffer Upload Helper (For Multer memoryStorage)
+ * @param {Buffer} buffer - File memory buffer
+ * @param {String} folderName - Target Cloudinary folder (default: 'evcorn')
+ * @returns {Promise<Object>} Object containing secure_url, public_id, and metadata
+ */
+const uploadBuffer = (buffer, folderName = 'evcorn') => {
+  return new Promise((resolve, reject) => {
+    const options = {
+      folder: folderName,
+      resource_type: 'auto',
+      transformation: [
+        { fetch_format: 'auto', quality: 'auto' }
+      ]
+    };
+
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) {
+        console.error('Cloudinary Buffer Upload Error:', error);
+        return reject(error);
+      }
+      resolve({
+        url: result.secure_url,
+        public_id: result.public_id,
+        format: result.format,
+        width: result.width,
+        height: result.height,
+        original_filename: result.original_filename || ''
+      });
+    });
+
+    stream.end(buffer);
+  });
+};
+
+/**
  * Reusable Cloudinary Image Delete Helper
  * @param {String} publicId - Cloudinary asset public_id
  * @returns {Promise<Object>} Deletion status result
@@ -59,5 +94,6 @@ const deleteImage = async (publicId) => {
 module.exports = {
   cloudinary,
   uploadImage,
+  uploadBuffer,
   deleteImage
 };

@@ -27,6 +27,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Mount Cloudinary Single Image Upload Endpoint (POST /api/upload)
+const uploadRouter = require('./routes/upload');
+app.use('/api', uploadRouter);
+
 // Auth Helper Middleware
 function checkAdminAuth(req, res, next) {
   const password = req.headers['x-admin-password'];
