@@ -1,0 +1,1474 @@
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Meta } from '@angular/platform-browser';
+import { BlogDataService, Category, Article, CarSpec } from '../../services/blog-data.service';
+import { AuthService } from '../../services/auth.service';
+import { BlockEditorComponent } from '../../components/block-editor/block-editor.component';
+import { BlockRendererComponent } from '../../components/block-renderer/block-renderer.component';
+import { ArticleBlock } from '../../models/blocks.model';
+
+@Component({
+  selector: 'app-admin',
+  standalone: true,
+  imports: [FormsModule, CommonModule, BlockEditorComponent, BlockRendererComponent],
+  template: `
+    <div class="admin-page">
+      <h2>EVCorn Admin Portal</h2>
+
+      <!-- Tab Switcher Navigation -->
+      <div class="admin-tabs">
+        <button [class.active]="activeTab === 'articles'" (click)="setTab('articles')">📰 Manage Articles</button>
+        <button [class.active]="activeTab === 'vehicles'" (click)="setTab('vehicles')">🚗 Manage EV Specs</button>
+        <button [class.active]="activeTab === 'brands'" (click)="setTab('brands')">🏷️ Manage Brands</button>
+      </div>
+
+      <div class="dashboard-content">
+        
+        <!-- ========================================== -->
+        <!-- TAB 1: ARTICLES MANAGEMENT                 -->
+        <!-- ========================================== -->
+        <div *ngIf="activeTab === 'articles'" class="dashboard-grid">
+          <!-- Article Form -->
+          <div class="panel article-panel">
+            <h3>{{ editingArticleId ? 'Edit Article' : 'Write New EV Article' }}</h3>
+            
+            <form (submit)="onPublishArticle($event)" class="vertical-form">
+              <div class="form-group">
+                <label for="title">Article Title</label>
+                <input 
+                  type="text" 
+                  id="title" 
+                  name="title" 
+                  placeholder="e.g. BYD Seal: Setting New Range Standards in 2025" 
+                  [(ngModel)]="articleTitle"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="imageFile">Cover Photo</label>
+                <div class="image-upload-wrapper" style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                  <input 
+                    type="file" 
+                    id="imageFile" 
+                    accept="image/*" 
+                    (change)="onImageFileSelected($event)" 
+                    style="display: none;" 
+                    #fileInput
+                  >
+                  <button type="button" class="btn secondary-btn upload-trigger-btn" (click)="fileInput.click()" style="padding: 10px 16px; background: #E2E8F0; color: #2D3748; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
+                    📁 Choose Image File
+                  </button>
+                  <span class="file-name-hint" style="color: #718096; font-size: 0.85rem;" *ngIf="selectedFileName">{{ selectedFileName }}</span>
+                </div>
+                
+                <!-- Image Preview -->
+                <div class="image-preview-container" *ngIf="articleImageUrl" style="position: relative; width: 100%; max-width: 250px; margin-top: 10px;">
+                  <img [src]="articleImageUrl" class="image-preview" alt="Cover Preview" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06);">
+                  <button type="button" class="btn delete-preview-btn" (click)="clearImagePreview()" style="margin-top: 6px; padding: 6px 12px; background: #FF4D4D; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">Remove Photo</button>
+                </div>
+                
+                <p class="form-hint" *ngIf="imageProcessing" style="color: #0088CC; font-size: 0.85rem; margin-top: 5px;">Processing and compressing image...</p>
+              </div>
+
+
+
+              <div class="form-group" style="margin-top: 20px;">
+                <label>Article Content Blocks</label>
+                <app-block-editor [(blocks)]="articleBlocks"></app-block-editor>
+              </div>
+
+              <div class="form-actions" style="margin-top: 25px;">
+                <button type="submit" class="btn primary-btn" [disabled]="saving">
+                  {{ saving ? 'Saving...' : (editingArticleId ? 'Update Article' : 'Publish EV Article') }}
+                </button>
+                <button *ngIf="editingArticleId" type="button" (click)="cancelEditArticle()" class="btn cancel-btn">
+                  Cancel Edit
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Live Preview Pane -->
+          <div class="panel preview-panel">
+            <h3 style="display: flex; justify-content: space-between; align-items: center;">
+              Live Preview 
+              <span style="font-size: 0.8rem; font-weight: normal; background: #38bdf8; color: #0f172a; padding: 2px 8px; border-radius: 10px;">Auto-updating</span>
+            </h3>
+            <div class="preview-container" style="background: white; color: #333; padding: 20px; border-radius: 8px; max-height: 800px; overflow-y: auto; border: 1px solid #e2e8f0;">
+              <h1 style="margin-top: 0; margin-bottom: 20px; font-size: 2rem; color: #111;">{{ articleTitle || 'Article Title Preview' }}</h1>
+              <img *ngIf="articleImageUrl" [src]="articleImageUrl" style="width: 100%; border-radius: 8px; margin-bottom: 20px;" alt="Cover">
+              <div *ngIf="!articleBlocks || articleBlocks.length === 0" style="color: #94a3b8; font-style: italic; text-align: center; margin-top: 40px;">
+                Add content blocks on the left to see the live preview here.
+              </div>
+              <app-block-renderer [blocks]="articleBlocks"></app-block-renderer>
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="activeTab === 'articles'" style="margin-top: 20px;">
+          <!-- Manage Articles List -->
+          <div class="panel manage-panel">
+            <h3>Manage Published Articles</h3>
+            <div class="articles-list-wrapper">
+              @if (articles.length > 0) {
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (art of articles; track art.id) {
+                      <tr>
+                        <td class="article-title">{{ art.title }}</td>
+                        <td>
+                          <span class="cat-label">News</span>
+                        </td>
+                        <td class="table-actions">
+                          <button (click)="startEditArticle(art)" class="btn edit-btn">Edit</button>
+                          <button (click)="onDeleteArticle(art.id!, art.title)" class="btn delete-btn">Delete</button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <p class="no-articles">No articles published. Write one to populate the library!</p>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: VEHICLE SPECS MANAGEMENT            -->
+        <!-- ========================================== -->
+        <div *ngIf="activeTab === 'vehicles'" class="dashboard-grid">
+          <!-- EV Specs Form -->
+          <div class="panel article-panel">
+            <h3>{{ editingVehicleId ? 'Edit Vehicle Specs' : 'Add Vehicle Specs' }}</h3>
+            
+            <form (submit)="onSaveVehicle($event)" class="vertical-form scrollable-form">
+              <!-- Section 1: Overview & Pricing -->
+              <div class="admin-form-card">
+                <div class="admin-card-header" (click)="adminSecOverview = !adminSecOverview">
+                  <h4>📌 1. Overview & Pricing</h4>
+                  <span class="card-toggle">{{ adminSecOverview ? '▲' : '▼' }}</span>
+                </div>
+                <div class="admin-card-body" *ngIf="adminSecOverview">
+                  <!-- Brand / Category -->
+                  <div class="form-group">
+                    <label for="car-category">Brand / Category</label>
+                    <input 
+                      type="text" 
+                      id="car-category" 
+                      name="car-category" 
+                      placeholder="e.g. Tata Motors" 
+                      [(ngModel)]="vehBrandName"
+                      (ngModelChange)="onFormBrandChange()"
+                      list="brand-suggestions"
+                      autocomplete="off"
+                      required
+                    >
+                    <datalist id="brand-suggestions">
+                      @for (cat of categories; track cat.id) {
+                        <option [value]="cat.name"></option>
+                      }
+                    </datalist>
+                  </div>
+
+                  <!-- Model Name -->
+                  <div class="form-group">
+                    <label for="car-parent-model">Model Name</label>
+                    <input 
+                      type="text" 
+                      id="car-parent-model" 
+                      name="car-parent-model" 
+                      placeholder="e.g. Nexon EV" 
+                      [(ngModel)]="vehParentModel"
+                      (ngModelChange)="onModelNameChange($event)"
+                      list="model-suggestions"
+                      autocomplete="off"
+                      required
+                    >
+                    <datalist id="model-suggestions">
+                      @for (model of getUniqueModelNames(vehCategoryId); track model) {
+                        <option [value]="model"></option>
+                      }
+                    </datalist>
+                  </div>
+
+                  <!-- Variant -->
+                  <div class="form-group">
+                    <label for="car-variant-name">Variant Name</label>
+                    <input 
+                      type="text" 
+                      id="car-variant-name" 
+                      name="car-variant-name" 
+                      placeholder="e.g. Empowered+ LR" 
+                      [(ngModel)]="vehVariantName"
+                      required
+                    >
+                  </div>
+
+                  <!-- Price -->
+                  <div class="form-group">
+                    <label for="price">Price (Ex-Showroom) (e.g. ₹14.5 Lakhs / $38,990)</label>
+                    <input type="text" id="price" name="price" [(ngModel)]="vehPrice">
+                  </div>
+
+                  <!-- Body Style Dropdown -->
+                  <div class="form-group">
+                    <label for="car-body-style">Body Style</label>
+                    <select id="car-body-style" name="car-body-style" [(ngModel)]="vehBodyStyle">
+                      <option value="">Select Body Style...</option>
+                      <option value="SUV">SUV</option>
+                      <option value="Hatchback">Hatchback</option>
+                      <option value="Sedan">Sedan</option>
+                      <option value="MPV">MPV</option>
+                      <option value="Sports">Sports</option>
+                    </select>
+                  </div>
+
+                  <!-- Multi-Photo Gallery Upload -->
+                  <div class="form-group">
+                    <label>Vehicle Photos (Multi-Angle Gallery)</label>
+                    <p style="font-size: 0.82rem; color: #94A3B8; margin-top: -4px; margin-bottom: 12px;">Upload up to 4 angles (Front, Side, Rear, Interior). Shared across all variants of this model.</p>
+                    
+                    <div *ngIf="isBorrowedImage" style="background: rgba(16, 185, 129, 0.15); color: #059669; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                      ✓ Auto-linked photo gallery from {{ vehParentModel }} (No upload needed!)
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                      @for (label of ['1. Front (Main)', '2. Side Profile', '3. Rear View', '4. Interior']; track $index; let i = $index) {
+                        <div style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); padding: 10px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+                          <span style="font-size: 0.75rem; color: #CBD5E1; font-weight: 600; margin-bottom: 6px;">{{ label }}</span>
+                          
+                          <div *ngIf="vehGalleryImages[i]" style="position: relative; width: 100%; aspect-ratio: 16/9; margin-bottom: 6px;">
+                            <img [src]="vehGalleryImages[i]" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px; background: white;">
+                          </div>
+
+                          <div style="display: flex; gap: 4px; width: 100%;">
+                            <label class="btn" style="flex: 1; cursor: pointer; background: #334155; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; text-align: center;">
+                              <input type="file" accept="image/*" (change)="onVehImageFileSelected($event, i)" style="display: none;">
+                              {{ vehGalleryImages[i] ? 'Change' : '+ Upload' }}
+                            </label>
+                            <button *ngIf="vehGalleryImages[i]" type="button" (click)="clearVehImageSlot(i)" style="background: #EF4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem;">✕</button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                    <p class="form-hint" *ngIf="vehImageProcessing" style="color: #00D4FF; font-size: 0.85rem; margin-top: 8px;">Processing and optimizing image...</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 2: Performance & Motor -->
+              <div class="admin-form-card">
+                <div class="admin-card-header" (click)="adminSecPerformance = !adminSecPerformance">
+                  <h4>🏎️ 2. Performance & Motor</h4>
+                  <span class="card-toggle">{{ adminSecPerformance ? '▲' : '▼' }}</span>
+                </div>
+                <div class="admin-card-body" *ngIf="adminSecPerformance">
+                  <div class="form-group">
+                    <label for="acceleration">Acceleration (0-100 km/h) (e.g. 3.8 Seconds)</label>
+                    <input type="text" id="acceleration" name="acceleration" [(ngModel)]="vehAcceleration">
+                  </div>
+                  <div class="form-group">
+                    <label for="maxPower">Max Power (e.g. 150 kW / 201 bhp)</label>
+                    <input type="text" id="maxPower" name="maxPower" [(ngModel)]="vehMaxPower">
+                  </div>
+                  <div class="form-group">
+                    <label for="torque">Peak Torque (e.g. 310 Nm)</label>
+                    <input type="text" id="torque" name="torque" [(ngModel)]="vehTorque">
+                  </div>
+                  <div class="form-group">
+                    <label for="drivetrain">Drivetrain Type (e.g. Dual Motor AWD / RWD / FWD)</label>
+                    <input type="text" id="drivetrain" name="drivetrain" [(ngModel)]="vehDrivetrain">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 3: Battery & Charging -->
+              <div class="admin-form-card">
+                <div class="admin-card-header" (click)="adminSecBattery = !adminSecBattery">
+                  <h4>🔋 3. Battery & Charging</h4>
+                  <span class="card-toggle">{{ adminSecBattery ? '▲' : '▼' }}</span>
+                </div>
+                <div class="admin-card-body" *ngIf="adminSecBattery">
+                  <div class="form-group">
+                    <label for="battery">Battery Capacity (e.g. 82 kWh)</label>
+                    <input type="text" id="battery" name="battery" [(ngModel)]="vehBatteryCapacity">
+                  </div>
+                  <div class="form-group">
+                    <label for="range">Claimed Range (e.g. 526 km)</label>
+                    <input type="text" id="range" name="range" [(ngModel)]="vehRange">
+                  </div>
+                  <div class="form-group">
+                    <label for="acCharging">AC Charging Speed / Time (e.g. 11 kW / 0-100% in 8h)</label>
+                    <input type="text" id="acCharging" name="acCharging" [(ngModel)]="vehAcCharging">
+                  </div>
+                  <div class="form-group">
+                    <label for="dcCharging">DC Fast Charging Speed / Time (e.g. 150 kW / 10-80% in 30m)</label>
+                    <input type="text" id="dcCharging" name="dcCharging" [(ngModel)]="vehDcCharging">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 4: Safety & ADAS -->
+              <div class="admin-form-card">
+                <div class="admin-card-header" (click)="adminSecSafety = !adminSecSafety">
+                  <h4>🛡️ 4. Safety & ADAS</h4>
+                  <span class="card-toggle">{{ adminSecSafety ? '▲' : '▼' }}</span>
+                </div>
+                <div class="admin-card-body" *ngIf="adminSecSafety">
+                  <div class="form-group">
+                    <label for="safety">NCAP Safety Rating (e.g. 5-Star Euro NCAP)</label>
+                    <input type="text" id="safety" name="safety" [(ngModel)]="vehSafetyRating">
+                  </div>
+                  <div class="form-group">
+                    <label for="adas">ADAS Level (e.g. Level 2 / Yes / No)</label>
+                    <input type="text" id="adas" name="adas" [(ngModel)]="vehAdas">
+                  </div>
+                  <div class="form-group">
+                    <label for="airbags">Number of Airbags (e.g. 6 Airbags)</label>
+                    <input type="text" id="airbags" name="airbags" [(ngModel)]="vehAirbags">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 5: Dimensions & Weight -->
+              <div class="admin-form-card">
+                <div class="admin-card-header" (click)="adminSecDimensions = !adminSecDimensions">
+                  <h4>📐 5. Dimensions & Weight</h4>
+                  <span class="card-toggle">{{ adminSecDimensions ? '▲' : '▼' }}</span>
+                </div>
+                <div class="admin-card-body" *ngIf="adminSecDimensions">
+                  <div class="form-group">
+                    <label for="dimensions">Dimensions (L x W x H) (e.g. 4720 x 1850 x 1440 mm)</label>
+                    <input type="text" id="dimensions" name="dimensions" [(ngModel)]="vehDimensions">
+                  </div>
+                  <div class="form-group">
+                    <label for="wheelbase">Wheelbase (e.g. 2654 mm)</label>
+                    <input type="text" id="wheelbase" name="wheelbase" [(ngModel)]="vehWheelbase">
+                  </div>
+                  <div class="form-group">
+                    <label for="ground">Ground Clearance (e.g. 138 mm)</label>
+                    <input type="text" id="ground" name="ground" [(ngModel)]="vehGroundClearance">
+                  </div>
+                  <div class="form-group">
+                    <label for="boot">Boot / Frunk Space (e.g. 649 L / 88 L)</label>
+                    <input type="text" id="boot" name="boot" [(ngModel)]="vehBootFrunkSpace">
+                  </div>
+                  <div class="form-group">
+                    <label for="kerbWeight">Kerb Weight (e.g. 1500 kg)</label>
+                    <input type="text" id="kerbWeight" name="kerbWeight" [(ngModel)]="vehKerbWeight">
+                  </div>
+                  <div class="form-group">
+                    <label for="grossWeight">Gross Weight (e.g. 1950 kg)</label>
+                    <input type="text" id="grossWeight" name="grossWeight" [(ngModel)]="vehGrossWeight">
+                  </div>
+                  <div class="form-group">
+                    <label for="tyre">Tyre Size (e.g. 235/45 R18)</label>
+                    <input type="text" id="tyre" name="tyre" [(ngModel)]="vehTyreSize">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 6: Entertainment & Interior -->
+              <div class="admin-form-card">
+                <div class="admin-card-header" (click)="adminSecEntertainment = !adminSecEntertainment">
+                  <h4>🎵 6. Entertainment & Interior</h4>
+                  <span class="card-toggle">{{ adminSecEntertainment ? '▲' : '▼' }}</span>
+                </div>
+                <div class="admin-card-body" *ngIf="adminSecEntertainment">
+                  <div class="form-group">
+                    <label for="seating">Seating Capacity (e.g. 5 Seats)</label>
+                    <input type="text" id="seating" name="seating" [(ngModel)]="vehSeating">
+                  </div>
+                  <div class="form-group">
+                    <label for="colour">Colour Options (e.g. Red, Blue, White)</label>
+                    <input type="text" id="colour" name="colour" [(ngModel)]="vehColour">
+                  </div>
+                  <div class="form-group">
+                    <label for="screen">Screen Display (e.g. 15.6-inch Touchscreen)</label>
+                    <input type="text" id="screen" name="screen" [(ngModel)]="vehScreen">
+                  </div>
+                  <div class="form-group">
+                    <label for="audio">Audio System (e.g. 14-Speaker Meridian Audio)</label>
+                    <input type="text" id="audio" name="audio" [(ngModel)]="vehAudio">
+                  </div>
+                  <div class="form-group">
+                    <label for="connectivity">Connectivity (e.g. Wireless Apple CarPlay & Android Auto)</label>
+                    <input type="text" id="connectivity" name="connectivity" [(ngModel)]="vehConnectivity">
+                  </div>
+                  <div class="form-group">
+                    <label for="highlights">Key Highlights / Feature Upgrades</label>
+                    <textarea id="highlights" name="highlights" [(ngModel)]="vehKeyHighlights" rows="3" placeholder="e.g. ADAS Level 2, Panoramic Sunroof, V2L Capability"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top: 20px;">
+                <button type="submit" class="btn primary-btn" [disabled]="saving">
+                  {{ saving ? 'Saving...' : (editingVehicleId ? 'Update Specs' : 'Save Specs') }}
+                </button>
+                <button *ngIf="editingVehicleId" type="button" (click)="cancelEditVehicle()" class="btn cancel-btn">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Manage Vehicle Specs List -->
+          <div class="panel manage-panel">
+            <h3>Registered EV Models</h3>
+            <div class="articles-list-wrapper">
+              @if (vehicles.length > 0) {
+                <div *ngIf="adminViewLevel !== 'brands'" style="margin-bottom: 15px;">
+                  <button (click)="goBackAdminLevel()" class="btn" style="background: #e2e8f0; color: #1e293b; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none;">
+                    🔙 Back to {{ adminViewLevel === 'variants' ? 'Models' : 'Brands' }}
+                  </button>
+                  <span *ngIf="selectedAdminBrandId" style="margin-left: 10px; font-weight: bold; color: #0284C7;">
+                    {{ getCategoryName(selectedAdminBrandId) }}
+                  </span>
+                  <span *ngIf="selectedAdminModel" style="font-weight: bold; color: #64748B;">
+                    > {{ selectedAdminModel }}
+                  </span>
+                </div>
+
+                <div class="table-container">
+                  <table class="article-table">
+                    
+                    <!-- LEVEL 1: BRANDS -->
+                    <ng-container *ngIf="adminViewLevel === 'brands'">
+                      <thead>
+                        <tr>
+                          <th>Brand Name</th>
+                          <th>Total Models</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (cat of getAdminBrands(); track cat.id) {
+                          <tr>
+                            <td class="article-title">{{ cat.name }}</td>
+                            <td>{{ getAdminModelsForBrand(cat.id).length }} Models</td>
+                            <td class="table-actions">
+                              <button (click)="selectAdminBrand(cat.id)" class="btn view-btn" style="background: #0ea5e9; color: white;">View Models ➔</button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </ng-container>
+
+                    <!-- LEVEL 2: MODELS -->
+                    <ng-container *ngIf="adminViewLevel === 'models' && selectedAdminBrandId">
+                      <thead>
+                        <tr>
+                          <th>Model Name</th>
+                          <th>Total Variants</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (modelName of getAdminModelsForBrand(selectedAdminBrandId); track modelName) {
+                          <tr>
+                            <td class="article-title">{{ modelName }}</td>
+                            <td>{{ getAdminVariants(selectedAdminBrandId, modelName).length }} Variants</td>
+                            <td class="table-actions">
+                              <button (click)="selectAdminModel(modelName)" class="btn view-btn" style="background: #10B981; color: white;">View Variants ➔</button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </ng-container>
+
+                    <!-- LEVEL 3: VARIANTS -->
+                    <ng-container *ngIf="adminViewLevel === 'variants' && selectedAdminBrandId && selectedAdminModel">
+                      <thead>
+                        <tr>
+                          <th>Variant</th>
+                          <th>Price</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (veh of getAdminVariants(selectedAdminBrandId, selectedAdminModel); track veh.id) {
+                          <tr>
+                            <td class="article-title" style="color: #A8B2B2; font-size: 0.95rem;">{{ veh.variantName || 'Standard' }}</td>
+                            <td>{{ veh.price }}</td>
+                            <td class="table-actions">
+                              <button (click)="startEditVehicle(veh)" class="btn edit-btn">Edit</button>
+                              <button (click)="onDeleteVehicle(veh.id!, veh.name)" class="btn delete-btn">Delete</button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </ng-container>
+
+                  </table>
+                </div>
+              } @else {
+                <p class="no-articles">No vehicles stored in the database. Add one to enable comparison!</p>
+              }
+                  </div>     </div>
+        </div>
+
+      </div>
+    </div>
+  `,
+  styles: [`
+    .admin-page {
+      min-height: 90vh;
+      background: #0D1418;
+      color: #E6ECEC;
+      padding: 120px 20px 60px 20px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 2.8rem;
+      color: #00D4FF;
+    }
+    .admin-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+    .admin-tabs button {
+      padding: 12px 24px;
+      background: #1A252A;
+      color: #A8B2B2;
+      border: 1px solid rgba(0, 212, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .admin-tabs button:hover, .admin-tabs button.active {
+      background: rgba(0, 212, 255, 0.1);
+      color: #00D4FF;
+      border-color: #00D4FF;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .panel {
+      background: #1A252A;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 212, 255, 0.1);
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      height: fit-content;
+    }
+    .admin-form-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .admin-card-header {
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      transition: background 0.2s ease;
+    }
+    .admin-card-header:hover {
+      background: rgba(0, 212, 255, 0.1);
+    }
+    .admin-card-header h4 {
+      margin: 0;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #00D4FF;
+      letter-spacing: -0.01em;
+    }
+    .admin-card-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: rgba(13, 20, 24, 0.5);
+    }
+    .card-toggle {
+      font-size: 0.85rem;
+      color: #00D4FF;
+      font-weight: 800;
+    }
+    .scrollable-form {
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    h3 {
+      font-size: 1.8rem;
+      color: #00D4FF;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+      padding-bottom: 12px;
+      font-weight: 500;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    label {
+      font-size: 0.95rem;
+      color: #A8B2B2;
+      font-weight: 600;
+    }
+    input, select, textarea {
+      padding: 12px 16px;
+      background: #0D1418;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: white;
+      outline: none;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #00D4FF;
+      box-shadow: 0 0 8px rgba(0, 212, 255, 0.2);
+    }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+    .primary-btn {
+      background: #00D4FF;
+      color: #0D1418;
+      text-transform: uppercase;
+      letter-spacing: 0.05rem;
+      width: 100%;
+    }
+    .primary-btn:hover {
+      background: #00b4db;
+      box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+    }
+    .cancel-btn {
+      background: #3a474d;
+      color: white;
+      width: 100%;
+    }
+    .cancel-btn:hover {
+      background: #485860;
+    }
+    .form-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .articles-list-wrapper {
+      max-height: 550px;
+      overflow-y: auto;
+    }
+    .admin-table, .article-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    .admin-table th, .admin-table td, .article-table th, .article-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.95rem;
+    }
+    .admin-table th, .article-table th {
+      color: #00D4FF;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.15);
+    }
+    .article-title {
+      font-weight: 500;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cat-label {
+      background: rgba(245, 210, 142, 0.1);
+      color: #f5d28e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .edit-btn {
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      color: #00D4FF;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+    }
+    .edit-btn:hover {
+      background: #00D4FF;
+      color: #0D1418;
+    }
+    .delete-btn {
+      background: rgba(255, 77, 77, 0.1);
+      border: 1px solid rgba(255, 77, 77, 0.3);
+      color: #ff4d4d;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+    }
+    .delete-btn:hover {
+      background: #ff4d4d;
+      color: white;
+      box-shadow: 0 0 10px rgba(255, 77, 77, 0.2);
+    }
+    .no-articles {
+      color: #A8B2B2;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    @media (max-width: 992px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  `]
+})
+export class AdminComponent implements OnInit {
+  activeTab: 'articles' | 'vehicles' | 'brands' = 'articles';
+  
+  categories: Category[] = [];
+  articles: Article[] = [];
+  vehicles: CarSpec[] = [];
+  private categoriesMap: Record<string, string> = {};
+  
+  // 1. Article Form Properties
+  editingArticleId: string | null = null;
+  articleTitle = '';
+  articleImageUrl = '';
+  articleBlocks: ArticleBlock[] = [];
+  selectedFileName = '';
+  imageProcessing = false;
+
+  // 2. Vehicle Form Properties
+  editingVehicleId: string | null = null;
+  vehName = '';
+  vehCategoryId = '';
+  vehBrandName = '';
+  vehParentModel = '';
+  vehVariantName = '';
+  vehPrice = '';
+  vehSeating = '';
+  vehBodyStyle = '';
+  vehDimensions = '';
+  vehWheelbase = '';
+  vehGroundClearance = '';
+  vehKerbWeight = '';
+  vehGrossWeight = '';
+  vehBatteryCapacity = '';
+  vehAcCharging = '';
+  vehDcCharging = '';
+  vehRange = '';
+  vehTyreSize = '';
+  vehBootFrunkSpace = '';
+  vehBhpTorque = '';
+  vehAcceleration = '';
+  vehMaxPower = '';
+  vehTorque = '';
+  vehDrivetrain = '';
+  vehSafetyRating = '';
+  vehColour = '';
+  vehWeight = '';
+  vehScreen = '';
+  vehAudio = '';
+  vehConnectivity = '';
+  vehAdas = '';
+  vehAirbags = '';
+  vehImageUrl = '';
+  vehGalleryImages: string[] = ['', '', '', ''];
+  vehImageProcessing = false;
+  vehKeyHighlights = '';
+  isBorrowedImage = false;
+
+  // 3. Admin Form Section Accordions
+  adminSecOverview = true;
+  adminSecPerformance = false;
+  adminSecBattery = false;
+  adminSecSafety = false;
+  adminSecDimensions = false;
+  adminSecEntertainment = false;
+
+  saving = false;
+
+  // 3. Brand Form Properties
+  brandName = '';
+  brandId = '';
+
+  // 4. Hierarchical Admin View State
+  adminViewLevel: 'brands' | 'models' | 'variants' = 'brands';
+  selectedAdminBrandId: string | null = null;
+  selectedAdminModel: string | null = null;
+
+  constructor(
+    private dataService: BlogDataService,
+    private authService: AuthService,
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+    private metaService: Meta
+  ) {}
+
+  ngOnInit() {
+    // Prevent Google from indexing the admin panel
+    this.metaService.addTag({ name: 'robots', content: 'noindex, nofollow' });
+
+    // Guards check: Redirect if not authenticated
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    this.loadData();
+  }
+
+  setTab(tab: 'articles' | 'vehicles' | 'brands') {
+    this.activeTab = tab;
+  }
+
+  loadData() {
+    this.dataService.getCategories().subscribe(cats => {
+      this.categories = cats;
+      this.categoriesMap = cats.reduce((acc, cat) => {
+        acc[cat.id] = cat.name;
+        return acc;
+      }, {} as Record<string, string>);
+      this.cdr.detectChanges();
+    });
+
+    this.loadArticles();
+    this.loadVehicles();
+  }
+
+  loadArticles() {
+    this.dataService.getArticles().subscribe(data => {
+      this.articles = data;
+      this.cdr.detectChanges();
+    });
+  }
+
+  loadVehicles() {
+    this.dataService.getVehicles().subscribe(data => {
+      this.vehicles = data;
+      this.cdr.detectChanges();
+    });
+  }
+
+  getCategoryName(catId: string): string {
+    return this.categoriesMap[catId] || 'EV Insights';
+  }
+
+  // ==========================================
+  // ARTICLES EVENT HANDLERS
+  // ==========================================
+  onPublishArticle(event: Event) {
+    event.preventDefault();
+    if (this.saving) return;
+
+    if (!this.articleTitle.trim()) {
+      alert('Please provide at least a title for the article!');
+      return;
+    }
+
+    // To bypass backend schema restrictions, we serialize all blocks into the paragraphs array.
+    const serializedBlocks = JSON.stringify(this.articleBlocks);
+    
+    // We still keep the backward compatibility fallback for old components if they need it.
+    const fallbackParagraphs = this.articleBlocks
+      .filter(b => b.type === 'paragraph' && b.data.text)
+      .map(b => (b as any).data.text.trim());
+      
+    // The first paragraph will be the magic serialized blocks.
+    const paragraphs = [ `__EVBLOCKS__${serializedBlocks}`, ...fallbackParagraphs ];
+
+    const generatedDesc = fallbackParagraphs[0] 
+      ? (fallbackParagraphs[0].length > 150 ? fallbackParagraphs[0].substring(0, 147) + '...' : fallbackParagraphs[0]) 
+      : '';
+
+    const articleData: Article = {
+      title: this.articleTitle.trim(),
+      description: generatedDesc,
+      imageUrl: this.articleImageUrl.trim(),
+      categoryId: 'general',
+      paragraphs: paragraphs,
+      blocks: this.articleBlocks,
+      active: true
+    };
+
+    this.saving = true;
+
+    if (this.editingArticleId) {
+      this.dataService.updateArticle(this.editingArticleId, articleData).subscribe({
+        next: () => {
+          this.saving = false;
+          alert('Article updated successfully!');
+          this.cancelEditArticle();
+          this.loadArticles();
+        },
+        error: (err) => {
+          this.saving = false;
+          alert('Failed to update article: ' + err.message);
+        }
+      });
+    } else {
+      this.dataService.addArticle(articleData).subscribe({
+        next: () => {
+          this.saving = false;
+          alert('Article published successfully!');
+          this.resetArticleForm();
+          this.loadArticles();
+        },
+        error: (err) => {
+          this.saving = false;
+          alert('Failed to publish article: ' + err.message);
+        }
+      });
+    }
+  }
+
+  startEditArticle(art: Article) {
+    this.editingArticleId = art.id || null;
+    this.articleTitle = art.title;
+    this.articleImageUrl = art.imageUrl || '';
+    
+    if (art.blocks && art.blocks.length > 0) {
+      this.articleBlocks = JSON.parse(JSON.stringify(art.blocks)); // deep copy
+    } else if (art.paragraphs && art.paragraphs.length > 0) {
+      // Migrate old paragraphs to blocks on the fly
+      this.articleBlocks = art.paragraphs.map(p => ({
+        type: 'paragraph',
+        id: Math.random().toString(36).substring(2, 9),
+        data: { text: p }
+      } as ArticleBlock));
+    } else {
+      this.articleBlocks = [];
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  cancelEditArticle() {
+    this.editingArticleId = null;
+    this.resetArticleForm();
+  }
+
+  resetArticleForm() {
+    this.articleTitle = '';
+    this.articleImageUrl = '';
+    this.articleBlocks = [];
+    this.selectedFileName = '';
+    this.imageProcessing = false;
+    this.cdr.detectChanges();
+  }
+
+  onImageFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      
+      this.imageProcessing = true;
+      
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          const MAX_WIDTH = 1200;
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          this.selectedFileName = file.name;
+          this.articleImageUrl = canvas.toDataURL('image/webp', 0.85);
+          this.imageProcessing = false;
+          this.cdr.detectChanges();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  clearImagePreview() {
+    this.articleImageUrl = '';
+    this.selectedFileName = '';
+    const fileInput = document.getElementById('imageFile') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+    this.cdr.detectChanges();
+  }
+
+  onDeleteArticle(id: string, title: string) {
+    if (confirm(`Are you sure you want to delete "${title}"? This cannot be undone.`)) {
+      this.dataService.deleteArticle(id).subscribe({
+        next: () => {
+          this.loadArticles();
+          if (this.editingArticleId === id) this.cancelEditArticle();
+        },
+        error: (err) => alert('Delete failed: ' + err.message)
+      });
+    }
+  }
+
+  // ==========================================
+  // VEHICLE SPECS EVENT HANDLERS
+  // ==========================================
+  onSaveVehicle(event: Event) {
+    event.preventDefault();
+    if (this.saving) return;
+
+    if (!this.vehParentModel.trim() || !this.vehVariantName.trim() || !this.vehBrandName.trim()) {
+      alert('Model (e.g. Nexon EV), Variant (e.g. Empowered+ LR), and Brand Category are required!');
+      return;
+    }
+
+    const model = this.vehParentModel.trim();
+    const variant = this.vehVariantName.trim();
+    const brandNameTrimmed = this.vehBrandName.trim();
+
+    // Check if brand exists
+    const matchedBrand = this.categories.find(c => c.name.toLowerCase() === brandNameTrimmed.toLowerCase());
+    
+    if (matchedBrand) {
+      this.vehCategoryId = matchedBrand.id;
+      this._executeSaveVehicle(model, variant);
+    } else {
+      // Auto-create brand
+      this.saving = true;
+      const cleanId = brandNameTrimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      this.dataService.addCategory({ id: cleanId, name: brandNameTrimmed }).subscribe({
+        next: () => {
+          this.vehCategoryId = cleanId;
+          this.loadData(); // reload categories
+          this._executeSaveVehicle(model, variant);
+        },
+        error: (err) => {
+          this.saving = false;
+          alert('Failed to auto-create brand: ' + err.message);
+        }
+      });
+    }
+  }
+
+  private _executeSaveVehicle(model: string, variant: string) {
+
+    if (model.toLowerCase() === variant.toLowerCase()) {
+      alert('Validation Error: The Model name and Variant name cannot be exactly the same (e.g., if Model is "Punch", Variant should be "30kWh" or "Pure", not "Punch"). Please give them different names.');
+      return;
+    }
+
+    const fullName = `${model}::${variant}`;
+
+    const ac = this.vehAcCharging.trim() || 'N/A';
+    const dc = this.vehDcCharging.trim() || 'N/A';
+    const bat = this.vehBatteryCapacity.trim() || 'N/A';
+    const range = this.vehRange.trim() || 'N/A';
+    const highlights = this.vehKeyHighlights.trim() || 'N/A';
+    
+    let finalGalleryUrls = this.vehGalleryImages.filter(u => u && u.trim().length > 10).join(';;;');
+    if (this.isBorrowedImage && !finalGalleryUrls) {
+      finalGalleryUrls = '';
+    }
+
+    const batEncoded = `${bat}||${ac}||${dc}||${finalGalleryUrls || 'N/A'}||${range}||${highlights}||${this.vehBodyStyle || 'N/A'}`;
+
+    const dimensionsEncoded = `${this.vehDimensions.trim() || 'N/A'}||${this.vehWheelbase.trim() || 'N/A'}`;
+    const weightCombined = `${this.vehKerbWeight.trim() || 'N/A'}~${this.vehGrossWeight.trim() || 'N/A'}`;
+
+    const perfEncoded = `${this.vehAcceleration.trim() || 'N/A'}||${this.vehMaxPower.trim() || 'N/A'}||${this.vehTorque.trim() || 'N/A'}`;
+
+    const vehicleData: CarSpec = {
+      name: fullName,
+      categoryId: this.vehCategoryId,
+      parentModel: model,
+      variantName: variant,
+      price: this.vehPrice.trim() || 'N/A',
+      seating: `${this.vehSeating.trim() || 'N/A'}||${this.vehColour.trim() || 'N/A'}||${weightCombined}||${this.vehScreen.trim() || 'N/A'}||${this.vehAudio.trim() || 'N/A'}||${this.vehConnectivity.trim() || 'N/A'}`,
+      dimensions: dimensionsEncoded,
+      groundClearance: this.vehGroundClearance.trim() || 'N/A',
+      batteryCapacity: batEncoded,
+      range: this.vehRange.trim() || 'N/A',
+      tyreSize: this.vehTyreSize.trim() || 'N/A',
+      bootFrunkSpace: this.vehBootFrunkSpace.trim() || 'N/A',
+      bhpTorque: perfEncoded,
+      drivetrain: this.vehDrivetrain.trim(),
+      safetyRating: `${this.vehSafetyRating.trim() || 'N/A'}||${this.vehAdas.trim() || 'N/A'}||${this.vehAirbags.trim() || 'N/A'}`,
+      imageUrl: this.vehImageUrl.trim(),
+      keyHighlights: this.vehKeyHighlights.trim()
+    };
+
+    if (this.editingVehicleId) {
+      vehicleData.id = this.editingVehicleId;
+    }
+
+    this.saving = true;
+
+    this.dataService.saveVehicle(vehicleData).subscribe({
+      next: () => {
+        this.saving = false;
+        alert(this.editingVehicleId ? 'Vehicle specs updated successfully!' : 'Vehicle specs saved successfully!');
+        this.dataService.clearVehicleCache();
+        this.cancelEditVehicle();
+        this.loadVehicles();
+      },
+      error: (err) => {
+        this.saving = false;
+        alert('Failed to save specifications: ' + err.message);
+      }
+    });
+  }
+
+  startEditVehicle(veh: CarSpec) {
+    this.editingVehicleId = veh.id || null;
+    this.vehName = veh.name;
+    
+    let pModel = veh.parentModel || veh.name;
+    let vName = veh.variantName || veh.name;
+
+    if (pModel === vName) {
+      const words = veh.name.split(' ');
+      pModel = words[0];
+      vName = veh.name.substring(pModel.length).trim() || 'Base';
+    }
+
+    this.vehParentModel = pModel;
+    this.vehVariantName = vName;
+    this.vehCategoryId = veh.categoryId;
+    const matchedCat = this.categories.find(c => c.id === veh.categoryId);
+    this.vehBrandName = matchedCat ? matchedCat.name : '';
+    this.vehPrice = veh.price;
+    this.vehSeating = veh.seating;
+    this.vehDimensions = veh.dimensions;
+    this.vehWheelbase = veh.wheelbase || '';
+    this.vehGroundClearance = veh.groundClearance;
+    this.vehKerbWeight = veh.kerbWeight || veh.weight || '';
+    this.vehGrossWeight = veh.grossWeight || '';
+    this.vehBatteryCapacity = veh.batteryCapacity;
+    this.vehAcCharging = veh.acCharging || '';
+    this.vehDcCharging = veh.dcCharging || '';
+    this.vehRange = veh.range || '';
+    this.vehTyreSize = veh.tyreSize;
+    this.vehBootFrunkSpace = veh.bootFrunkSpace;
+    this.vehBhpTorque = veh.bhpTorque || '';
+    this.vehAcceleration = veh.acceleration || '';
+    this.vehMaxPower = veh.maxPower || veh.bhpTorque || '';
+    this.vehTorque = veh.torque || '';
+    this.vehDrivetrain = veh.drivetrain || '';
+    this.vehSafetyRating = veh.safetyRating || '';
+    this.vehColour = veh.colour || '';
+    this.vehWeight = veh.weight || '';
+    this.vehScreen = veh.screen || '';
+    this.vehAudio = veh.audio || '';
+    this.vehConnectivity = veh.connectivity || '';
+    this.vehAdas = veh.adasLevel || '';
+    this.vehAirbags = veh.airbags || '';
+    this.vehImageUrl = veh.imageUrl || '';
+    this.vehGalleryImages = veh.galleryImages && veh.galleryImages.length > 0 
+      ? [veh.galleryImages[0] || '', veh.galleryImages[1] || '', veh.galleryImages[2] || '', veh.galleryImages[3] || '']
+      : [veh.imageUrl || '', '', '', ''];
+    this.vehKeyHighlights = veh.keyHighlights || '';
+    this.vehBodyStyle = veh.bodyStyle || '';
+    this.isBorrowedImage = veh.imageBorrowed || false;
+  }
+
+  cancelEditVehicle() {
+    this.editingVehicleId = null;
+    this.resetVehicleFormExceptBrand();
+    this.vehBrandName = '';
+    this.vehCategoryId = '';
+  }
+
+  onFormBrandChange() {
+    const matched = this.categories.find(c => c.name.toLowerCase() === this.vehBrandName.trim().toLowerCase());
+    this.vehCategoryId = matched ? matched.id : '';
+    this.editingVehicleId = null;
+    this.resetVehicleFormExceptBrand();
+    this.cdr.detectChanges();
+  }
+
+  onFormModelSelectChange() {
+    if (!this.editingVehicleId || this.editingVehicleId === 'null') {
+      this.editingVehicleId = null;
+      this.resetVehicleFormExceptBrand();
+      return;
+    }
+    const car = this.vehicles.find(v => v.id === this.editingVehicleId);
+    if (car) {
+      this.startEditVehicle(car);
+    }
+  }
+
+  onModelNameChange(modelName: string) {
+    if (!modelName || !modelName.trim()) {
+      if (this.isBorrowedImage) {
+        this.vehImageUrl = '';
+        this.isBorrowedImage = false;
+      }
+      return;
+    }
+
+    const trimmedModel = modelName.trim().toLowerCase();
+
+    // Look for matching existing vehicle with an image under the current brand OR globally if model name matches
+    const existingVehicleWithImage = this.vehicles.find(v => {
+      const pModel = (v.parentModel || v.name).toLowerCase();
+      const isModelMatch = pModel === trimmedModel;
+      const isBrandMatch = !this.vehCategoryId || v.categoryId === this.vehCategoryId;
+      return isModelMatch && isBrandMatch && v.imageUrl && v.imageUrl.length > 10;
+    });
+
+    if (existingVehicleWithImage) {
+      if (existingVehicleWithImage.galleryImages && existingVehicleWithImage.galleryImages.length > 0) {
+        this.vehGalleryImages = [
+          existingVehicleWithImage.galleryImages[0] || '',
+          existingVehicleWithImage.galleryImages[1] || '',
+          existingVehicleWithImage.galleryImages[2] || '',
+          existingVehicleWithImage.galleryImages[3] || ''
+        ];
+        this.vehImageUrl = this.vehGalleryImages[0];
+      } else {
+        this.vehImageUrl = existingVehicleWithImage.imageUrl || '';
+        this.vehGalleryImages = [this.vehImageUrl, '', '', ''];
+      }
+      this.isBorrowedImage = true;
+    } else if (this.isBorrowedImage) {
+      this.vehImageUrl = '';
+      this.vehGalleryImages = ['', '', '', ''];
+      this.isBorrowedImage = false;
+    }
+
+    // Auto-prefill the 5 core physical specs if present on existing model entry
+    const existingVehicleWithSpecs = this.vehicles.find(v => {
+      const pModel = (v.parentModel || v.name).toLowerCase();
+      const isModelMatch = pModel === trimmedModel;
+      const isBrandMatch = !this.vehCategoryId || v.categoryId === this.vehCategoryId;
+      return isModelMatch && isBrandMatch;
+    });
+
+    if (existingVehicleWithSpecs) {
+      if (!this.vehDimensions && existingVehicleWithSpecs.dimensions && existingVehicleWithSpecs.dimensions !== 'N/A') {
+        this.vehDimensions = existingVehicleWithSpecs.dimensions;
+      }
+      if (!this.vehWheelbase && existingVehicleWithSpecs.wheelbase && existingVehicleWithSpecs.wheelbase !== 'N/A') {
+        this.vehWheelbase = existingVehicleWithSpecs.wheelbase;
+      }
+      if (!this.vehGroundClearance && existingVehicleWithSpecs.groundClearance && existingVehicleWithSpecs.groundClearance !== 'N/A') {
+        this.vehGroundClearance = existingVehicleWithSpecs.groundClearance;
+      }
+      if (!this.vehBodyStyle && existingVehicleWithSpecs.bodyStyle && existingVehicleWithSpecs.bodyStyle !== 'N/A') {
+        this.vehBodyStyle = existingVehicleWithSpecs.bodyStyle;
+      }
+      if (!this.vehBootFrunkSpace && existingVehicleWithSpecs.bootFrunkSpace && existingVehicleWithSpecs.bootFrunkSpace !== 'N/A') {
+        this.vehBootFrunkSpace = existingVehicleWithSpecs.bootFrunkSpace;
+      }
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  getFilteredModels(brandId: string | null): CarSpec[] {
+    if (!brandId) return [];
+    return this.vehicles.filter(car => car.categoryId === brandId);
+  }
+
+  getUniqueModelNames(brandId: string | null): string[] {
+    if (!brandId) return [];
+    const models = this.vehicles
+      .filter(car => car.categoryId === brandId)
+      .map(car => car.parentModel || car.name);
+    return Array.from(new Set(models));
+  }
+
+  resetVehicleForm() {
+    this.vehBrandName = '';
+    this.vehCategoryId = '';
+    this.resetVehicleFormExceptBrand();
+  }
+
+  resetVehicleFormExceptBrand() {
+    this.vehName = '';
+    this.vehParentModel = '';
+    this.vehVariantName = '';
+    this.vehPrice = '';
+    this.vehSeating = '';
+    this.vehDimensions = '';
+    this.vehGroundClearance = '';
+    this.vehBatteryCapacity = '';
+    this.vehAcCharging = '';
+    this.vehDcCharging = '';
+    this.vehRange = '';
+    this.vehTyreSize = '';
+    this.vehBootFrunkSpace = '';
+    this.vehBhpTorque = '';
+    this.vehAcceleration = '';
+    this.vehMaxPower = '';
+    this.vehTorque = '';
+    this.vehDrivetrain = '';
+    this.vehSafetyRating = '';
+    this.vehColour = '';
+    this.vehWeight = '';
+    this.vehKerbWeight = '';
+    this.vehGrossWeight = '';
+    this.vehWheelbase = '';
+    this.vehBodyStyle = '';
+    this.vehScreen = '';
+    this.vehAudio = '';
+    this.vehConnectivity = '';
+    this.vehAdas = '';
+    this.vehAirbags = '';
+    this.vehImageUrl = '';
+    this.vehGalleryImages = ['', '', '', ''];
+    this.vehImageProcessing = false;
+    this.vehKeyHighlights = '';
+    this.isBorrowedImage = false;
+  }
+
+  onVehImageFileSelected(event: Event, slotIndex: number = 0) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      
+      this.vehImageProcessing = true;
+      
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          const MAX_WIDTH = 1200;
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const base64Data = canvas.toDataURL('image/jpeg', 0.85);
+            this.vehGalleryImages[slotIndex] = base64Data;
+            if (slotIndex === 0) {
+              this.vehImageUrl = base64Data;
+            }
+            this.isBorrowedImage = false;
+          }
+          this.vehImageProcessing = false;
+          this.cdr.detectChanges();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  clearVehImageSlot(slotIndex: number) {
+    this.vehGalleryImages[slotIndex] = '';
+    if (slotIndex === 0) {
+      this.vehImageUrl = '';
+    }
+    this.isBorrowedImage = false;
+    this.cdr.detectChanges();
+  }
+
+  clearVehImagePreview() {
+    this.vehImageUrl = '';
+    this.vehGalleryImages = ['', '', '', ''];
+    this.vehImageProcessing = false;
+    this.isBorrowedImage = false;
+  }
+
+  onDeleteVehicle(id: string, name: string) {
+    if (confirm(`Are you sure you want to delete specs for "${name}"?`)) {
+      this.dataService.deleteVehicle(id).subscribe({
+        next: () => {
+          this.dataService.clearVehicleCache();
+          this.loadVehicles();
+          if (this.editingVehicleId === id) this.cancelEditVehicle();
+        },
+        error: (err) => alert('Delete failed: ' + err.message)
+      });
+    }
+  }
+  // ==========================================
+  // HIERARCHICAL VEHICLE LIST LOGIC
+  // ==========================================
+  
+  getAdminBrands() {
+    return this.categories;
+  }
+  
+  getAdminModelsForBrand(brandId: string) {
+    const models = this.vehicles
+      .filter(v => v.categoryId === brandId)
+      .map(v => v.parentModel || v.name);
+    return Array.from(new Set(models));
+  }
+  
+  getAdminVariants(brandId: string, modelName: string) {
+    return this.vehicles.filter(v => v.categoryId === brandId && (v.parentModel || v.name) === modelName);
+  }
+  
+  selectAdminBrand(brandId: string) {
+    this.selectedAdminBrandId = brandId;
+    this.adminViewLevel = 'models';
+  }
+  
+  selectAdminModel(modelName: string) {
+    this.selectedAdminModel = modelName;
+    this.adminViewLevel = 'variants';
+  }
+  
+  goBackAdminLevel() {
+    if (this.adminViewLevel === 'variants') {
+      this.adminViewLevel = 'models';
+      this.selectedAdminModel = null;
+    } else if (this.adminViewLevel === 'models') {
+      this.adminViewLevel = 'brands';
+      this.selectedAdminBrandId = null;
+    }
+  }
+}

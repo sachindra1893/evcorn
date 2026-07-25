@@ -1,0 +1,14 @@
+<header>
+  <app-navbar></app-navbar>
+</header>
+
+<main>
+  <router-outlet (activate)="onActivate()"></router-outlet>
+</main>
+
+@if (isRouteReady) {
+  <footer>
+    <app-compare-tray></app-compare-tray>
+    <app-footer></app-footer>
+  </footer>
+}

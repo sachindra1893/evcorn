@@ -1,0 +1,20 @@
+{
+  "name": "evcorn-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EVCorn Monorepo - Angular Frontend & Express Node.js Backend",
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend start",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "keywords": [
+    "evcorn",
+    "angular",
+    "nodejs",
+    "express",
+    "monorepo"
+  ],
+  "author": "EVCorn Team",
+  "license": "ISC"
+}
