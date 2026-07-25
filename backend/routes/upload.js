@@ -57,4 +57,28 @@ router.post('/upload', (req, res, next) => {
   });
 });
 
+/**
+ * @route   GET /api/upload-test
+ * @desc    Postman compatibility instructions & test status
+ * @access  Public
+ */
+router.get('/upload-test', (req, res) => {
+  res.status(200).json({
+    status: 'online',
+    message: 'EVCorn Cloudinary Upload API is ready for Postman verification',
+    endpoint: 'POST /api/upload',
+    contentType: 'multipart/form-data',
+    allowedFieldNames: ['file', 'image'],
+    browserTestPage: '/upload-test.html',
+    expectedResponseFormat: {
+      url: 'https://res.cloudinary.com/...',
+      public_id: 'evcorn/sample_id',
+      width: 1200,
+      height: 800,
+      format: 'webp',
+      original_filename: 'sample'
+    }
+  });
+});
+
 module.exports = router;
