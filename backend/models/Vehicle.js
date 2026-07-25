@@ -16,7 +16,16 @@ const VehicleSchema = new mongoose.Schema({
   bootFrunkSpace: { type: String, default: 'N/A' },
   bhpTorque: { type: String, default: 'N/A' },
   drivetrain: { type: String, default: 'N/A' },
-  safetyRating: { type: String, default: 'N/A' }
+  safetyRating: { type: String, default: 'N/A' },
+  // Cloudinary Image Metadata (Optional, Stores only URL & Public ID)
+  cloudinaryMainImage: {
+    url: { type: String, default: '' },
+    public_id: { type: String, default: '' }
+  },
+  cloudinaryImages: [{
+    url: { type: String, default: '' },
+    public_id: { type: String, default: '' }
+  }]
 });
 
 // Clean up standard MongoDB keys for the frontend API response

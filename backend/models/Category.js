@@ -2,7 +2,13 @@ const mongoose = require('mongoose');
 
 const CategorySchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true }, // e.g. 'tesla'
-  name: { type: String, required: true }              // e.g. 'Tesla'
+  name: { type: String, required: true },             // e.g. 'Tesla'
+  logoUrl: { type: String, default: '' },
+  // Cloudinary Logo Metadata (Optional, Stores only URL & Public ID)
+  cloudinaryLogo: {
+    url: { type: String, default: '' },
+    public_id: { type: String, default: '' }
+  }
 });
 
 CategorySchema.set('toJSON', {

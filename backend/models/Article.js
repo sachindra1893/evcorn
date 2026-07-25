@@ -6,9 +6,17 @@ const ArticleSchema = new mongoose.Schema({
   categoryId: { type: String, default: "general" },
   imageUrl: { type: String, default: "" },
   paragraphs: { type: [String], default: [] },
-  blocks: { type: [mongoose.Schema.Types.Mixed], default: [] },
   active: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  // Cloudinary Image Metadata (Optional, Stores only URL & Public ID)
+  cloudinaryImage: {
+    url: { type: String, default: '' },
+    public_id: { type: String, default: '' }
+  },
+  cloudinaryImages: [{
+    url: { type: String, default: '' },
+    public_id: { type: String, default: '' }
+  }]
 });
 
 // Ensure virtual id maps to _id for Angular compatibility
