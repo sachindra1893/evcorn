@@ -85,4 +85,40 @@ router.get('/upload-test', (req, res) => {
   });
 });
 
+/**
+ * @route   DELETE /api/upload
+ * @desc    Delete single image from Cloudinary by public_id or url
+ * @access  Public
+ */
+router.delete('/upload', async (req, res) => {
+  try {
+    const publicId = req.body?.public_id || req.body?.url || req.query?.public_id || req.query?.url;
+    if (!publicId) {
+      return res.status(400).json({ error: 'Missing public_id or url parameter' });
+    }
+
+    const deletionResult = await deleteImage(publicId);
+    return res.status(200).json(deletionResult);
+  } catch (error) {
+    console.error('API Image Delete Error:', error);
+    return res.status(200).json({ success: false, error: error.message });
+  }
+});
+
+// Alternative POST route for clients restricting DELETE body
+router.post('/upload/delete', async (req, res) => {
+  try {
+    const publicId = req.body?.public_id || req.body?.url;
+    if (!publicId) {
+      return res.status(400).json({ error: 'Missing public_id or url parameter' });
+    }
+
+    const deletionResult = await deleteImage(publicId);
+    return res.status(200).json(deletionResult);
+  } catch (error) {
+    console.error('API Image Delete Error:', error);
+    return res.status(200).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

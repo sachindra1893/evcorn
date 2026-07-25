@@ -1019,6 +1019,11 @@ export class AdminComponent implements OnInit {
   }
 
   clearImagePreview() {
+    if (this.articleImageUrl && this.articleImageUrl.includes('cloudinary')) {
+      this.dataService.deleteImage(this.articleImageUrl).subscribe({
+        error: (err: any) => console.warn('Cloudinary article image deletion warning:', err)
+      });
+    }
     this.articleImageUrl = '';
     this.selectedFileName = '';
     const fileInput = document.getElementById('imageFile') as HTMLInputElement;
@@ -1380,6 +1385,12 @@ export class AdminComponent implements OnInit {
   }
 
   clearVehImageSlot(slotIndex: number) {
+    const existingUrl = this.vehGalleryImages[slotIndex];
+    if (existingUrl && existingUrl.includes('cloudinary')) {
+      this.dataService.deleteImage(existingUrl).subscribe({
+        error: (err: any) => console.warn('Cloudinary slot deletion warning:', err)
+      });
+    }
     this.vehGalleryImages[slotIndex] = '';
     if (slotIndex === 0) {
       this.vehImageUrl = '';
@@ -1389,6 +1400,13 @@ export class AdminComponent implements OnInit {
   }
 
   clearVehImagePreview() {
+    this.vehGalleryImages.forEach(url => {
+      if (url && url.includes('cloudinary')) {
+        this.dataService.deleteImage(url).subscribe({
+          error: (err: any) => console.warn('Cloudinary image deletion warning:', err)
+        });
+      }
+    });
     this.vehImageUrl = '';
     this.vehGalleryImages = ['', '', '', ''];
     this.vehImageProcessing = false;

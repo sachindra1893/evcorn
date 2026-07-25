@@ -99,6 +99,16 @@ export class BlogDataService {
     );
   }
 
+  /**
+   * Delete single image from Cloudinary via POST /api/upload/delete
+   */
+  deleteImage(urlOrPublicId: string): Observable<{ success: boolean; result?: string }> {
+    return this.http.post<{ success: boolean; result?: string }>(
+      `${this.apiUrl}/upload/delete`,
+      { public_id: urlOrPublicId }
+    );
+  }
+
   // Helper to construct authorization headers for Admin actions
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({

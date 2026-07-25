@@ -5,10 +5,11 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 
-// Import Models
+// Import Models & Services
 const Category = require('./models/Category');
 const Article = require('./models/Article');
 const Vehicle = require('./models/Vehicle');
+const { deleteImage } = require('./services/cloudinary.service');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -514,6 +515,15 @@ app.delete('/api/articles/:id', checkAdminAuth, async (req, res) => {
     if (!article) {
       return res.status(404).json({ error: 'Article not found' });
     }
+    // Synchronized Cloudinary cleanup (safe, non-blocking)
+    try {
+      const imgToDelete = article.cloudinaryImage?.public_id || article.cloudinaryImage?.url || article.imageUrl;
+      if (imgToDelete && imgToDelete.includes('cloudinary')) {
+        await deleteImage(imgToDelete);
+      }
+    } catch (cleanErr) {
+      console.warn('Cloudinary image cleanup warning on article delete:', cleanErr.message);
+    }
     res.json({ message: 'Article deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Server error deleting article' });
@@ -673,6 +683,22 @@ app.delete('/api/vehicles/:id', checkAdminAuth, async (req, res) => {
     const vehicle = await Vehicle.findOneAndDelete({ id: req.params.id });
     if (!vehicle) {
       return res.status(404).json({ error: 'Vehicle not found' });
+    }
+    // Synchronized Cloudinary cleanup (safe, non-blocking)
+    try {
+      if (vehicle.imageUrl && vehicle.imageUrl.includes('cloudinary')) {
+        await deleteImage(vehicle.imageUrl);
+      }
+      if (vehicle.cloudinaryImages && Array.isArray(vehicle.cloudinaryImages)) {
+        for (const item of vehicle.cloudinaryImages) {
+          const target = item.public_id || item.url;
+          if (target && target.includes('cloudinary')) {
+            await deleteImage(target);
+          }
+        }
+      }
+    } catch (cleanErr) {
+      console.warn('Cloudinary image cleanup warning on vehicle delete:', cleanErr.message);
     }
     res.json({ message: 'Vehicle deleted successfully' });
   } catch (error) {
