@@ -1,9 +1,10 @@
 /**
  * EVCorn Backend Server Application Bootstrap
- * Refactored to Enterprise Layered Architecture + Security Hardening (Phase 4)
+ * Enterprise Layered Architecture + Security Hardening + Performance Engineering (Phase 6)
  */
 const express = require('express');
 const helmet = require('helmet');
+const compression = require('compression');
 const path = require('path');
 const config = require('./config/env');
 const corsMiddleware = require('./config/cors');
@@ -17,25 +18,40 @@ const Article = require('./models/Article');
 
 const app = express();
 
-// 1. HTTP Security Headers (Helmet: XSS, Frameguard, MIME sniffing, HSTS)
+// 1. Cheap Security Middleware (Helmet: XSS, Frameguard, MIME sniffing, HSTS)
 app.use(helmet({
-  contentSecurityPolicy: false, // Disabled to prevent blocking Cloudinary / external assets
+  contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
 // 2. Strict CORS Policy
 app.use(corsMiddleware);
 
-// 3. Request Body Parsing & Limits
+// 3. Response Compression (Gzip / Brotli for JSON, HTML, CSS, JS, Text)
+app.use(compression({
+  level: 6,
+  threshold: 512, // Compress payloads larger than 512 bytes
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
+
+// 4. Request Body Parsing & Limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// 4. MongoDB Operator Injection Sanitization Guard
+// 5. MongoDB Operator Injection Sanitization Guard
 app.use(sanitizeInput);
 
-// 5. Cache-Control Header
+// 6. Enterprise HTTP Cache-Control & CDN Edge Caching Strategy
 app.use((req, res, next) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  // Public GET endpoints can be cached at the CDN Edge (s-maxage=300s) and browser (max-age=60s)
+  if (req.method === 'GET' && !req.path.startsWith('/api/auth') && !req.path.startsWith('/api/upload')) {
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+  } else {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  }
   next();
 });
 
@@ -108,16 +124,16 @@ app.get('/', (req, res) => {
   res.send('EVCorn Enterprise Backend API is running successfully!');
 });
 
-// 6. Mount Aggregated Enterprise REST API Router (Protected with API Rate Limiter)
+// 7. Mount Aggregated Enterprise REST API Router (Protected with API Rate Limiter)
 app.use('/api', apiLimiter, apiRouter);
 
-// 7. Centralized Global Error Handling Middleware (Leakage Guard)
+// 8. Centralized Global Error Handling Middleware (Leakage Guard)
 app.use(errorHandler);
 
 // Connect Database & Start Server
 connectDatabase().then(() => {
   app.listen(config.PORT, () => {
-    logger.info(`Secured Server running on port ${config.PORT} [Environment: ${config.NODE_ENV}]`);
+    logger.info(`Optimized Server running on port ${config.PORT} [Environment: ${config.NODE_ENV}]`);
   });
 });
 

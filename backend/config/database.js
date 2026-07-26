@@ -62,8 +62,14 @@ async function connectDatabase() {
   }
 
   try {
-    await mongoose.connect(config.MONGO_URI);
-    logger.info('Successfully connected to MongoDB Atlas.');
+    await mongoose.connect(config.MONGO_URI, {
+      maxPoolSize: 50,
+      minPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      family: 4
+    });
+    logger.info('Successfully connected to MongoDB Atlas with connection pool (min: 10, max: 50).');
   } catch (err) {
     logger.error('Database connection error:', err.message);
     logger.warn('Falling back to local JSON file database mode.');
