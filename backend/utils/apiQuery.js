@@ -141,14 +141,36 @@ function buildArticleFilterQuery(query) {
 
   if (query.active !== undefined) {
     mongoQuery.active = query.active === 'true';
+  } else if (!query.admin) {
+    mongoQuery.active = true;
+  }
+
+  // Editorial Workflow Status Filtering
+  if (query.status) {
+    mongoQuery.status = query.status;
+  } else if (!query.admin) {
+    mongoQuery.$or = [
+      { status: 'published' },
+      { status: { $exists: false } }
+    ];
+    mongoQuery.publishAt = { $lte: new Date() };
   }
 
   if (query.search && typeof query.search === 'string') {
     const searchRegex = new RegExp(query.search.trim(), 'i');
-    mongoQuery.$or = [
+    const searchConditions = [
       { title: searchRegex },
       { description: searchRegex }
     ];
+    if (mongoQuery.$or) {
+      mongoQuery.$and = [
+        { $or: mongoQuery.$or },
+        { $or: searchConditions }
+      ];
+      delete mongoQuery.$or;
+    } else {
+      mongoQuery.$or = searchConditions;
+    }
   }
 
   return mongoQuery;

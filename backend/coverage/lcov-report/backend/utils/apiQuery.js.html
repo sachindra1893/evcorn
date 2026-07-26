@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">62.02% </span>
+                <span class="strong">54.44% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>49/79</span>
+                <span class='fraction'>49/90</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">60.97% </span>
+                <span class="strong">57.25% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>75/123</span>
+                <span class='fraction'>75/131</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">68.11% </span>
+                <span class="strong">58.75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>47/69</span>
+                <span class='fraction'>47/80</span>
             </div>
         
             
@@ -246,7 +246,29 @@
 <a name='L181'></a><a href='#L181'>181</a>
 <a name='L182'></a><a href='#L182'>182</a>
 <a name='L183'></a><a href='#L183'>183</a>
-<a name='L184'></a><a href='#L184'>184</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -389,6 +411,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -396,6 +431,15 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -572,14 +616,36 @@ function <span class="fstat-no" title="function not covered" >buildArticleFilter
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (query.active !== undefined) {</span>
 <span class="cstat-no" title="statement not covered" >    mongoQuery.active = query.active === 'true';</span>
+  } else <span class="cstat-no" title="statement not covered" >if (!query.admin) {</span>
+<span class="cstat-no" title="statement not covered" >    mongoQuery.active = true;</span>
+  }
+&nbsp;
+  // Editorial Workflow Status Filtering
+<span class="cstat-no" title="statement not covered" >  if (query.status) {</span>
+<span class="cstat-no" title="statement not covered" >    mongoQuery.status = query.status;</span>
+  } else <span class="cstat-no" title="statement not covered" >if (!query.admin) {</span>
+<span class="cstat-no" title="statement not covered" >    mongoQuery.$or = [</span>
+      { status: 'published' },
+      { status: { $exists: false } }
+    ];
+<span class="cstat-no" title="statement not covered" >    mongoQuery.publishAt = { $lte: new Date() };</span>
   }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (query.search &amp;&amp; typeof query.search === 'string') {</span>
     const searchRegex = <span class="cstat-no" title="statement not covered" >new RegExp(query.search.trim(), 'i');</span>
-<span class="cstat-no" title="statement not covered" >    mongoQuery.$or = [</span>
+    const searchConditions = <span class="cstat-no" title="statement not covered" >[</span>
       { title: searchRegex },
       { description: searchRegex }
     ];
+<span class="cstat-no" title="statement not covered" >    if (mongoQuery.$or) {</span>
+<span class="cstat-no" title="statement not covered" >      mongoQuery.$and = [</span>
+        { $or: mongoQuery.$or },
+        { $or: searchConditions }
+      ];
+<span class="cstat-no" title="statement not covered" >      delete mongoQuery.$or;</span>
+    } else {
+<span class="cstat-no" title="statement not covered" >      mongoQuery.$or = searchConditions;</span>
+    }
   }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return mongoQuery;</span>
@@ -619,7 +685,7 @@ module.exports = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-26T11:52:17.955Z
+                at 2026-07-26T12:17:48.486Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

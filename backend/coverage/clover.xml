@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1785066738002" clover="3.2.0">
-  <project timestamp="1785066738002" name="All files">
-    <metrics statements="883" coveredstatements="444" conditionals="694" coveredconditionals="185" methods="150" coveredmethods="46" elements="1727" coveredelements="675" complexity="0" loc="883" ncloc="883" packages="13" files="48" classes="48"/>
+<coverage generated="1785068268704" clover="3.2.0">
+  <project timestamp="1785068268704" name="All files">
+    <metrics statements="899" coveredstatements="444" conditionals="710" coveredconditionals="185" methods="150" coveredmethods="46" elements="1759" coveredelements="675" complexity="0" loc="899" ncloc="899" packages="13" files="48" classes="48"/>
     <package name="backend">
       <metrics statements="76" coveredstatements="47" conditionals="25" coveredconditionals="8" methods="13" coveredmethods="3"/>
       <file name="server.js" path="/Users/sachin/Desktop/evcorn/backend/server.js">
@@ -495,13 +495,13 @@
       <metrics statements="39" coveredstatements="24" conditionals="0" coveredconditionals="0" methods="11" coveredmethods="0"/>
       <file name="Article.js" path="/Users/sachin/Desktop/evcorn/backend/models/Article.js">
         <metrics statements="7" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-        <line num="1" count="3" type="stmt"/>
-        <line num="3" count="3" type="stmt"/>
-        <line num="23" count="3" type="stmt"/>
-        <line num="26" count="0" type="stmt"/>
-        <line num="27" count="0" type="stmt"/>
-        <line num="28" count="0" type="stmt"/>
-        <line num="32" count="3" type="stmt"/>
+        <line num="5" count="3" type="stmt"/>
+        <line num="7" count="3" type="stmt"/>
+        <line num="91" count="3" type="stmt"/>
+        <line num="94" count="0" type="stmt"/>
+        <line num="95" count="0" type="stmt"/>
+        <line num="96" count="0" type="stmt"/>
+        <line num="100" count="3" type="stmt"/>
       </file>
       <file name="Category.js" path="/Users/sachin/Desktop/evcorn/backend/models/Category.js">
         <metrics statements="6" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
@@ -900,9 +900,9 @@
       </file>
     </package>
     <package name="backend.utils">
-      <metrics statements="106" coveredstatements="68" conditionals="150" coveredconditionals="82" methods="14" coveredmethods="10"/>
+      <metrics statements="117" coveredstatements="68" conditionals="158" coveredconditionals="82" methods="14" coveredmethods="10"/>
       <file name="apiQuery.js" path="/Users/sachin/Desktop/evcorn/backend/utils/apiQuery.js">
-        <metrics statements="69" coveredstatements="47" conditionals="123" coveredconditionals="75" methods="6" coveredmethods="5"/>
+        <metrics statements="80" coveredstatements="47" conditionals="131" coveredconditionals="75" methods="6" coveredmethods="5"/>
         <line num="7" count="4" type="stmt"/>
         <line num="16" count="4" type="stmt"/>
         <line num="17" count="4" type="stmt"/>
@@ -964,14 +964,25 @@
         <line num="139" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="142" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="143" count="0" type="stmt"/>
-        <line num="146" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="147" count="0" type="stmt"/>
-        <line num="148" count="0" type="stmt"/>
-        <line num="154" count="0" type="stmt"/>
-        <line num="161" count="4" type="cond" truecount="4" falsecount="0"/>
-        <line num="162" count="2" type="stmt"/>
-        <line num="173" count="2" type="stmt"/>
-        <line num="176" count="4" type="stmt"/>
+        <line num="144" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="145" count="0" type="stmt"/>
+        <line num="149" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="150" count="0" type="stmt"/>
+        <line num="151" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="152" count="0" type="stmt"/>
+        <line num="156" count="0" type="stmt"/>
+        <line num="159" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="160" count="0" type="stmt"/>
+        <line num="161" count="0" type="stmt"/>
+        <line num="165" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="166" count="0" type="stmt"/>
+        <line num="170" count="0" type="stmt"/>
+        <line num="172" count="0" type="stmt"/>
+        <line num="176" count="0" type="stmt"/>
+        <line num="183" count="4" type="cond" truecount="4" falsecount="0"/>
+        <line num="184" count="2" type="stmt"/>
+        <line num="195" count="2" type="stmt"/>
+        <line num="198" count="4" type="stmt"/>
       </file>
       <file name="auth.utils.js" path="/Users/sachin/Desktop/evcorn/backend/utils/auth.utils.js">
         <metrics statements="7" coveredstatements="7" conditionals="1" coveredconditionals="0" methods="2" coveredmethods="2"/>
@@ -1021,16 +1032,21 @@
       </file>
     </package>
     <package name="backend.validators">
-      <metrics statements="36" coveredstatements="14" conditionals="51" coveredconditionals="10" methods="3" coveredmethods="1"/>
+      <metrics statements="41" coveredstatements="14" conditionals="59" coveredconditionals="10" methods="3" coveredmethods="1"/>
       <file name="article.validator.js" path="/Users/sachin/Desktop/evcorn/backend/validators/article.validator.js">
-        <metrics statements="7" coveredstatements="2" conditionals="9" coveredconditionals="0" methods="1" coveredmethods="0"/>
+        <metrics statements="12" coveredstatements="2" conditionals="17" coveredconditionals="0" methods="1" coveredmethods="0"/>
         <line num="4" count="3" type="stmt"/>
         <line num="7" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="8" count="0" type="stmt"/>
         <line num="11" count="0" type="cond" truecount="0" falsecount="5"/>
         <line num="12" count="0" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="18" count="3" type="stmt"/>
+        <line num="16" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="17" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="18" count="0" type="stmt"/>
+        <line num="20" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="21" count="0" type="stmt"/>
+        <line num="25" count="0" type="stmt"/>
+        <line num="28" count="3" type="stmt"/>
       </file>
       <file name="query.validator.js" path="/Users/sachin/Desktop/evcorn/backend/validators/query.validator.js">
         <metrics statements="20" coveredstatements="10" conditionals="28" coveredconditionals="10" methods="1" coveredmethods="1"/>

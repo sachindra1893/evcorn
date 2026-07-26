@@ -1,5 +1,5 @@
 /**
- * Article Input Validator
+ * Article Input & Publication Validator
  */
 const { BadRequestError } = require('../errors/AppError');
 
@@ -10,6 +10,16 @@ function validateArticleInput(body) {
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim().length === 0) {
     throw new BadRequestError('Article field "title" is required.');
+  }
+
+  // Publication Validation Guard
+  if (body.status === 'published') {
+    if (!body.description || body.description.trim().length < 10) {
+      throw new BadRequestError('Publishing requires a valid description (minimum 10 characters).');
+    }
+    if (!body.categoryId) {
+      throw new BadRequestError('Publishing requires a valid categoryId.');
+    }
   }
 
   return true;
