@@ -2,6 +2,8 @@
   "routes": [
     { "handle": "filesystem" },
     { "src": "/disqus.html", "dest": "/disqus.html" },
+    { "src": "/assets/(.*)", "status": 404 },
+    { "src": "/images/(.*)", "status": 404 },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

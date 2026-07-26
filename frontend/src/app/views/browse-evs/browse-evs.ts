@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Category, CarSpec, BlogDataService } from '../../services/blog-data.service';
 import { SeoService } from '../../services/seo.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
-import { getOptimizedImageUrl } from '../../utils/image.utils';
+import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
 
 @Component({
   selector: 'app-browse-evs',
@@ -89,8 +89,8 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
                 @for (car of getFilteredModels(); track car.id) {
                   <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card">
                     <div class="model-image-container">
-                      <img [src]="car.imageUrl ? getOptimizedUrl(car.imageUrl, 600) : ('/assets/images/models/' + slugify(car.parentModel || car.name) + '.png')" 
-                           onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'><rect width=\'100%\' height=\'100%\' fill=\'%23F1F5F9\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'24\' fill=\'%2394A3B8\'>⚡</text></svg>'; this.style.opacity='0.5';"
+                      <img [src]="getOptimizedUrl(car.imageUrl, 600)" 
+                           (error)="onImgError($event)"
                            loading="lazy"
                            decoding="async"
                            class="model-thumb" alt="Vehicle Image">
@@ -125,8 +125,8 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
                     </div>
 
                     <div class="model-image-container">
-                      <img [src]="car.imageUrl ? getOptimizedUrl(car.imageUrl, 600) : ('/assets/images/models/' + slugify(car.parentModel || car.name) + '.png')" 
-                           onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'><rect width=\'100%\' height=\'100%\' fill=\'%23F1F5F9\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'24\' fill=\'%2394A3B8\'>⚡</text></svg>'; this.style.opacity='0.5';"
+                      <img [src]="getOptimizedUrl(car.imageUrl, 600)" 
+                           (error)="onImgError($event)"
                            loading="lazy"
                            decoding="async"
                            class="model-thumb" alt="Vehicle Image">
@@ -500,6 +500,10 @@ export class BrowseEvsComponent implements OnInit {
 
   getOptimizedUrl(url: string | undefined | null, width?: number): string {
     return getOptimizedImageUrl(url, width);
+  }
+
+  onImgError(event: Event): void {
+    handleImageError(event);
   }
 
   loadTopRangeEvs() {

@@ -7,7 +7,7 @@ import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
-import { getOptimizedImageUrl } from '../../utils/image.utils';
+import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
 import { combineLatest, Subscription } from 'rxjs';
 
 interface OverviewData {
@@ -93,12 +93,12 @@ interface OverviewData {
               <div class="hero-visual" style="position: relative;">
                 <div class="gallery-container" style="position: relative; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 20px; background: #FAFAFC; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 12px 30px rgba(0,0,0,0.04);">
                   
-                  <img [src]="activeImageUrl ? getOptimizedUrl(activeImageUrl, 1200) : ('/assets/images/models/' + slugify(modelName) + '.png')" 
-                       onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'><rect width=\'100%\' height=\'100%\' fill=\'%23F1F5F9\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'24\' fill=\'%2394A3B8\'>⚡</text></svg>'; this.style.opacity='0.5';" 
+                  <img [src]="getOptimizedUrl(activeImageUrl, 1200)" 
+                       (error)="onImgError($event)" 
                        class="hero-image" 
                        loading="lazy"
                        decoding="async"
-                       [alt]="brand.name + ' ' + modelName"
+                       [alt]="(brand ? brand.name : '') + ' ' + modelName"
                        style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease-in-out;" />
 
                   @if (galleryImages.length > 1) {
@@ -812,6 +812,10 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
         }
       })
     );
+  }
+
+  onImgError(event: Event): void {
+    handleImageError(event);
   }
 
   ngOnDestroy() {
