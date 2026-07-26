@@ -9,7 +9,9 @@ const categoryRoutes = require('./category.routes');
 const articleRoutes = require('./article.routes');
 const vehicleRoutes = require('./vehicle.routes');
 const uploadRoutes = require('./upload');
+const healthRoutes = require('./health.routes');
 
+router.use('/', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/articles', articleRoutes);

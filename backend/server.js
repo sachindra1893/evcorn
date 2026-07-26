@@ -1,15 +1,19 @@
 /**
  * EVCorn Backend Server Application Bootstrap
- * Enterprise Layered Architecture + Security Hardening + Performance Engineering (Phase 6)
+ * Layered Architecture + Security + Performance + Observability (Phase 7)
  */
 const express = require('express');
 const helmet = require('helmet');
 const compression = require('compression');
+const mongoose = require('mongoose');
 const path = require('path');
 const config = require('./config/env');
 const corsMiddleware = require('./config/cors');
 const { connectDatabase, isLocalFileDb, fileDb } = require('./config/database');
 const logger = require('./utils/logger');
+const requestIdMiddleware = require('./middlewares/requestId.middleware');
+const { requestLoggerMiddleware } = require('./middlewares/requestLogger.middleware');
+const conditionalRequestMiddleware = require('./middlewares/etag.middleware');
 const apiRouter = require('./routes/index');
 const errorHandler = require('./middlewares/error.middleware');
 const { sanitizeInput } = require('./middlewares/sanitize.middleware');
@@ -18,35 +22,39 @@ const Article = require('./models/Article');
 
 const app = express();
 
-// 1. Cheap Security Middleware (Helmet: XSS, Frameguard, MIME sniffing, HSTS)
+// 1. Correlation & Observability Middleware
+app.use(requestIdMiddleware);
+app.use(requestLoggerMiddleware);
+app.use(conditionalRequestMiddleware);
+
+// 2. Cheap Security Middleware (Helmet)
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-// 2. Strict CORS Policy
+// 3. Strict CORS Policy
 app.use(corsMiddleware);
 
-// 3. Response Compression (Gzip / Brotli for JSON, HTML, CSS, JS, Text)
+// 4. Response Compression (Gzip / Brotli Level 6, Threshold > 512 bytes)
 app.use(compression({
   level: 6,
-  threshold: 512, // Compress payloads larger than 512 bytes
+  threshold: 512,
   filter: (req, res) => {
     if (req.headers['x-no-compression']) return false;
     return compression.filter(req, res);
   }
 }));
 
-// 4. Request Body Parsing & Limits
+// 5. Request Body Parsing & Limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// 5. MongoDB Operator Injection Sanitization Guard
+// 6. MongoDB Operator Injection Sanitization Guard
 app.use(sanitizeInput);
 
-// 6. Enterprise HTTP Cache-Control & CDN Edge Caching Strategy
+// 7. Enterprise HTTP Cache-Control & CDN Edge Caching Strategy
 app.use((req, res, next) => {
-  // Public GET endpoints can be cached at the CDN Edge (s-maxage=300s) and browser (max-age=60s)
   if (req.method === 'GET' && !req.path.startsWith('/api/auth') && !req.path.startsWith('/api/upload')) {
     res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
   } else {
@@ -124,16 +132,47 @@ app.get('/', (req, res) => {
   res.send('EVCorn Enterprise Backend API is running successfully!');
 });
 
-// 7. Mount Aggregated Enterprise REST API Router (Protected with API Rate Limiter)
+// 8. Mount Aggregated Enterprise REST API Router (Protected with API Rate Limiter)
 app.use('/api', apiLimiter, apiRouter);
 
-// 8. Centralized Global Error Handling Middleware (Leakage Guard)
+// 9. Centralized Global Error Handling Middleware (Leakage Guard)
 app.use(errorHandler);
+
+// Graceful Shutdown & Uncaught Exception Handlers
+let server;
+
+function gracefulShutdown(signal) {
+  logger.info(`Received ${signal}. Starting graceful shutdown of HTTP server...`);
+  if (server) {
+    server.close(async () => {
+      logger.info('HTTP server closed.');
+      if (!isLocalFileDb() && mongoose.connection.readyState !== 0) {
+        await mongoose.connection.close(false);
+        logger.info('MongoDB connection closed cleanly.');
+      }
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('uncaughtException', (err) => {
+  logger.error(`UNCAUGHT EXCEPTION: ${err.message}`, { stack: err.stack });
+  gracefulShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error(`UNHANDLED PROMISE REJECTION: ${reason}`);
+});
 
 // Connect Database & Start Server
 connectDatabase().then(() => {
-  app.listen(config.PORT, () => {
-    logger.info(`Optimized Server running on port ${config.PORT} [Environment: ${config.NODE_ENV}]`);
+  server = app.listen(config.PORT, () => {
+    logger.info(`Enterprise Server running on port ${config.PORT} [Environment: ${config.NODE_ENV}]`);
   });
 });
 

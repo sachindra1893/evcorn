@@ -1,11 +1,11 @@
 /**
- * Central Environment Configuration
- * Prevents direct process.env access & magic strings across the codebase.
+ * Central Environment Configuration & Startup Audit
+ * Validates environment configuration at boot and fails fast if invalid.
  */
 require('dotenv').config();
 
-module.exports = {
-  PORT: process.env.PORT || 3000,
+const config = {
+  PORT: parseInt(process.env.PORT || '3000', 10),
   NODE_ENV: process.env.NODE_ENV || 'development',
   MONGO_URI: process.env.MONGO_URI || '',
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin',
@@ -20,3 +20,23 @@ module.exports = {
     API_SECRET: process.env.CLOUDINARY_API_SECRET || ''
   }
 };
+
+// Startup Audit Guard
+function validateEnv() {
+  if (isNaN(config.PORT) || config.PORT <= 0) {
+    throw new Error('FATAL: Environment variable PORT must be a valid positive number.');
+  }
+
+  if (config.NODE_ENV === 'production') {
+    if (!config.MONGO_URI) {
+      console.warn('⚠️ WARNING: MONGO_URI is missing in production environment!');
+    }
+    if (config.ADMIN_PASSWORD === 'admin') {
+      console.warn('⚠️ SECURITY WARNING: ADMIN_PASSWORD is set to default "admin" in production!');
+    }
+  }
+}
+
+validateEnv();
+
+module.exports = config;

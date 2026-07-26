@@ -1,9 +1,9 @@
 /**
- * Vehicle Repository
- * Handles ONLY raw database queries (MongoDB Atlas or File DB). Zero business logic.
+ * Vehicle Repository (Instrumented with Slow Query Monitoring)
  */
 const Vehicle = require('../models/Vehicle');
 const { isLocalFileDb, fileDb } = require('../config/database');
+const { measureQuery } = require('../utils/slowQuery.utils');
 
 class VehicleRepository {
   async findAll(filterQuery, projection, sort, skip = 0, limit = 0) {
@@ -19,10 +19,12 @@ class VehicleRepository {
       return vehicles;
     }
 
-    let query = Vehicle.find(filterQuery, projection).sort(sort).lean();
-    if (skip > 0) query = query.skip(skip);
-    if (limit > 0) query = query.limit(limit);
-    return await query;
+    return await measureQuery('Vehicle.findAll', async () => {
+      let query = Vehicle.find(filterQuery, projection).sort(sort).lean();
+      if (skip > 0) query = query.skip(skip);
+      if (limit > 0) query = query.limit(limit);
+      return await query;
+    }, { filterQuery });
   }
 
   async count(filterQuery) {
@@ -30,7 +32,10 @@ class VehicleRepository {
       const vehicles = fileDb.getVehicles();
       return vehicles.length;
     }
-    return await Vehicle.countDocuments(filterQuery);
+
+    return await measureQuery('Vehicle.count', async () => {
+      return await Vehicle.countDocuments(filterQuery);
+    }, { filterQuery });
   }
 
   async findById(slugId) {
@@ -38,7 +43,10 @@ class VehicleRepository {
       const vehicles = fileDb.getVehicles();
       return vehicles.find(v => v.id === slugId) || null;
     }
-    return await Vehicle.findOne({ id: slugId }).lean();
+
+    return await measureQuery('Vehicle.findById', async () => {
+      return await Vehicle.findOne({ id: slugId }).lean();
+    }, { slugId });
   }
 
   async upsert(vehicleData) {
@@ -54,11 +62,13 @@ class VehicleRepository {
       return vehicleData;
     }
 
-    return await Vehicle.findOneAndUpdate(
-      { id: vehicleData.id },
-      vehicleData,
-      { new: true, upsert: true }
-    ).lean();
+    return await measureQuery('Vehicle.upsert', async () => {
+      return await Vehicle.findOneAndUpdate(
+        { id: vehicleData.id },
+        vehicleData,
+        { new: true, upsert: true }
+      ).lean();
+    }, { slugId: vehicleData.id });
   }
 
   async delete(slugId) {
@@ -72,7 +82,9 @@ class VehicleRepository {
       return deleted;
     }
 
-    return await Vehicle.findOneAndDelete({ id: slugId }).lean();
+    return await measureQuery('Vehicle.delete', async () => {
+      return await Vehicle.findOneAndDelete({ id: slugId }).lean();
+    }, { slugId });
   }
 }
 
