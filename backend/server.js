@@ -10,6 +10,7 @@ const Category = require('./models/Category');
 const Article = require('./models/Article');
 const Vehicle = require('./models/Vehicle');
 const { deleteImage } = require('./services/cloudinary.service');
+const { parseQueryParams, buildVehicleFilterQuery, buildArticleFilterQuery, formatResponse } = require('./utils/apiQuery');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -332,7 +333,7 @@ app.get('/api/categories', async (req, res) => {
       const categories = fileDb.getCategories().sort((a, b) => a.name.localeCompare(b.name));
       return res.json(categories);
     }
-    const categories = await Category.find().sort({ name: 1 });
+    const categories = await Category.find().sort({ name: 1 }).lean();
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: 'Server error fetching categories' });
@@ -386,10 +387,18 @@ app.delete('/api/categories/:id', checkAdminAuth, async (req, res) => {
 app.get('/api/articles', async (req, res) => {
   try {
     const isLight = req.query.light === 'true';
+    const { page, limit, sort, projection: customProjection, formatEnvelope } = parseQueryParams(req.query);
+    const filterQuery = buildArticleFilterQuery(req.query);
+
     if (useLocalFileDb) {
       let articles = fileDb.getArticles();
+      if (filterQuery.categoryId) {
+        articles = articles.filter(a => a.categoryId === filterQuery.categoryId);
+      }
+      if (filterQuery.active !== undefined) {
+        articles = articles.filter(a => a.active === filterQuery.active);
+      }
       if (isLight) {
-        // Strip heavy fields — list page only needs metadata
         articles = articles.map(a => ({
           id: a.id,
           title: a.title,
@@ -399,12 +408,27 @@ app.get('/api/articles', async (req, res) => {
           active: a.active
         }));
       }
-      return res.json(articles);
+      const total = articles.length;
+      if (page && limit) {
+        const start = (page - 1) * limit;
+        articles = articles.slice(start, start + limit);
+      }
+      const meta = page && limit ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
+      return res.json(formatResponse(articles, meta, formatEnvelope));
     }
-    // MongoDB: use projection to exclude heavy fields when in light mode
-    const projection = isLight ? { paragraphs: 0, blocks: 0, imageUrl: 0 } : {};
-    const articles = await Article.find({}, projection).sort({ createdAt: -1 });
-    res.json(articles);
+
+    // MongoDB Query Execution
+    const projection = customProjection || (isLight ? { paragraphs: 0, blocks: 0, imageUrl: 0 } : {});
+    const total = await Article.countDocuments(filterQuery);
+
+    let queryObj = Article.find(filterQuery, projection).sort(sort || { createdAt: -1 }).lean();
+    if (page && limit) {
+      queryObj = queryObj.skip((page - 1) * limit).limit(limit);
+    }
+
+    const articles = await queryObj;
+    const meta = page && limit ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
+    res.json(formatResponse(articles, meta, formatEnvelope));
   } catch (error) {
     res.status(500).json({ error: 'Server error fetching articles' });
   }
@@ -420,7 +444,7 @@ app.get('/api/articles/:id', async (req, res) => {
       }
       return res.json(article);
     }
-    const article = await Article.findById(req.params.id);
+    const article = await Article.findById(req.params.id).lean();
     if (!article) {
       return res.status(404).json({ error: 'Article not found' });
     }
@@ -592,10 +616,16 @@ app.get('/api/sitemap.xml', async (req, res) => {
 // 4. Vehicles Endpoints
 app.get('/api/vehicles', async (req, res) => {
   try {
-    const light = req.query.light === 'true';
+    const isLight = req.query.light === 'true';
+    const { page, limit, sort, projection: customProjection, formatEnvelope } = parseQueryParams(req.query);
+    const filterQuery = buildVehicleFilterQuery(req.query);
+
     if (useLocalFileDb) {
       let vehicles = fileDb.getVehicles();
-      if (light) {
+      if (filterQuery.categoryId) {
+        vehicles = vehicles.filter(v => v.categoryId === filterQuery.categoryId);
+      }
+      if (isLight) {
         vehicles = vehicles.map(v => ({
           id: v.id,
           name: v.name,
@@ -604,16 +634,28 @@ app.get('/api/vehicles', async (req, res) => {
         }));
       }
       vehicles.sort((a, b) => a.name.localeCompare(b.name));
-      return res.json(vehicles);
+
+      const total = vehicles.length;
+      if (page && limit) {
+        const start = (page - 1) * limit;
+        vehicles = vehicles.slice(start, start + limit);
+      }
+      const meta = page && limit ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
+      return res.json(formatResponse(vehicles, meta, formatEnvelope));
     }
-    
-    let vehicles;
-    if (light) {
-      vehicles = await Vehicle.find({}, 'id name categoryId parentModel').sort({ name: 1 });
-    } else {
-      vehicles = await Vehicle.find().sort({ name: 1 });
+
+    // MongoDB Query Execution with Projection, Filtering, Sorting, Pagination, and .lean()
+    const projection = customProjection || (isLight ? 'id name categoryId parentModel' : null);
+    const total = await Vehicle.countDocuments(filterQuery);
+
+    let queryObj = Vehicle.find(filterQuery, projection).sort(sort || { name: 1 }).lean();
+    if (page && limit) {
+      queryObj = queryObj.skip((page - 1) * limit).limit(limit);
     }
-    res.json(vehicles);
+
+    const vehicles = await queryObj;
+    const meta = page && limit ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
+    res.json(formatResponse(vehicles, meta, formatEnvelope));
   } catch (error) {
     res.status(500).json({ error: 'Server error fetching vehicles' });
   }
@@ -629,7 +671,7 @@ app.get('/api/vehicles/:id', async (req, res) => {
       }
       return res.json(vehicle);
     }
-    const vehicle = await Vehicle.findOne({ id: req.params.id });
+    const vehicle = await Vehicle.findOne({ id: req.params.id }).lean();
     if (!vehicle) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
