@@ -62,9 +62,9 @@ function parseQueryParams(query) {
   return {
     page,
     limit,
-    sort: { [sortField]: sortOrder },
+    sort: query.sort ? { [sortField]: sortOrder } : null,
     projection,
-    formatEnvelope: query.page || query.limit || query.format === 'envelope'
+    formatEnvelope: Boolean(query.page || query.limit || query.format === 'envelope' || query.envelope === 'true')
   };
 }
 

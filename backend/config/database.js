@@ -55,8 +55,7 @@ const fileDb = {
 };
 
 async function connectDatabase() {
-  if (!config.MONGO_URI) {
-    logger.warn('MONGO_URI is not defined. Falling back to local JSON file database!');
+  if (config.NODE_ENV === 'test' || !config.MONGO_URI) {
     useLocalFileDb = true;
     return;
   }

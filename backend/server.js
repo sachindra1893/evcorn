@@ -171,9 +171,11 @@ process.on('unhandledRejection', (reason) => {
 
 // Connect Database & Start Server
 connectDatabase().then(() => {
-  server = app.listen(config.PORT, () => {
-    logger.info(`Enterprise Server running on port ${config.PORT} [Environment: ${config.NODE_ENV}]`);
-  });
+  if (process.env.NODE_ENV !== 'test') {
+    server = app.listen(config.PORT, () => {
+      logger.info(`Enterprise Server running on port ${config.PORT} [Environment: ${config.NODE_ENV}]`);
+    });
+  }
 });
 
 module.exports = app;
