@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for backend/utils/slowQuery.utils.js</title>
+    <title>Code coverage report for backend/middlewares/maintenance.middleware.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/utils</a> slowQuery.utils.js</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/middlewares</a> maintenance.middleware.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">21.42% </span>
+                <span class="strong">70% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/14</span>
+                <span class='fraction'>14/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">55.55% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>10/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">21.42% </span>
+                <span class="strong">70% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/14</span>
+                <span class='fraction'>14/20</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -103,86 +103,125 @@
 <a name='L38'></a><a href='#L38'>38</a>
 <a name='L39'></a><a href='#L39'>39</a>
 <a name='L40'></a><a href='#L40'>40</a>
-<a name='L41'></a><a href='#L41'>41</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-yes">22x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
- * Slow Query Monitoring &amp; Execution Wrapper
- * Logs warnings for any database query taking &gt; 100ms.
+ * Maintenance Mode Middleware
+ * Gated maintenance response triggered when MAINTENANCE_MODE=true.
+ * Bypasses health probes and authenticated admin requests.
  */
-const logger = require('./logger');
+const config = require('../config/env');
+const { verifyToken } = require('../utils/auth.utils');
 &nbsp;
-const SLOW_QUERY_THRESHOLD_MS = 100;
+function maintenanceMiddleware(req, res, next) {
+  const isMaintenance = process.env.MAINTENANCE_MODE === 'true';
 &nbsp;
-async function <span class="fstat-no" title="function not covered" >measureQuery(</span>operationName, queryFn, meta = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
-  const start = <span class="cstat-no" title="statement not covered" >Date.now();</span>
-<span class="cstat-no" title="statement not covered" >  try {</span>
-    const result = <span class="cstat-no" title="statement not covered" >await queryFn();</span>
-    const durationMs = <span class="cstat-no" title="statement not covered" >Date.now() - start;</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    if (durationMs &gt; SLOW_QUERY_THRESHOLD_MS) {</span>
-<span class="cstat-no" title="statement not covered" >      logger.warn(`SLOW QUERY DETECTED [${durationMs}ms &gt; ${SLOW_QUERY_THRESHOLD_MS}ms] in ${operationName}`, {</span>
-        operationName,
-        durationMs,
-        ...meta
-      });
-    } else {
-<span class="cstat-no" title="statement not covered" >      logger.debug(`Query [${operationName}] executed in ${durationMs}ms`);</span>
-    }
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    return result;</span>
-  } catch (err) {
-    const durationMs = <span class="cstat-no" title="statement not covered" >Date.now() - start;</span>
-<span class="cstat-no" title="statement not covered" >    logger.error(`Query Failed [${operationName}] after ${durationMs}ms: ${err.message}`, {</span>
-      operationName,
-      durationMs,
-      ...meta
-    });
-<span class="cstat-no" title="statement not covered" >    throw err;</span>
+  if (!isMaintenance) {
+    return next();
   }
+&nbsp;
+  // 1. Bypass Health Probes &amp; Metrics
+  if (req.path.startsWith('/api/health') || req.path === '/health') {
+    return next();
+  }
+&nbsp;
+  // 2. Bypass Admin Authentication Endpoints
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (req.path === '/api/auth/login') {
+<span class="cstat-no" title="statement not covered" >    return next();</span>
+  }
+&nbsp;
+  // 3. Bypass Authenticated Admin Requests
+  const authHeader = req.headers['authorization'];
+  const legacyPassword = req.headers['x-admin-password'];
+&nbsp;
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (authHeader &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >authHeader.startsWith('Bearer '))</span> {
+    const token = <span class="cstat-no" title="statement not covered" >authHeader.split(' ')[1];</span>
+    const decoded = <span class="cstat-no" title="statement not covered" >verifyToken(token);</span>
+<span class="cstat-no" title="statement not covered" >    if (decoded &amp;&amp; decoded.role === 'admin') {</span>
+<span class="cstat-no" title="statement not covered" >      return next();</span>
+    }
+  }
+&nbsp;
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (legacyPassword === config.ADMIN_PASSWORD) {
+<span class="cstat-no" title="statement not covered" >    return next();</span>
+  }
+&nbsp;
+  // Block Public Traffic with HTTP 503
+  res.status(503).json({
+    success: false,
+    error: {
+      code: 'SERVICE_MAINTENANCE',
+      message: 'EVCorn platform is currently undergoing scheduled maintenance. Please try again shortly.',
+      retryAfterSeconds: 300
+    }
+  });
 }
 &nbsp;
-module.exports = {
-  measureQuery,
-  SLOW_QUERY_THRESHOLD_MS
-};
+module.exports = maintenanceMiddleware;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->

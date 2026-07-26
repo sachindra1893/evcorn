@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for backend/validators/article.validator.js</title>
+    <title>Code coverage report for backend/utils/retry.utils.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/validators</a> article.validator.js</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/utils</a> retry.utils.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.66% </span>
+                <span class="strong">88.88% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>2/12</span>
+                <span class='fraction'>16/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">55.55% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>5/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.66% </span>
+                <span class="strong">88.23% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>2/12</span>
+                <span class='fraction'>15/17</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -93,65 +93,71 @@
 <a name='L28'></a><a href='#L28'>28</a>
 <a name='L29'></a><a href='#L29'>29</a>
 <a name='L30'></a><a href='#L30'>30</a>
-<a name='L31'></a><a href='#L31'>31</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
- * Article Input &amp; Publication Validator
+ * Exponential Backoff &amp; Resilience Retry Utility
  */
-const { BadRequestError } = require('../errors/AppError');
+const logger = require('./logger');
 &nbsp;
-function <span class="fstat-no" title="function not covered" >validateArticleInput(</span>body) {
-<span class="cstat-no" title="statement not covered" >  if (!body || typeof body !== 'object') {</span>
-<span class="cstat-no" title="statement not covered" >    throw new BadRequestError('Request body must be a valid JSON object.');</span>
-  }
+async function withRetry(fn, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  const retries = options.retries || <span class="branch-1 cbranch-no" title="branch not covered" >3;</span>
+  const delayMs = options.delayMs || <span class="branch-1 cbranch-no" title="branch not covered" >300;</span>
+  const backoffFactor = options.backoffFactor || 2;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (!body.title || typeof body.title !== 'string' || body.title.trim().length === 0) {</span>
-<span class="cstat-no" title="statement not covered" >    throw new BadRequestError('Article field "title" is required.');</span>
-  }
+  let attempt = 0;
+  let currentDelay = delayMs;
 &nbsp;
-  // Publication Validation Guard
-<span class="cstat-no" title="statement not covered" >  if (body.status === 'published') {</span>
-<span class="cstat-no" title="statement not covered" >    if (!body.description || body.description.trim().length &lt; 10) {</span>
-<span class="cstat-no" title="statement not covered" >      throw new BadRequestError('Publishing requires a valid description (minimum 10 characters).');</span>
+  while (attempt &lt; retries) {
+    try {
+      return await fn();
+    } catch (error) {
+      attempt++;
+      <span class="missing-if-branch" title="if path not taken" >I</span>if (attempt &gt;= retries) {
+<span class="cstat-no" title="statement not covered" >        logger.error(`Operation failed after ${retries} attempts: ${error.message}`);</span>
+<span class="cstat-no" title="statement not covered" >        throw error;</span>
+      }
+      logger.warn(`Operation attempt ${attempt} failed: ${error.message}. Retrying in ${currentDelay}ms...`);
+      await new Promise(resolve =&gt; setTimeout(resolve, currentDelay));
+      currentDelay *= backoffFactor;
     }
-<span class="cstat-no" title="statement not covered" >    if (!body.categoryId) {</span>
-<span class="cstat-no" title="statement not covered" >      throw new BadRequestError('Publishing requires a valid categoryId.');</span>
-    }
   }
-&nbsp;
-<span class="cstat-no" title="statement not covered" >  return true;</span>
 }
 &nbsp;
 module.exports = {
-  validateArticleInput
+  withRetry
 };
 &nbsp;</pre></td></tr></table></pre>
 

@@ -14,6 +14,7 @@ const logger = require('./utils/logger');
 const requestIdMiddleware = require('./middlewares/requestId.middleware');
 const { requestLoggerMiddleware } = require('./middlewares/requestLogger.middleware');
 const conditionalRequestMiddleware = require('./middlewares/etag.middleware');
+const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
 const apiRouter = require('./routes/index');
 const errorHandler = require('./middlewares/error.middleware');
 const { sanitizeInput } = require('./middlewares/sanitize.middleware');
@@ -22,9 +23,10 @@ const Article = require('./models/Article');
 
 const app = express();
 
-// 1. Correlation & Observability Middleware
+// 1. Correlation, Maintenance & Observability Middleware
 app.use(requestIdMiddleware);
 app.use(requestLoggerMiddleware);
+app.use(maintenanceMiddleware);
 app.use(conditionalRequestMiddleware);
 
 // 2. Cheap Security Middleware (Helmet)
