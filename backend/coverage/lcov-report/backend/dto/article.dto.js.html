@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">9.09% </span>
+                <span class="strong">81.81% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/11</span>
+                <span class='fraction'>9/11</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">57.69% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/26</span>
+                <span class='fraction'>15/26</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">11.11% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/9</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -103,68 +103,68 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Article Data Transfer Object (DTO)
  */
-function <span class="fstat-no" title="function not covered" >toArticleDTO(</span>doc) {
-<span class="cstat-no" title="statement not covered" >  if (!doc) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+function toArticleDTO(doc) {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!doc) <span class="cstat-no" title="statement not covered" >return null;</span>
 &nbsp;
-  const obj = <span class="cstat-no" title="statement not covered" >typeof doc.toObject === 'function' ? doc.toObject() : { ...doc };</span>
+  const obj = typeof doc.toObject === 'function' ? <span class="branch-0 cbranch-no" title="branch not covered" >doc.toObject() </span>: { ...doc };
 &nbsp;
-  const articleId = <span class="cstat-no" title="statement not covered" >obj._id ? obj._id.toString() : (obj.id || '');</span>
-<span class="cstat-no" title="statement not covered" >  delete obj._id;</span>
-<span class="cstat-no" title="statement not covered" >  delete obj.__v;</span>
+  const articleId = obj._id ? <span class="branch-0 cbranch-no" title="branch not covered" >obj._id.toString() </span>: (obj.id || <span class="branch-1 cbranch-no" title="branch not covered" >'')</span>;
+  delete obj._id;
+  delete obj.__v;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return {</span>
+  return {
     id: articleId,
     title: obj.title,
-    description: obj.description || '',
-    categoryId: obj.categoryId || 'general',
-    imageUrl: obj.imageUrl || '',
-    paragraphs: obj.paragraphs || [],
+    description: obj.description || <span class="branch-1 cbranch-no" title="branch not covered" >'',</span>
+    categoryId: obj.categoryId || <span class="branch-1 cbranch-no" title="branch not covered" >'general',</span>
+    imageUrl: obj.imageUrl || <span class="branch-1 cbranch-no" title="branch not covered" >'',</span>
+    paragraphs: obj.paragraphs || <span class="branch-1 cbranch-no" title="branch not covered" >[],</span>
     blocks: obj.blocks || [],
-    active: obj.active !== undefined ? obj.active : true,
-    cloudinaryImage: obj.cloudinaryImage || { url: obj.imageUrl || '', public_id: '' },
+    active: obj.active !== undefined ? obj.active : <span class="branch-1 cbranch-no" title="branch not covered" >true,</span>
+    cloudinaryImage: obj.cloudinaryImage || { url: obj.imageUrl || <span class="branch-1 cbranch-no" title="branch not covered" >'',</span> public_id: '' },
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt
   };
 }
 &nbsp;
-function <span class="fstat-no" title="function not covered" >toArticleListDTO(</span>docs) {
-<span class="cstat-no" title="statement not covered" >  if (!Array.isArray(docs)) <span class="cstat-no" title="statement not covered" >return [];</span></span>
-<span class="cstat-no" title="statement not covered" >  return docs.map(toArticleDTO);</span>
+function toArticleListDTO(docs) {
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!Array.isArray(docs)) <span class="cstat-no" title="statement not covered" >return [];</span>
+  return docs.map(toArticleDTO);
 }
 &nbsp;
 module.exports = {
@@ -178,7 +178,7 @@ module.exports = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-26T12:29:04.485Z
+                at 2026-07-26T12:43:33.323Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

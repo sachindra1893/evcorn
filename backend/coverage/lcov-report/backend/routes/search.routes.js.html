@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for backend/routes/vehicle.routes.js</title>
+    <title>Code coverage report for backend/routes/search.routes.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/routes</a> vehicle.routes.js</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/routes</a> search.routes.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>9/9</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>9/9</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
@@ -76,11 +76,9 @@
 <a name='L11'></a><a href='#L11'>11</a>
 <a name='L12'></a><a href='#L12'>12</a>
 <a name='L13'></a><a href='#L13'>13</a>
-<a name='L14'></a><a href='#L14'>14</a>
-<a name='L15'></a><a href='#L15'>15</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L14'></a><a href='#L14'>14</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
@@ -92,17 +90,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
- * Vehicle Routes Definition
+ * Search &amp; Recommendation Routes Definition
  */
 const express = require('express');
 const router = express.Router();
-const vehicleController = require('../controllers/vehicle.controller');
-const { checkAdminAuth } = require('../middlewares/auth.middleware');
+const searchController = require('../controllers/search.controller');
 &nbsp;
-router.get('/', vehicleController.getVehicles);
-router.get('/:id', vehicleController.getVehicleById);
-router.post('/', checkAdminAuth, vehicleController.saveVehicle);
-router.delete('/:id', checkAdminAuth, vehicleController.deleteVehicle);
+router.get('/unified', searchController.unifiedSearch);
+router.get('/autocomplete', searchController.autocomplete);
+router.get('/recommendations', searchController.getRecommendations);
+router.get('/trending', searchController.getTrendingContent);
 &nbsp;
 module.exports = router;
 &nbsp;</pre></td></tr></table></pre>
