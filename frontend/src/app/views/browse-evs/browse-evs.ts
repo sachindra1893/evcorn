@@ -90,7 +90,7 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
                   <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card">
                     <div class="model-image-container">
                       <img [src]="car.imageUrl ? getOptimizedUrl(car.imageUrl, 600) : ('/assets/images/models/' + slugify(car.parentModel || car.name) + '.png')" 
-                           onerror="this.src='/assets/images/placeholder.png'; this.style.opacity='0.1'"
+                           onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'><rect width=\'100%\' height=\'100%\' fill=\'%23F1F5F9\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'24\' fill=\'%2394A3B8\'>⚡</text></svg>'; this.style.opacity='0.5';"
                            loading="lazy"
                            decoding="async"
                            class="model-thumb" alt="Vehicle Image">
@@ -126,7 +126,7 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
 
                     <div class="model-image-container">
                       <img [src]="car.imageUrl ? getOptimizedUrl(car.imageUrl, 600) : ('/assets/images/models/' + slugify(car.parentModel || car.name) + '.png')" 
-                           onerror="this.src='/assets/images/placeholder.png'; this.style.opacity='0.1'"
+                           onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'><rect width=\'100%\' height=\'100%\' fill=\'%23F1F5F9\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'24\' fill=\'%2394A3B8\'>⚡</text></svg>'; this.style.opacity='0.5';"
                            loading="lazy"
                            decoding="async"
                            class="model-thumb" alt="Vehicle Image">

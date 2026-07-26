@@ -61,7 +61,7 @@ import { RouterLink } from '@angular/router';
                             decoding="async"
                             width="60"
                             height="40"
-                            onerror="this.style.display='none'; const sibling = this.parentNode.querySelector('.result-placeholder'); if(sibling) sibling.style.display='flex';"
+                            onerror="this.onerror=null; this.style.display='none'; const sibling = this.parentNode.querySelector('.result-placeholder'); if(sibling) sibling.style.display='flex';"
                           >
                         }
                         <div class="result-placeholder" [style.display]="art.imageUrl ? 'none' : 'flex'">⚡</div>
