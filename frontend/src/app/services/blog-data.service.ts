@@ -10,6 +10,102 @@ export interface Category {
   name: string; // e.g. 'Tesla'
 }
 
+export interface Brand {
+  id: string;
+  name: string;
+  logoUrl?: string;
+  countryOrigin?: string;
+}
+
+export interface Pricing {
+  exShowroomPriceINR: number;
+  priceText: string;
+  onRoadPriceEstINR?: number;
+  subsidyEligible?: boolean;
+}
+
+export interface Battery {
+  capacityKWh: number;
+  capacityText: string;
+  chemistry?: 'LFP' | 'NMC' | 'Sodium-Ion' | 'Solid-State' | 'Unknown';
+  voltageArchitecture?: number;
+}
+
+export interface Charging {
+  acChargingKW?: number;
+  dcFastChargingKW?: number;
+  acChargingText?: string;
+  dcChargingText?: string;
+  portType?: string;
+}
+
+export interface Performance {
+  claimedRangeKM: number;
+  rangeText: string;
+  maxPowerBHP?: number;
+  maxTorqueNM?: number;
+  acceleration0to100Sec?: number;
+  topSpeedKMH?: number;
+  drivetrain?: 'FWD' | 'RWD' | 'AWD' | 'FWD/AWD' | 'N/A';
+}
+
+export interface Dimensions {
+  lengthMM?: number;
+  widthMM?: number;
+  heightMM?: number;
+  dimensionsText?: string;
+  groundClearanceMM?: number;
+  groundClearanceText?: string;
+  wheelbaseMM?: number;
+  kerbWeightKG?: number;
+  grossWeightKG?: number;
+  bootSpaceLiters?: number;
+  frunkSpaceLiters?: number;
+  bootFrunkText?: string;
+  seatingCapacity?: number;
+  seatingText?: string;
+  tyreSize?: string;
+}
+
+export interface Media {
+  mainImage?: string;
+  gallery?: string[];
+  cloudinaryMainImage?: { url: string; public_id: string };
+  cloudinaryImages?: Array<{ url: string; public_id: string }>;
+}
+
+export interface Safety {
+  ncapRating?: number;
+  safetyRatingText?: string;
+  ncapTestingBody?: string;
+  airbagsCount?: number;
+  hasADAS?: boolean;
+}
+
+export interface SEO {
+  metaTitle?: string;
+  metaDescription?: string;
+}
+
+export interface VehicleVariant {
+  id: string;
+  variantName: string;
+  pricing: Pricing;
+  battery: Battery;
+  charging: Charging;
+  performance: Performance;
+  dimensions: Dimensions;
+  media: Media;
+  safety: Safety;
+}
+
+export interface VehicleModel {
+  id: string;
+  modelName: string;
+  brandId: string;
+  variants: VehicleVariant[];
+}
+
 export interface Article {
   id?: string;
   title: string;
@@ -28,7 +124,7 @@ export interface CarSpec {
   categoryId: string;
   parentModel?: string; // e.g. 'Nexon EV'
   variantName?: string; // e.g. 'Empowered+ LR'
-  imageUrl?: string; // e.g. base64 image data
+  imageUrl?: string; // e.g. base64 or Cloudinary URL
   galleryImages?: string[];
   price: string;
   seating: string;
@@ -59,6 +155,16 @@ export interface CarSpec {
   acceleration?: string;
   maxPower?: string;
   torque?: string;
+
+  // New Enterprise Domain Nested Sub-Documents (Phase 1 Domain Foundation)
+  pricing?: Pricing;
+  battery?: Battery;
+  charging?: Charging;
+  performance?: Performance;
+  dimensionsObj?: Dimensions;
+  media?: Media;
+  safety?: Safety;
+  seo?: SEO;
 }
 
 @Injectable({

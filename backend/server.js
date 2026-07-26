@@ -645,6 +645,29 @@ app.post('/api/vehicles', checkAdminAuth, async (req, res) => {
     if (!vehicleData.id) {
       vehicleData.id = vehicleData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     }
+
+    // Helper numeric extractor
+    const num = str => (str && typeof str === 'string' ? parseFloat((str.match(/\d+(\.\d+)?/) || [0])[0]) : 0);
+
+    const priceNum = num(vehicleData.price);
+    const priceINR = vehicleData.price?.toLowerCase().includes('lakh') ? Math.round(priceNum * 100000) : Math.round(priceNum);
+    const rangeKM = num(vehicleData.range);
+    const batteryKWh = num(vehicleData.batteryCapacity);
+
+    // Populate nested domain objects seamlessly
+    vehicleData.pricing = vehicleData.pricing || {
+      exShowroomPriceINR: priceINR,
+      priceText: vehicleData.price || 'N/A'
+    };
+    vehicleData.battery = vehicleData.battery || {
+      capacityKWh: batteryKWh,
+      capacityText: vehicleData.batteryCapacity || 'N/A'
+    };
+    vehicleData.performance = vehicleData.performance || {
+      claimedRangeKM: rangeKM,
+      rangeText: vehicleData.range || 'N/A'
+    };
+
     if (useLocalFileDb) {
       let vehicles = fileDb.getVehicles();
       const index = vehicles.findIndex(v => v.id === vehicleData.id);
@@ -656,6 +679,7 @@ app.post('/api/vehicles', checkAdminAuth, async (req, res) => {
       fileDb.saveVehicles(vehicles);
       return res.json(vehicleData);
     }
+
     // Upsert so we can create or update existing vehicle specs
     const vehicle = await Vehicle.findOneAndUpdate(
       { id: vehicleData.id },
