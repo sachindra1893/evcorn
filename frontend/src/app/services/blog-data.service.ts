@@ -89,7 +89,13 @@ export interface SEO {
 
 export interface VehicleVariant {
   id: string;
+  variantId: string;
+  variantSlug: string;
   variantName: string;
+  modelId: string;
+  modelSlug: string;
+  brandId: string;
+  brandSlug: string;
   pricing: Pricing;
   battery: Battery;
   charging: Charging;
@@ -101,8 +107,11 @@ export interface VehicleVariant {
 
 export interface VehicleModel {
   id: string;
+  modelId: string;
+  modelSlug: string;
   modelName: string;
   brandId: string;
+  brandSlug: string;
   variants: VehicleVariant[];
 }
 
@@ -122,6 +131,11 @@ export interface CarSpec {
   id?: string; // Custom string identifier, e.g. 'tesla-model-3'
   name: string;
   categoryId: string;
+  brandSlug?: string;
+  modelId?: string;
+  modelSlug?: string;
+  variantId?: string;
+  variantSlug?: string;
   parentModel?: string; // e.g. 'Nexon EV'
   variantName?: string; // e.g. 'Empowered+ LR'
   imageUrl?: string; // e.g. base64 or Cloudinary URL
@@ -156,7 +170,7 @@ export interface CarSpec {
   maxPower?: string;
   torque?: string;
 
-  // New Enterprise Domain Nested Sub-Documents (Phase 1 Domain Foundation)
+  // Temporary Dual-Model Compatibility Layer (Deprecated - To be removed after consumer migration)
   pricing?: Pricing;
   battery?: Battery;
   charging?: Charging;

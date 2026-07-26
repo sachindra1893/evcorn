@@ -81,8 +81,12 @@ const VehicleSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   categoryId: { type: String, required: true, index: true },
-  parentModel: { type: String, default: '', index: true },
-  variantName: { type: String, default: '' },
+  // Stable Domain Hierarchy Slugs & Identifiers
+  brandSlug: { type: String, default: '', index: true },
+  modelId: { type: String, default: '', index: true },
+  modelSlug: { type: String, default: '', index: true },
+  variantId: { type: String, default: '', index: true },
+  variantSlug: { type: String, default: '', index: true },
   
   // Legacy Flat Fallbacks (Preserved for 100% Backward API Compatibility)
   price: { type: String, default: 'N/A' },
