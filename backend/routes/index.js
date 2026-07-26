@@ -12,8 +12,10 @@ const uploadRoutes = require('./upload');
 const healthRoutes = require('./health.routes');
 const analyticsRoutes = require('./analytics.routes');
 const searchRoutes = require('./search.routes');
+const adminRoutes = require('./admin.routes');
 
 router.use('/', healthRoutes);
+router.use('/admin', adminRoutes);
 router.use('/search', searchRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/auth', authRoutes);
