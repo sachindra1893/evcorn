@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for backend/routes/auth.routes.js</title>
+    <title>Code coverage report for backend/routes/analytics.routes.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,7 +19,7 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/routes</a> auth.routes.js</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/routes</a> analytics.routes.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
@@ -82,24 +82,24 @@
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
- * Auth Routes Definition (Secured with Rate Limiting)
+ * Analytics &amp; Business Intelligence Routes
  */
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/auth.controller');
-const { authLimiter } = require('../middlewares/rateLimit.middleware');
-const { checkAdminAuth } = require('../middlewares/auth.middleware');
+const analyticsController = require('../controllers/analytics.controller');
 &nbsp;
-router.post('/login', authLimiter, authController.login);
-router.post('/logout', checkAdminAuth, authController.logout);
+router.post('/event', analyticsController.trackEvent);
+router.get('/overview', analyticsController.getOverview);
+router.get('/top-content', analyticsController.getTopContent);
+router.get('/search-queries', analyticsController.getSearchAnalytics);
 &nbsp;
 module.exports = router;
 &nbsp;</pre></td></tr></table></pre>

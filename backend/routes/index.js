@@ -10,8 +10,10 @@ const articleRoutes = require('./article.routes');
 const vehicleRoutes = require('./vehicle.routes');
 const uploadRoutes = require('./upload');
 const healthRoutes = require('./health.routes');
+const analyticsRoutes = require('./analytics.routes');
 
 router.use('/', healthRoutes);
+router.use('/analytics', analyticsRoutes);
 router.use('/auth', authRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/articles', articleRoutes);
