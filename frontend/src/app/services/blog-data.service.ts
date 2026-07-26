@@ -245,13 +245,15 @@ export class BlogDataService {
     }
   }
 
-  // 1. Categories / Brands API (Now fully dynamic from database!)
+  // 1. Categories / Brands API (Now fully dynamic from database with shareReplay caching)
   getCategories(): Observable<Category[]> {
     if (!this.categoriesCache$) {
       const cached = this.loadCache('categories') || [];
       const subject = new BehaviorSubject<Category[]>(cached);
       
-      this.http.get<Category[]>(`${this.apiUrl}/categories?t=${Date.now()}`).subscribe({
+      this.http.get<Category[]>(`${this.apiUrl}/categories`).pipe(
+        shareReplay(1)
+      ).subscribe({
         next: (data) => {
           try { localStorage.setItem('categories', JSON.stringify(data)); } catch {}
           subject.next(data);
@@ -267,10 +269,12 @@ export class BlogDataService {
   }
 
   addCategory(catData: { id: string; name: string }): Observable<Category> {
+    this.categoriesCache$ = null;
     return this.http.post<Category>(`${this.apiUrl}/categories`, catData, { headers: this.getHeaders() });
   }
 
   deleteCategory(id: string): Observable<any> {
+    this.categoriesCache$ = null;
     return this.http.delete(`${this.apiUrl}/categories/${id}`, { headers: this.getHeaders() });
   }
 
@@ -283,7 +287,9 @@ export class BlogDataService {
       const cached = this.loadCache('articles') || [];
       const subject = new BehaviorSubject<Article[]>(cached);
 
-      this.http.get<Article[]>(`${this.apiUrl}/articles`).subscribe({
+      this.http.get<Article[]>(`${this.apiUrl}/articles`).pipe(
+        shareReplay(1)
+      ).subscribe({
         next: (data) => {
           try { localStorage.setItem('articles', JSON.stringify(data)); } catch {}
           subject.next(data);
@@ -304,7 +310,9 @@ export class BlogDataService {
       const cached = this.loadCache('articlesLight') || [];
       const subject = new BehaviorSubject<any[]>(cached);
 
-      this.http.get<Partial<Article>[]>(`${this.apiUrl}/articles?light=true&t=${Date.now()}`).subscribe({
+      this.http.get<Partial<Article>[]>(`${this.apiUrl}/articles?light=true`).pipe(
+        shareReplay(1)
+      ).subscribe({
         next: (data) => {
           try { localStorage.setItem('articlesLight', JSON.stringify(data)); } catch {}
           subject.next(data);
@@ -325,7 +333,9 @@ export class BlogDataService {
       const cached = this.loadCache(cachedKey);
       const subject = new BehaviorSubject<Article | null>(cached);
 
-      this.http.get<Article>(`${this.apiUrl}/articles/${id}`).subscribe({
+      this.http.get<Article>(`${this.apiUrl}/articles/${id}`).pipe(
+        shareReplay(1)
+      ).subscribe({
         next: (data) => {
           try { localStorage.setItem(cachedKey, JSON.stringify(data)); } catch {}
           subject.next(data);
@@ -343,14 +353,22 @@ export class BlogDataService {
   }
 
   addArticle(articleData: Article): Observable<Article> {
+    this.articlesCache$ = null;
+    this.articlesLightCache$ = null;
     return this.http.post<Article>(`${this.apiUrl}/articles`, articleData, { headers: this.getHeaders() });
   }
 
   updateArticle(id: string, articleData: Article): Observable<Article> {
+    this.articlesCache$ = null;
+    this.articlesLightCache$ = null;
+    this.articleByIdCache.delete(id);
     return this.http.put<Article>(`${this.apiUrl}/articles/${id}`, articleData, { headers: this.getHeaders() });
   }
 
   deleteArticle(id: string): Observable<any> {
+    this.articlesCache$ = null;
+    this.articlesLightCache$ = null;
+    this.articleByIdCache.delete(id);
     return this.http.delete(`${this.apiUrl}/articles/${id}`, { headers: this.getHeaders() });
   }
 
@@ -361,11 +379,12 @@ export class BlogDataService {
       const cached = this.loadCache('allVehicles') || [];
       const subject = new BehaviorSubject<CarSpec[]>(cached);
 
-      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?t=${Date.now()}`).pipe(
+      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles`).pipe(
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
-        })
+        }),
+        shareReplay(1)
       ).subscribe({
         next: (data) => {
           try { localStorage.setItem('allVehicles', JSON.stringify(data)); } catch {}
@@ -387,11 +406,12 @@ export class BlogDataService {
       const cached = this.loadCache('vehiclesLight') || [];
       const subject = new BehaviorSubject<any[]>(cached);
 
-      this.http.get<any[]>(`${this.apiUrl}/vehicles?light=true&t=${Date.now()}`).pipe(
+      this.http.get<any[]>(`${this.apiUrl}/vehicles?light=true`).pipe(
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
-        })
+        }),
+        shareReplay(1)
       ).subscribe({
         next: (data) => {
           try { localStorage.setItem('vehiclesLight', JSON.stringify(data)); } catch {}
