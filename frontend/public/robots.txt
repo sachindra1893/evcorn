@@ -2,5 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /login
+Disallow: /api/auth
+Disallow: /api/upload
 
+# Dynamic Sitemap Reference
 Sitemap: https://evcorn.com/sitemap.xml
