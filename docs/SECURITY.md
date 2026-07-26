@@ -18,6 +18,12 @@ EVCorn implements a **Dual-Mode Admin Authentication System** designed for secur
 
 ---
 
+### ⚠️ Technical Debt Item: Password Storage & Verification
+- **Current State:** The admin authentication system currently verifies incoming login attempts directly against the `ADMIN_PASSWORD` secret defined in environment variables (`process.env.ADMIN_PASSWORD`).
+- **Future Roadmap:** A future authentication phase will replace direct environment secret comparison with database-backed User accounts using bcrypt/Argon2 password hashing, salt rounds, and refresh token rotation.
+
+---
+
 ## 2. Authorization Boundary Matrix
 
 | Endpoint | Method | Permission Level | Rate Limit |
