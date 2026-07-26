@@ -13,8 +13,10 @@ const healthRoutes = require('./health.routes');
 const analyticsRoutes = require('./analytics.routes');
 const searchRoutes = require('./search.routes');
 const adminRoutes = require('./admin.routes');
+const evDomainRoutes = require('./evDomain.routes');
 
 router.use('/', healthRoutes);
+router.use('/domain', evDomainRoutes);
 router.use('/admin', adminRoutes);
 router.use('/search', searchRoutes);
 router.use('/analytics', analyticsRoutes);

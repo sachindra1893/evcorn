@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for backend/routes/admin.routes.js</title>
+    <title>Code coverage report for backend/routes/evDomain.routes.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,7 +19,7 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/routes</a> admin.routes.js</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">backend/routes</a> evDomain.routes.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
@@ -84,8 +84,8 @@
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
@@ -94,18 +94,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
- * Enterprise Admin Operations Routes Definition
+ * EV Domain Intelligence Routes Definition
  */
 const express = require('express');
 const router = express.Router();
-const adminController = require('../controllers/admin.controller');
-const { checkAdminAuth } = require('../middlewares/auth.middleware');
+const evDomainController = require('../controllers/evDomain.controller');
 &nbsp;
-router.get('/dashboard', checkAdminAuth, adminController.getDashboard);
-router.post('/bulk', checkAdminAuth, adminController.executeBulkOperation);
-router.get('/export', checkAdminAuth, adminController.exportData);
-router.get('/activity', checkAdminAuth, adminController.getActivityLog);
-router.get('/media', checkAdminAuth, adminController.getMediaLibrary);
+router.post('/score', evDomainController.getEVScore);
+router.post('/tco', evDomainController.getTCO);
+router.post('/charging-cost', evDomainController.getChargingCost);
+router.post('/real-range', evDomainController.getRealWorldRange);
+router.post('/compatibility', evDomainController.checkCompatibility);
+router.post('/smart-recommendations', evDomainController.getSmartRecommendations);
 &nbsp;
 module.exports = router;
 &nbsp;</pre></td></tr></table></pre>
