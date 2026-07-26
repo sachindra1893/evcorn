@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { BlogDataService, Article } from '../../services/blog-data.service';
@@ -453,6 +454,7 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class ArticleDetailComponent implements OnInit, OnDestroy {
+  private sub = new Subscription();
   loadedArticles: Article[] = [];
   articlesQueue: Article[] = [];
   vehicles: any[] = [];
@@ -475,80 +477,46 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   ngOnInit() {
     console.log('ArticleDetailComponent: OnInit executed!');
     
-    // 1. Subscribe to the initial route param
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        // Fetch target article
-        this.dataService.getArticleById(id).subscribe({
-          next: (article) => {
-            if (!article) return;
-            // Restore blocks from the serialized payload if the backend stripped the blocks array
-            if ((!article.blocks || article.blocks.length === 0) && article.paragraphs && article.paragraphs.length > 0) {
-              if (article.paragraphs[0].startsWith('__EVBLOCKS__')) {
-                try {
-                  article.blocks = JSON.parse(article.paragraphs[0].substring(12));
-                  article.paragraphs.shift(); // Remove the serialized block from paragraphs array
-                } catch (e) {
-                  console.error('Failed to parse serialized blocks', e);
-                }
-              }
-            }
-
-            this.loadedArticles = [article];
-            this.errorMessage = '';
-            this.updateSEOMetadata(article);
-            
-            // 2. Fetch queue of other articles
-            this.dataService.getArticles().subscribe({
-              next: (allArticles) => {
-                // Parse serialized blocks for all queued articles
-                const parsedArticles = allArticles.map(art => {
-                  if ((!art.blocks || art.blocks.length === 0) && art.paragraphs && art.paragraphs.length > 0) {
-                    if (art.paragraphs[0].startsWith('__EVBLOCKS__')) {
-                      try {
-                        art.blocks = JSON.parse(art.paragraphs[0].substring(12));
-                        art.paragraphs.shift();
-                      } catch (e) {
-                        console.error('Failed to parse serialized blocks for article ' + art.id, e);
-                      }
+    this.sub.add(
+      this.route.paramMap.subscribe(params => {
+        const id = params.get('id');
+        if (id) {
+          this.sub.add(
+            this.dataService.getArticleById(id).subscribe({
+              next: (article) => {
+                if (!article) return;
+                // Restore blocks from the serialized payload if the backend stripped the blocks array
+                if ((!article.blocks || article.blocks.length === 0) && article.paragraphs && article.paragraphs.length > 0) {
+                  if (article.paragraphs[0].startsWith('__EVBLOCKS__')) {
+                    try {
+                      article.blocks = JSON.parse(article.paragraphs[0].substring(12));
+                      article.paragraphs.shift(); // Remove the serialized block from paragraphs array
+                    } catch (e) {
+                      console.error('Failed to parse serialized blocks', e);
                     }
                   }
-                  return art;
-                });
-                
-                this.articlesQueue = parsedArticles.filter(a => a.id !== id && a.active);
+                }
+
+                this.loadedArticles = [article];
+                this.errorMessage = '';
+                this.updateSEOMetadata(article);
+                this.cdr.detectChanges();
+              },
+              error: (err) => {
+                this.errorMessage = err.message || JSON.stringify(err);
+                this.loadedArticles = [];
+                this.updateSEOMetadata(null);
                 this.cdr.detectChanges();
               }
-            });
-
-            // 3. Fetch vehicles for auto-linking
-            this.dataService.getVehicles().subscribe({
-              next: (allVehicles) => {
-                this.vehicles = allVehicles;
-                this.cdr.detectChanges();
-              }
-            });
-
-            this.cdr.detectChanges();
-          },
-          error: (err) => {
-            this.errorMessage = err.message || JSON.stringify(err);
-            this.loadedArticles = [];
-            this.updateSEOMetadata(null);
-            this.cdr.detectChanges();
-          }
-        });
-      } else {
-        this.loadedArticles = [];
-        this.errorMessage = 'No article ID provided in route parameters.';
-        this.updateSEOMetadata(null);
-        this.cdr.detectChanges();
-      }
-    });
+            })
+          );
+        }
+      })
+    );
   }
 
   ngOnDestroy() {
+    this.sub.unsubscribe();
     this.schemaService.setSchema([]);
   }
 

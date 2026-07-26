@@ -58,7 +58,16 @@
 
 ---
 
-## 6. Angular SSR / Prerender Readiness Audit
+## 7. Memory Management & Subscription Teardown Audit
 
-- **Prerendered Static Routes:** 6 static routes (`/`, `/about`, `/compare`, `/articles`, `/energy`, `/charging`) are prerendered during build.
-- **Browser-Only API Safeguards:** All `localStorage` and `window` accesses are wrapped in `typeof window !== 'undefined'` guards to remain 100% SSR compliant.
+- **Subscription Teardown:** Added explicit `Subscription` lifecycle management (`this.sub.add(...)` and `this.sub.unsubscribe()` in `ngOnDestroy()`) to components listening to long-lived Observables (`ActivatedRoute`, `combineLatest`, `LocationService`).
+- **Short-Lived HTTP Subscriptions:** Direct one-shot HTTP calls (`HttpClient.get`, `post`, `delete`) auto-complete upon emission.
+- **RxJS `shareReplay(1)` Prevention:** Service streams in `BlogDataService` use `shareReplay(1)` to prevent duplicate subscriber allocations.
+- **Timer / Event Cleanup:** All global event listeners (window resize, scroll) use Angular `@HostListener` bindings which automatically unbind on component destruction.
+
+---
+
+## 8. Technical Debt & Future Frontend Optimization Opportunities
+
+1. **Signals Migration:** Future Angular phases can migrate `BehaviorSubject` state in `BlogDataService` to native Angular Signals (`signal()`, `computed()`) for fine-grained reactivity.
+2. **Virtual Scrolling (`cdk-virtual-scroll-viewport`):** For catalog grids with > 500 vehicle variants, implementing virtual scrolling will keep DOM nodes constant at ~20 elements.

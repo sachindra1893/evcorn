@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -8,7 +8,7 @@ import { SchemaService } from '../../services/schema.service';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { getOptimizedImageUrl } from '../../utils/image.utils';
-import { combineLatest } from 'rxjs';
+import { combineLatest, Subscription } from 'rxjs';
 
 interface OverviewData {
   priceRange: string;
@@ -726,7 +726,8 @@ interface OverviewData {
     }
   `]
 })
-export class VehicleDetailComponent implements OnInit {
+export class VehicleDetailComponent implements OnInit, OnDestroy {
+  private sub = new Subscription();
   loading = true;
   error = false;
   safetyExpanded = false;
@@ -799,16 +800,22 @@ export class VehicleDetailComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
-      const brandSlug = params.get('brandSlug');
-      const modelSlug = params.get('modelSlug');
-      
-      if (brandSlug && modelSlug) {
-        this.loadModelData(brandSlug, modelSlug);
-      } else {
-        this.handleError();
-      }
-    });
+    this.sub.add(
+      this.route.paramMap.subscribe(params => {
+        const brandSlug = params.get('brandSlug');
+        const modelSlug = params.get('modelSlug');
+        
+        if (brandSlug && modelSlug) {
+          this.loadModelData(brandSlug, modelSlug);
+        } else {
+          this.handleError();
+        }
+      })
+    );
+  }
+
+  ngOnDestroy() {
+    this.sub.unsubscribe();
   }
   
   private handleError() {
@@ -832,10 +839,11 @@ export class VehicleDetailComponent implements OnInit {
     
     // Fetch categories and ALL full vehicle specs simultaneously.
     // Using combineLatest ensures we render instantly from cache, and re-render when fresh data arrives.
-    combineLatest({
-      categories: this.blogData.getCategories(),
-      allVehicles: this.blogData.getVehicles()
-    }).subscribe({
+    this.sub.add(
+      combineLatest({
+        categories: this.blogData.getCategories(),
+        allVehicles: this.blogData.getVehicles()
+      }).subscribe({
       next: ({ categories, allVehicles }) => {
         // If cache is empty, just wait. The network response will trigger this again.
         if (categories.length === 0 || allVehicles.length === 0) return;
@@ -889,7 +897,8 @@ export class VehicleDetailComponent implements OnInit {
             this.cdr.detectChanges();
       },
       error: () => this.handleError()
-    });
+    })
+    );
   }
 
   private calculateOverview(variants: CarSpec[]) {
