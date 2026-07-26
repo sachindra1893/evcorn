@@ -79,3 +79,12 @@ await mongoose.connect(config.MONGO_URI, {
 2. **Infrastructure Readiness:**
    - **Horizontal Scaling:** Stateless API handlers allow zero-downtime multi-instance deployment behind Render / Vercel Load Balancers.
    - **Redis Cache Layer Ready:** Repository layer is structured to wrap database queries in Redis cache lookups (`redis.get` / `redis.setex`) in future high-scale phases.
+
+---
+
+## 7. Planned Observability & Monitoring Enhancements (Future Phase)
+
+1. **Conditional Requests (ETag / 304 Not Modified):**
+   - Express strong ETag generation is active by default. In a future observability phase, conditional request revalidation (`If-None-Match`) will be explicitly instrumented at the repository level to return HTTP `304 Not Modified` with zero payload body transfer.
+2. **Slow Query Threshold Monitoring:**
+   - Repository execution wrappers will log warnings for any MongoDB query exceeding `100ms` duration (`SLOW_QUERY_THRESHOLD_MS = 100`), enabling proactive index tuning before production traffic spikes.
