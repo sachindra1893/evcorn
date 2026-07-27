@@ -1,12 +1,28 @@
 /**
  * Vehicle Service
  * Business logic, domain data transformation & repository orchestration for Vehicles.
+ * Pillar I: In-process node-cache for read-heavy endpoints.
+ * Pillar IV: Extended light=true projection to include imageUrl, bodyStyle, etc.
  */
 const vehicleRepository = require('../repositories/vehicle.repository');
 const { deleteImage } = require('./upload.service');
 const { parseQueryParams, buildVehicleFilterQuery, formatResponse } = require('../utils/apiQuery');
 const { toVehicleDTO, toVehicleListDTO } = require('../dto/vehicle.dto');
 const { NotFoundError } = require('../errors/AppError');
+const appCache = require('../utils/cache');
+
+// ─── Light Projection Fields ──────────────────────────────────────────────────
+// CRITICAL FIX (Pillar IV): Original 'id name categoryId parentModel' was missing
+// imageUrl, batteryCapacity, bodyStyle, variantName — breaking browse-evs photo rendering.
+const LIGHT_PROJECTION = [
+  'id', 'name', 'categoryId', 'parentModel', 'variantName',
+  'imageUrl', 'batteryCapacity', 'bodyStyle', 'status',
+  'pricing.exShowroomPriceINR', 'pricing.priceText',
+  'performance.claimedRangeKM', 'performance.rangeText',
+  'battery.capacityKWh',
+  'dimensionsObj.seatingCapacity',
+  'media.mainImage', 'media.cloudinaryMainImage'
+].join(' ');
 
 class VehicleService {
   async getVehicles(queryParams) {
@@ -14,7 +30,26 @@ class VehicleService {
     const { page, limit, sort, projection: customProjection, formatEnvelope } = parseQueryParams(queryParams);
     const filterQuery = buildVehicleFilterQuery(queryParams);
 
-    const projection = customProjection || (isLight ? 'id name categoryId parentModel' : null);
+    // ── Cache lookup (skip for admin/paginated/filtered requests) ────────────
+    const isCacheable = !page && !limit && !queryParams.brand && !queryParams.categoryId
+      && !queryParams.search && !queryParams.priceMin && !queryParams.priceMax
+      && !queryParams.rangeMin && !queryParams.rangeMax;
+
+    // Include envelope flag in cache key so envelope/non-envelope responses stay separate
+    const envelopeSuffix = formatEnvelope ? ':envelope' : '';
+    const cacheKey = isLight
+      ? appCache.KEYS.VEHICLES_LIGHT() + envelopeSuffix
+      : appCache.KEYS.VEHICLES_ALL() + envelopeSuffix;
+
+    if (isCacheable) {
+      const cached = appCache.get(cacheKey);
+      if (cached !== undefined) {
+        return cached;
+      }
+    }
+
+    // ── MongoDB Query ─────────────────────────────────────────────────────────
+    const projection = customProjection || (isLight ? LIGHT_PROJECTION : null);
     const skip = page && limit ? (page - 1) * limit : 0;
 
     const [docs, total] = await Promise.all([
@@ -25,15 +60,30 @@ class VehicleService {
     const dtos = toVehicleListDTO(docs);
     const meta = page && limit ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
 
-    return formatResponse(dtos, meta, formatEnvelope);
+    const result = formatResponse(dtos, meta, formatEnvelope);
+
+    // ── Cache store ───────────────────────────────────────────────────────────
+    if (isCacheable) {
+      const ttl = isLight ? appCache.TTL.VEHICLES_LIGHT : appCache.TTL.VEHICLES_ALL;
+      appCache.set(cacheKey, result, ttl);
+    }
+
+    return result;
   }
 
   async getVehicleById(slugId) {
+    const cacheKey = appCache.KEYS.VEHICLE_SINGLE(slugId);
+    const cached = appCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
     const doc = await vehicleRepository.findById(slugId);
     if (!doc) {
       throw new NotFoundError(`Vehicle with id "${slugId}" not found`);
     }
-    return toVehicleDTO(doc);
+
+    const result = toVehicleDTO(doc);
+    appCache.set(cacheKey, result, appCache.TTL.VEHICLE_SINGLE);
+    return result;
   }
 
   async saveVehicle(vehicleData) {
@@ -60,6 +110,11 @@ class VehicleService {
     };
 
     const doc = await vehicleRepository.upsert(vehicleData);
+
+    // ── Invalidate all vehicle cache keys on write ────────────────────────────
+    appCache.flushPrefix('vehicles:');
+    appCache.del(appCache.KEYS.VEHICLE_SINGLE(vehicleData.id));
+
     return toVehicleDTO(doc);
   }
 
@@ -68,6 +123,10 @@ class VehicleService {
     if (!deleted) {
       throw new NotFoundError(`Vehicle with id "${slugId}" not found`);
     }
+
+    // ── Invalidate cache ──────────────────────────────────────────────────────
+    appCache.flushPrefix('vehicles:');
+    appCache.del(appCache.KEYS.VEHICLE_SINGLE(slugId));
 
     // Synchronized Cloudinary Deletion (safe background orchestration)
     try {

@@ -129,11 +129,36 @@ const VehicleSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes
-VehicleSchema.index({ "pricing.exShowroomPriceINR": 1 });
-VehicleSchema.index({ "performance.claimedRangeKM": -1 });
-VehicleSchema.index({ "battery.capacityKWh": -1 });
+// ─── Compound Indexes (Pillar III — Production Query Optimisation) ─────────────
+// These match the exact query patterns executed in vehicle.service.js
+
+// Browse filter: brand + status sorted by range (most common query on /evs page)
+VehicleSchema.index({ categoryId: 1, status: 1, 'performance.claimedRangeKM': -1 });
+
+// Price range filter + status (budget filter on browse page)
+VehicleSchema.index({ 'pricing.exShowroomPriceINR': 1, status: 1 });
+
+// Top-range EVs query — used on home page "Top 5 Longest Range EVs" widget
+VehicleSchema.index({ 'performance.claimedRangeKM': -1, status: 1 });
+
+// Battery capacity filter + status
+VehicleSchema.index({ 'battery.capacityKWh': -1, status: 1 });
+
+// Default published listing sort by name
+VehicleSchema.index({ status: 1, name: 1 });
+
+// Slug-based lookups (brandSlug + modelSlug + variantSlug)
+VehicleSchema.index({ brandSlug: 1, modelSlug: 1, variantSlug: 1 }, { sparse: true });
+
+// Publish date sort
 VehicleSchema.index({ status: 1, publishedAt: -1 });
+
+// Full-text search across name, parentModel, variantName
+VehicleSchema.index({ name: 'text', parentModel: 'text', variantName: 'text' }, {
+  weights: { parentModel: 10, name: 5, variantName: 3 },
+  name: 'vehicle_text_search'
+});
+
 
 // Clean up standard MongoDB keys for the frontend API response
 VehicleSchema.set('toJSON', {

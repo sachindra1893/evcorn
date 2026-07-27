@@ -87,7 +87,25 @@ const ArticleSchema = new mongoose.Schema({
   }]
 });
 
+// ─── Compound Indexes (Pillar III — Production Query Optimisation) ─────────────
+
+// Active articles sorted by publish date — covers the most common listing query
+ArticleSchema.index({ active: 1, status: 1, publishAt: -1 });
+
+// Category + active + publishAt — covers category-filtered article listing
+ArticleSchema.index({ categoryId: 1, active: 1, publishAt: -1 });
+
+// Slug unique lookup — fast single article fetch by slug
+ArticleSchema.index({ slug: 1 }, { unique: false, sparse: true });
+
+// Full-text search across title and description
+ArticleSchema.index({ title: 'text', description: 'text' }, {
+  weights: { title: 10, description: 3 },
+  name: 'article_text_search'
+});
+
 // Ensure virtual id maps to _id for Angular compatibility
+
 ArticleSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {

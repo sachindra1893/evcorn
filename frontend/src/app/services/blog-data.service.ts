@@ -236,12 +236,43 @@ export class BlogDataService {
     });
   }
 
+  // ─── TTL-aware localStorage Cache (Pillar V) ──────────────────────────────
+  // Stores { data, ts } envelope; evicts entries older than TTL on read.
+  private readonly CACHE_TTL: Record<string, number> = {
+    categories:    60 * 60 * 1000,  // 60 min
+    allVehicles:    5 * 60 * 1000,  //  5 min
+    vehiclesLight:  5 * 60 * 1000,  //  5 min
+    articles:       3 * 60 * 1000,  //  3 min
+    articlesLight:  3 * 60 * 1000,  //  3 min
+  };
+
   private loadCache(key: string): any {
     try {
-      const data = localStorage.getItem(key);
-      return data ? JSON.parse(data) : null;
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const envelope = JSON.parse(raw);
+      // Support both plain data (legacy) and { data, ts } envelopes
+      if (!envelope || typeof envelope !== 'object' || !('ts' in envelope)) {
+        // Legacy plain entry — evict and force fresh fetch
+        localStorage.removeItem(key);
+        return null;
+      }
+      const ttlMs = this.CACHE_TTL[key] ?? (5 * 60 * 1000);
+      if (Date.now() - envelope.ts > ttlMs) {
+        localStorage.removeItem(key);
+        return null;  // Stale — force fresh fetch
+      }
+      return envelope.data;
     } catch {
       return null;
+    }
+  }
+
+  private saveCache(key: string, data: any): void {
+    try {
+      localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+    } catch {
+      // Quota exceeded or private mode — silently skip
     }
   }
 
@@ -255,7 +286,7 @@ export class BlogDataService {
         shareReplay(1)
       ).subscribe({
         next: (data) => {
-          try { localStorage.setItem('categories', JSON.stringify(data)); } catch {}
+          this.saveCache('categories', data);
           subject.next(data);
         },
         error: (err) => {
@@ -291,7 +322,7 @@ export class BlogDataService {
         shareReplay(1)
       ).subscribe({
         next: (data) => {
-          try { localStorage.setItem('articles', JSON.stringify(data)); } catch {}
+          this.saveCache('articles', data);
           subject.next(data);
         },
         error: (err) => {
@@ -314,7 +345,7 @@ export class BlogDataService {
         shareReplay(1)
       ).subscribe({
         next: (data) => {
-          try { localStorage.setItem('articlesLight', JSON.stringify(data)); } catch {}
+          this.saveCache('articlesLight', data);
           subject.next(data);
         },
         error: (err) => {
@@ -387,7 +418,7 @@ export class BlogDataService {
         shareReplay(1)
       ).subscribe({
         next: (data) => {
-          try { localStorage.setItem('allVehicles', JSON.stringify(data)); } catch {}
+          this.saveCache('allVehicles', data);
           subject.next(data);
         },
         error: (err) => {
@@ -414,7 +445,7 @@ export class BlogDataService {
         shareReplay(1)
       ).subscribe({
         next: (data) => {
-          try { localStorage.setItem('vehiclesLight', JSON.stringify(data)); } catch {}
+          this.saveCache('vehiclesLight', data);
           subject.next(data);
         },
         error: (err) => {
@@ -588,6 +619,20 @@ export class BlogDataService {
     try {
       localStorage.removeItem('allVehicles');
       localStorage.removeItem('vehiclesLight');
+    } catch {}
+  }
+
+  clearAllCaches() {
+    this.allVehiclesCache$ = null;
+    this.vehiclesLightCache$ = null;
+    this.categoriesCache$ = null;
+    this.articlesCache$ = null;
+    this.articlesLightCache$ = null;
+    this.articleByIdCache.clear();
+    try {
+      ['allVehicles', 'vehiclesLight', 'categories', 'articles', 'articlesLight'].forEach(k =>
+        localStorage.removeItem(k)
+      );
     } catch {}
   }
 }

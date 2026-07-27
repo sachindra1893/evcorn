@@ -55,15 +55,76 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // 6. MongoDB Operator Injection Sanitization Guard
 app.use(sanitizeInput);
 
-// 7. Enterprise HTTP Cache-Control & CDN Edge Caching Strategy
+// 7. Enterprise HTTP Cache-Control & CDN Edge Caching Strategy (Pillar II)
+// Granular per-route headers maximise Vercel Edge CDN hit rates.
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api/auth') && !req.path.startsWith('/api/upload')) {
-    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
-  } else {
+  if (req.method !== 'GET') {
+    // Mutations are never cached
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    return next();
   }
+
+  const path = req.path;
+
+  // Auth & upload routes — always private
+  if (path.startsWith('/api/auth') || path.startsWith('/api/upload')) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    return next();
+  }
+
+  // Admin routes — private
+  if (path.startsWith('/api/admin')) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    return next();
+  }
+
+  // Categories — almost never change (1hr browser, 24hr CDN)
+  if (path.startsWith('/api/categories')) {
+    res.set('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800');
+    return next();
+  }
+
+  // Single vehicle detail — changes infrequently (10min browser, 2hr CDN)
+  if (path.match(/^\/api\/vehicles\/[^/]+$/)) {
+    res.set('Cache-Control', 'public, max-age=600, s-maxage=7200, stale-while-revalidate=86400');
+    return next();
+  }
+
+  // Vehicle listing — moderate freshness (5min browser, 1hr CDN)
+  if (path.startsWith('/api/vehicles')) {
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
+    return next();
+  }
+
+  // Single article — moderate freshness (10min browser, 2hr CDN)
+  if (path.match(/^\/api\/articles\/[^/]+$/)) {
+    res.set('Cache-Control', 'public, max-age=600, s-maxage=7200, stale-while-revalidate=86400');
+    return next();
+  }
+
+  // Article listing — shorter TTL as articles publish frequently (3min browser, 30min CDN)
+  if (path.startsWith('/api/articles')) {
+    res.set('Cache-Control', 'public, max-age=180, s-maxage=1800, stale-while-revalidate=86400');
+    return next();
+  }
+
+  // Health check — short cache
+  if (path.startsWith('/api/health')) {
+    res.set('Cache-Control', 'public, max-age=30, s-maxage=60');
+    return next();
+  }
+
+  // Search — very short (1min browser, no CDN cache — query-specific)
+  if (path.startsWith('/api/search')) {
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=60');
+    return next();
+  }
+
+  // Default public read
+  res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
   next();
 });
+
 
 // Serve development test static files (disabled in production)
 if (config.NODE_ENV !== 'production') {
