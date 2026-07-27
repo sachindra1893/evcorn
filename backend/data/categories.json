@@ -1,0 +1,66 @@
+[
+  {
+    "id": "tesla",
+    "name": "Tesla"
+  },
+  {
+    "id": "byd",
+    "name": "BYD"
+  },
+  {
+    "id": "rivian",
+    "name": "Rivian"
+  },
+  {
+    "id": "lucid",
+    "name": "Lucid"
+  },
+  {
+    "id": "rimac",
+    "name": "Rimac"
+  },
+  {
+    "id": "porsche",
+    "name": "Porsche"
+  },
+  {
+    "id": "hyundai",
+    "name": "Hyundai"
+  },
+  {
+    "id": "kia",
+    "name": "Kia"
+  },
+  {
+    "id": "bmw",
+    "name": "BMW"
+  },
+  {
+    "id": "mercedes",
+    "name": "Mercedes-Benz"
+  },
+  {
+    "id": "audi",
+    "name": "Audi"
+  },
+  {
+    "id": "volvo",
+    "name": "Volvo"
+  },
+  {
+    "id": "polestar",
+    "name": "Polestar"
+  },
+  {
+    "id": "mg",
+    "name": "MG"
+  },
+  {
+    "id": "tata",
+    "name": "Tata Motors"
+  },
+  {
+    "id": "mahindra",
+    "name": "Mahindra"
+  }
+]

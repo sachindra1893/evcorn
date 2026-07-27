@@ -86,7 +86,7 @@ async function connectDatabase() {
 }
 
 function isLocalFileDb() {
-  return useLocalFileDb;
+  return useLocalFileDb || mongoose.connection.readyState !== 1;
 }
 
 module.exports = {

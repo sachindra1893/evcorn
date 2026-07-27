@@ -1,0 +1,516 @@
+[
+  {
+    "id": "tata-nexon-ev",
+    "name": "Tata Nexon EV",
+    "categoryId": "tata",
+    "brandSlug": "tata",
+    "modelId": "nexon-ev",
+    "modelSlug": "nexon-ev",
+    "variantId": "nexon-ev-empowered-plus-lr",
+    "variantSlug": "nexon-ev-empowered-plus-lr",
+    "parentModel": "Nexon EV",
+    "variantName": "Empowered+ Long Range",
+    "price": "₹ 16.99 Lakh",
+    "seating": "5 Seater",
+    "dimensions": "3994 mm L x 1811 mm W x 1616 mm H",
+    "groundClearance": "190 mm",
+    "batteryCapacity": "40.5 kWh",
+    "range": "465 km",
+    "tyreSize": "215/60 R16",
+    "bootFrunkSpace": "350 L",
+    "bhpTorque": "143 bhp / 215 Nm",
+    "drivetrain": "FWD",
+    "safetyRating": "5 Star (GNCAP)",
+    "imageUrl": "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/tata-nexon-ev.jpg",
+    "galleryImages": [
+      "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/tata-nexon-ev.jpg"
+    ],
+    "keyHighlights": "465 km Claimed Range • V2L/V2V Charging Support • 12.3-inch Cinematic Touchscreen",
+    "pricing": {
+      "exShowroomPriceINR": 1699000,
+      "priceText": "₹ 16.99 Lakh",
+      "onRoadPriceEstINR": 1820000,
+      "subsidyEligible": true
+    },
+    "battery": {
+      "capacityKWh": 40.5,
+      "capacityText": "40.5 kWh",
+      "chemistry": "LFP",
+      "voltageArchitecture": 400
+    },
+    "charging": {
+      "acChargingKW": 7.2,
+      "dcFastChargingKW": 50,
+      "acChargingText": "7.2 kW AC (10-100% in 6 hrs)",
+      "dcChargingText": "50 kW DC Fast (10-80% in 56 mins)",
+      "portType": "CCS2"
+    },
+    "performance": {
+      "claimedRangeKM": 465,
+      "rangeText": "465 km",
+      "maxPowerBHP": 143,
+      "maxTorqueNM": 215,
+      "acceleration0to100Sec": 8.9,
+      "topSpeedKMH": 150,
+      "drivetrain": "FWD"
+    },
+    "dimensionsObj": {
+      "lengthMM": 3994,
+      "widthMM": 1811,
+      "heightMM": 1616,
+      "wheelbaseMM": 2498,
+      "groundClearanceMM": 190,
+      "seatingCapacity": 5,
+      "seatingText": "5 Seater",
+      "bootSpaceLiters": 350,
+      "frunkSpaceLiters": 0
+    },
+    "safety": {
+      "ncapRating": 5,
+      "ncapTestingBody": "GNCAP",
+      "airbagsCount": 6,
+      "hasADAS": true
+    },
+    "status": "Published"
+  },
+  {
+    "id": "tata-tiago-ev",
+    "name": "Tata Tiago EV",
+    "categoryId": "tata",
+    "brandSlug": "tata",
+    "modelId": "tiago-ev",
+    "modelSlug": "tiago-ev",
+    "variantId": "tiago-ev-xz-plus-tech-lux",
+    "variantSlug": "tiago-ev-xz-plus-tech-lux",
+    "parentModel": "Tiago EV",
+    "variantName": "XZ+ Tech LUX",
+    "price": "₹ 7.99 Lakh",
+    "seating": "5 Seater",
+    "dimensions": "3769 mm L x 1677 mm W x 1536 mm H",
+    "groundClearance": "166 mm",
+    "batteryCapacity": "24 kWh",
+    "range": "315 km",
+    "tyreSize": "175/65 R14",
+    "bootFrunkSpace": "240 L",
+    "bhpTorque": "74 bhp / 114 Nm",
+    "drivetrain": "FWD",
+    "safetyRating": "4 Star (GNCAP)",
+    "imageUrl": "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/tata-tiago-ev.jpg",
+    "galleryImages": [
+      "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/tata-tiago-ev.jpg"
+    ],
+    "keyHighlights": "India's Most Accessible Family EV • 315 km Range • Multi-Mode Regen",
+    "pricing": {
+      "exShowroomPriceINR": 799000,
+      "priceText": "₹ 7.99 Lakh",
+      "onRoadPriceEstINR": 850000,
+      "subsidyEligible": true
+    },
+    "battery": {
+      "capacityKWh": 24,
+      "capacityText": "24 kWh",
+      "chemistry": "LFP",
+      "voltageArchitecture": 350
+    },
+    "charging": {
+      "acChargingKW": 7.2,
+      "dcFastChargingKW": 25,
+      "acChargingText": "7.2 kW AC Wallbox",
+      "dcChargingText": "25 kW DC Fast Charging",
+      "portType": "CCS2"
+    },
+    "performance": {
+      "claimedRangeKM": 315,
+      "rangeText": "315 km",
+      "maxPowerBHP": 74,
+      "maxTorqueNM": 114,
+      "acceleration0to100Sec": 11.2,
+      "topSpeedKMH": 120,
+      "drivetrain": "FWD"
+    },
+    "dimensionsObj": {
+      "lengthMM": 3769,
+      "widthMM": 1677,
+      "heightMM": 1536,
+      "wheelbaseMM": 2400,
+      "groundClearanceMM": 166,
+      "seatingCapacity": 5,
+      "seatingText": "5 Seater",
+      "bootSpaceLiters": 240
+    },
+    "safety": {
+      "ncapRating": 4,
+      "ncapTestingBody": "GNCAP",
+      "airbagsCount": 2,
+      "hasADAS": false
+    },
+    "status": "Published"
+  },
+  {
+    "id": "tata-punch-ev",
+    "name": "Tata Punch EV",
+    "categoryId": "tata",
+    "brandSlug": "tata",
+    "modelId": "punch-ev",
+    "modelSlug": "punch-ev",
+    "variantId": "punch-ev-empowered-plus-s-lr",
+    "variantSlug": "punch-ev-empowered-plus-s-lr",
+    "parentModel": "Punch EV",
+    "variantName": "Empowered+ S Long Range",
+    "price": "₹ 13.29 Lakh",
+    "seating": "5 Seater",
+    "dimensions": "3857 mm L x 1742 mm W x 1633 mm H",
+    "groundClearance": "190 mm",
+    "batteryCapacity": "35 kWh",
+    "range": "421 km",
+    "tyreSize": "195/60 R16",
+    "bootFrunkSpace": "366 L + 14 L Frunk",
+    "bhpTorque": "122 bhp / 190 Nm",
+    "drivetrain": "FWD",
+    "safetyRating": "5 Star (Bharat NCAP)",
+    "imageUrl": "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/tata-punch-ev.jpg",
+    "galleryImages": [
+      "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/tata-punch-ev.jpg"
+    ],
+    "keyHighlights": "Built on acti.ev Pure EV Architecture • 14L Front Frunk • 360-Degree Camera",
+    "pricing": {
+      "exShowroomPriceINR": 1329000,
+      "priceText": "₹ 13.29 Lakh",
+      "onRoadPriceEstINR": 1420000,
+      "subsidyEligible": true
+    },
+    "battery": {
+      "capacityKWh": 35,
+      "capacityText": "35 kWh",
+      "chemistry": "LFP",
+      "voltageArchitecture": 400
+    },
+    "charging": {
+      "acChargingKW": 7.2,
+      "dcFastChargingKW": 50,
+      "acChargingText": "7.2 kW Fast AC Wallbox",
+      "dcChargingText": "50 kW DC Fast (10-80% in 56 mins)",
+      "portType": "CCS2"
+    },
+    "performance": {
+      "claimedRangeKM": 421,
+      "rangeText": "421 km",
+      "maxPowerBHP": 122,
+      "maxTorqueNM": 190,
+      "acceleration0to100Sec": 9.5,
+      "topSpeedKMH": 140,
+      "drivetrain": "FWD"
+    },
+    "dimensionsObj": {
+      "lengthMM": 3857,
+      "widthMM": 1742,
+      "heightMM": 1633,
+      "wheelbaseMM": 2445,
+      "groundClearanceMM": 190,
+      "seatingCapacity": 5,
+      "seatingText": "5 Seater",
+      "bootSpaceLiters": 366,
+      "frunkSpaceLiters": 14
+    },
+    "safety": {
+      "ncapRating": 5,
+      "ncapTestingBody": "Bharat NCAP",
+      "airbagsCount": 6,
+      "hasADAS": false
+    },
+    "status": "Published"
+  },
+  {
+    "id": "mg-windsor-ev",
+    "name": "MG Windsor EV",
+    "categoryId": "mg",
+    "brandSlug": "mg",
+    "modelId": "windsor-ev",
+    "modelSlug": "windsor-ev",
+    "variantId": "windsor-ev-essence",
+    "variantSlug": "windsor-ev-essence",
+    "parentModel": "Windsor EV",
+    "variantName": "Essence",
+    "price": "₹ 13.50 Lakh",
+    "seating": "5 Seater",
+    "dimensions": "4295 mm L x 1850 mm W x 1652 mm H",
+    "groundClearance": "186 mm",
+    "batteryCapacity": "38 kWh",
+    "range": "331 km",
+    "tyreSize": "215/55 R18",
+    "bootFrunkSpace": "604 L",
+    "bhpTorque": "136 bhp / 200 Nm",
+    "drivetrain": "FWD",
+    "safetyRating": "5 Star (Expected)",
+    "imageUrl": "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/mg-windsor-ev.jpg",
+    "galleryImages": [
+      "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/mg-windsor-ev.jpg"
+    ],
+    "keyHighlights": "AeroLounge 135° Reclining Rear Seats • Massive 15.6-inch Touchscreen • 604L Boot Space",
+    "pricing": {
+      "exShowroomPriceINR": 1350000,
+      "priceText": "₹ 13.50 Lakh",
+      "onRoadPriceEstINR": 1450000,
+      "subsidyEligible": true
+    },
+    "battery": {
+      "capacityKWh": 38,
+      "capacityText": "38 kWh",
+      "chemistry": "LFP",
+      "voltageArchitecture": 400
+    },
+    "charging": {
+      "acChargingKW": 7.4,
+      "dcFastChargingKW": 45,
+      "acChargingText": "7.4 kW AC Charger",
+      "dcChargingText": "45 kW DC Fast Charger",
+      "portType": "CCS2"
+    },
+    "performance": {
+      "claimedRangeKM": 331,
+      "rangeText": "331 km",
+      "maxPowerBHP": 136,
+      "maxTorqueNM": 200,
+      "acceleration0to100Sec": 9.8,
+      "topSpeedKMH": 150,
+      "drivetrain": "FWD"
+    },
+    "dimensionsObj": {
+      "lengthMM": 4295,
+      "widthMM": 1850,
+      "heightMM": 1652,
+      "wheelbaseMM": 2700,
+      "groundClearanceMM": 186,
+      "seatingCapacity": 5,
+      "seatingText": "5 Seater",
+      "bootSpaceLiters": 604
+    },
+    "safety": {
+      "ncapRating": 5,
+      "ncapTestingBody": "GNCAP",
+      "airbagsCount": 6,
+      "hasADAS": false
+    },
+    "status": "Published"
+  },
+  {
+    "id": "mahindra-xuv400",
+    "name": "Mahindra XUV400 EV",
+    "categoryId": "mahindra",
+    "brandSlug": "mahindra",
+    "modelId": "xuv400-ev",
+    "modelSlug": "xuv400-ev",
+    "variantId": "xuv400-ev-el-pro",
+    "variantSlug": "xuv400-ev-el-pro",
+    "parentModel": "XUV400 EV",
+    "variantName": "EL Pro 39.4 kWh",
+    "price": "₹ 15.49 Lakh",
+    "seating": "5 Seater",
+    "dimensions": "4200 mm L x 1821 mm W x 1634 mm H",
+    "groundClearance": "200 mm",
+    "batteryCapacity": "39.4 kWh",
+    "range": "456 km",
+    "tyreSize": "205/65 R16",
+    "bootFrunkSpace": "378 L",
+    "bhpTorque": "150 bhp / 310 Nm",
+    "drivetrain": "FWD",
+    "safetyRating": "5 Star (GNCAP)",
+    "imageUrl": "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/mahindra-xuv400.jpg",
+    "galleryImages": [
+      "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/mahindra-xuv400.jpg"
+    ],
+    "keyHighlights": "0-100 km/h in 8.3s • 310 Nm Instant Torque • Dual 10.25-inch Digital Screens",
+    "pricing": {
+      "exShowroomPriceINR": 1549000,
+      "priceText": "₹ 15.49 Lakh",
+      "onRoadPriceEstINR": 1660000,
+      "subsidyEligible": true
+    },
+    "battery": {
+      "capacityKWh": 39.4,
+      "capacityText": "39.4 kWh",
+      "chemistry": "NMC",
+      "voltageArchitecture": 400
+    },
+    "charging": {
+      "acChargingKW": 7.2,
+      "dcFastChargingKW": 50,
+      "acChargingText": "7.2 kW Fast Charger",
+      "dcChargingText": "50 kW DC Charger (0-80% in 50 mins)",
+      "portType": "CCS2"
+    },
+    "performance": {
+      "claimedRangeKM": 456,
+      "rangeText": "456 km",
+      "maxPowerBHP": 150,
+      "maxTorqueNM": 310,
+      "acceleration0to100Sec": 8.3,
+      "topSpeedKMH": 150,
+      "drivetrain": "FWD"
+    },
+    "dimensionsObj": {
+      "lengthMM": 4200,
+      "widthMM": 1821,
+      "heightMM": 1634,
+      "wheelbaseMM": 2600,
+      "groundClearanceMM": 200,
+      "seatingCapacity": 5,
+      "seatingText": "5 Seater",
+      "bootSpaceLiters": 378
+    },
+    "safety": {
+      "ncapRating": 5,
+      "ncapTestingBody": "GNCAP",
+      "airbagsCount": 6,
+      "hasADAS": false
+    },
+    "status": "Published"
+  },
+  {
+    "id": "byd-atto-3",
+    "name": "BYD Atto 3",
+    "categoryId": "byd",
+    "brandSlug": "byd",
+    "modelId": "atto-3",
+    "modelSlug": "atto-3",
+    "variantId": "atto-3-superior",
+    "variantSlug": "atto-3-superior",
+    "parentModel": "Atto 3",
+    "variantName": "Superior Extended Range",
+    "price": "₹ 33.99 Lakh",
+    "seating": "5 Seater",
+    "dimensions": "4455 mm L x 1875 mm W x 1615 mm H",
+    "groundClearance": "175 mm",
+    "batteryCapacity": "60.48 kWh",
+    "range": "521 km",
+    "tyreSize": "215/55 R18",
+    "bootFrunkSpace": "440 L",
+    "bhpTorque": "201 bhp / 310 Nm",
+    "drivetrain": "FWD",
+    "safetyRating": "5 Star (Euro NCAP)",
+    "imageUrl": "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/byd-atto-3.jpg",
+    "galleryImages": [
+      "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/byd-atto-3.jpg"
+    ],
+    "keyHighlights": "BYD Ultra-Safe Blade Battery • Rotating 12.8-inch Screen • Level 2 ADAS Suite",
+    "pricing": {
+      "exShowroomPriceINR": 3399000,
+      "priceText": "₹ 33.99 Lakh",
+      "onRoadPriceEstINR": 3600000,
+      "subsidyEligible": false
+    },
+    "battery": {
+      "capacityKWh": 60.48,
+      "capacityText": "60.48 kWh",
+      "chemistry": "LFP Blade",
+      "voltageArchitecture": 400
+    },
+    "charging": {
+      "acChargingKW": 7,
+      "dcFastChargingKW": 80,
+      "acChargingText": "7 kW AC Charger",
+      "dcChargingText": "80 kW DC Fast Charging (0-80% in 45 mins)",
+      "portType": "CCS2"
+    },
+    "performance": {
+      "claimedRangeKM": 521,
+      "rangeText": "521 km",
+      "maxPowerBHP": 201,
+      "maxTorqueNM": 310,
+      "acceleration0to100Sec": 7.3,
+      "topSpeedKMH": 160,
+      "drivetrain": "FWD"
+    },
+    "dimensionsObj": {
+      "lengthMM": 4455,
+      "widthMM": 1875,
+      "heightMM": 1615,
+      "wheelbaseMM": 2720,
+      "groundClearanceMM": 175,
+      "seatingCapacity": 5,
+      "seatingText": "5 Seater",
+      "bootSpaceLiters": 440
+    },
+    "safety": {
+      "ncapRating": 5,
+      "ncapTestingBody": "Euro NCAP",
+      "airbagsCount": 7,
+      "hasADAS": true
+    },
+    "status": "Published"
+  },
+  {
+    "id": "hyundai-ioniq-5",
+    "name": "Hyundai Ioniq 5",
+    "categoryId": "hyundai",
+    "brandSlug": "hyundai",
+    "modelId": "ioniq-5",
+    "modelSlug": "ioniq-5",
+    "variantId": "ioniq-5-rwd",
+    "variantSlug": "ioniq-5-rwd",
+    "parentModel": "Ioniq 5",
+    "variantName": "Long Range RWD",
+    "price": "₹ 46.05 Lakh",
+    "seating": "5 Seater",
+    "dimensions": "4635 mm L x 1890 mm W x 1625 mm H",
+    "groundClearance": "163 mm",
+    "batteryCapacity": "72.6 kWh",
+    "range": "631 km",
+    "tyreSize": "255/45 R20",
+    "bootFrunkSpace": "527 L + 57 L Frunk",
+    "bhpTorque": "214 bhp / 350 Nm",
+    "drivetrain": "RWD",
+    "safetyRating": "5 Star (Euro NCAP)",
+    "imageUrl": "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/hyundai-ioniq-5.jpg",
+    "galleryImages": [
+      "https://res.cloudinary.com/kuu2880f/image/upload/v1700000000/evcorn/vehicles/hyundai-ioniq-5.jpg"
+    ],
+    "keyHighlights": "800V Ultra-Fast Architecture (10-80% in 18 min) • 631 km ARAI Range • V2L Outdoor Power",
+    "pricing": {
+      "exShowroomPriceINR": 4605000,
+      "priceText": "₹ 46.05 Lakh",
+      "onRoadPriceEstINR": 4900000,
+      "subsidyEligible": false
+    },
+    "battery": {
+      "capacityKWh": 72.6,
+      "capacityText": "72.6 kWh",
+      "chemistry": "NMC",
+      "voltageArchitecture": 800
+    },
+    "charging": {
+      "acChargingKW": 11,
+      "dcFastChargingKW": 350,
+      "acChargingText": "11 kW AC Wallbox",
+      "dcChargingText": "350 kW Ultra-Fast DC (10-80% in 18 mins)",
+      "portType": "CCS2"
+    },
+    "performance": {
+      "claimedRangeKM": 631,
+      "rangeText": "631 km",
+      "maxPowerBHP": 214,
+      "maxTorqueNM": 350,
+      "acceleration0to100Sec": 7.6,
+      "topSpeedKMH": 185,
+      "drivetrain": "RWD"
+    },
+    "dimensionsObj": {
+      "lengthMM": 4635,
+      "widthMM": 1890,
+      "heightMM": 1625,
+      "wheelbaseMM": 3000,
+      "groundClearanceMM": 163,
+      "seatingCapacity": 5,
+      "seatingText": "5 Seater",
+      "bootSpaceLiters": 527,
+      "frunkSpaceLiters": 57
+    },
+    "safety": {
+      "ncapRating": 5,
+      "ncapTestingBody": "Euro NCAP",
+      "airbagsCount": 6,
+      "hasADAS": true
+    },
+    "status": "Published"
+  }
+]
