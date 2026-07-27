@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.25% </span>
+                <span class="strong">68.75% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>13/16</span>
+                <span class='fraction'>11/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">43.47% </span>
+                <span class="strong">34.78% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>10/23</span>
+                <span class='fraction'>8/23</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">80% </span>
+                <span class="strong">60% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/5</span>
+                <span class='fraction'>3/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.25% </span>
+                <span class="strong">68.75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>13/16</span>
+                <span class='fraction'>11/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -101,18 +101,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">34x</span>
-<span class="cline-any cline-yes">34x</span>
+<span class="cline-any cline-yes">43x</span>
+<span class="cline-any cline-yes">43x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -130,7 +130,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Centralized Structured Logger &amp; Audit Utility
  * Supports Request ID correlation, log levels (info, warn, error, debug, audit), and secret redaction.
@@ -144,9 +144,9 @@ const logger = {
     const reqId = meta?.reqId ? <span class="branch-0 cbranch-no" title="branch not covered" >` [reqId:${meta.reqId}]` </span>: '';
     console.warn(`[WARN] ${new Date().toISOString()}${reqId} - ${msg}`, Object.keys(meta).length &gt; 0 ? <span class="branch-0 cbranch-no" title="branch not covered" >JSON.stringify(meta) </span>: '');
   },
-  error: (msg, meta = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> =&gt; {
-    const reqId = meta?.reqId ? ` [reqId:${meta.reqId}]` : <span class="branch-1 cbranch-no" title="branch not covered" >'';</span>
-    console.error(`[ERROR] ${new Date().toISOString()}${reqId} - ${msg}`, Object.keys(meta).length &gt; 0 ? JSON.stringify(meta) : <span class="branch-1 cbranch-no" title="branch not covered" >'')</span>;
+  error: <span class="fstat-no" title="function not covered" >(m</span>sg, meta = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> =&gt; {
+    const reqId = <span class="cstat-no" title="statement not covered" >meta?.reqId ? ` [reqId:${meta.reqId}]` : '';</span>
+<span class="cstat-no" title="statement not covered" >    console.error(`[ERROR] ${new Date().toISOString()}${reqId} - ${msg}`, Object.keys(meta).length &gt; 0 ? JSON.stringify(meta) : '');</span>
   },
   audit: (action, details = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> =&gt; {
     // Redact sensitive secrets from audit trail
@@ -172,7 +172,7 @@ module.exports = logger;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-26T13:21:13.877Z
+                at 2026-07-27T11:24:03.275Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -30,9 +30,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">57.69% </span>
+                <span class="strong">70% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>15/26</span>
+                <span class='fraction'>35/50</span>
             </div>
         
             
@@ -99,39 +99,55 @@
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
 <a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -149,14 +165,22 @@ function toArticleDTO(doc) {
 &nbsp;
   return {
     id: articleId,
-    title: obj.title,
+    slug: obj.slug || '',
+    title: obj.title || <span class="branch-1 cbranch-no" title="branch not covered" >'',</span>
     description: obj.description || <span class="branch-1 cbranch-no" title="branch not covered" >'',</span>
     categoryId: obj.categoryId || <span class="branch-1 cbranch-no" title="branch not covered" >'general',</span>
+    status: obj.status || 'published',
+    active: obj.active !== undefined ? obj.active : <span class="branch-1 cbranch-no" title="branch not covered" >true,</span>
+    publishAt: obj.publishAt || obj.createdAt,
     imageUrl: obj.imageUrl || <span class="branch-1 cbranch-no" title="branch not covered" >'',</span>
     paragraphs: obj.paragraphs || <span class="branch-1 cbranch-no" title="branch not covered" >[],</span>
     blocks: obj.blocks || [],
-    active: obj.active !== undefined ? obj.active : <span class="branch-1 cbranch-no" title="branch not covered" >true,</span>
+    author: obj.author || { name: 'EVCorn Editorial', role: 'Staff Writer' },
+    media: obj.media || { mainImage: obj.imageUrl || <span class="branch-1 cbranch-no" title="branch not covered" >'' </span>},
+    seo: obj.seo || { metaTitle: obj.title || <span class="branch-1 cbranch-no" title="branch not covered" >'',</span> metaDescription: obj.description || <span class="branch-1 cbranch-no" title="branch not covered" >'' </span>},
+    relationships: obj.relationships || { relatedArticles: [], relatedVehicles: [], relatedBrands: [] },
     cloudinaryImage: obj.cloudinaryImage || { url: obj.imageUrl || <span class="branch-1 cbranch-no" title="branch not covered" >'',</span> public_id: '' },
+    cloudinaryImages: obj.cloudinaryImages || [],
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt
   };
@@ -178,7 +202,7 @@ module.exports = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-26T13:21:13.877Z
+                at 2026-07-27T11:24:03.275Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

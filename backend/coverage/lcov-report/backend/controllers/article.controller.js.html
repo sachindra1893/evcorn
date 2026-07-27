@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.38% </span>
+                <span class="strong">42.3% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>4/26</span>
+                <span class='fraction'>11/26</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">40% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>2/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.38% </span>
+                <span class="strong">42.3% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>4/26</span>
+                <span class='fraction'>11/26</span>
             </div>
         
             
@@ -123,9 +123,28 @@
 <a name='L58'></a><a href='#L58'>58</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -151,32 +170,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Article Controller
  */
@@ -185,22 +185,22 @@ const { validateQuery } = require('../validators/query.validator');
 const { validateArticleInput } = require('../validators/article.validator');
 &nbsp;
 class ArticleController {
-<span class="fstat-no" title="function not covered" >  as</span>ync getArticles(req, res, next) {
-<span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      validateQuery(req.query);</span>
-      const result = <span class="cstat-no" title="statement not covered" >await articleService.getArticles(req.query);</span>
-<span class="cstat-no" title="statement not covered" >      res.json(result);</span>
+  async getArticles(req, res, next) {
+    try {
+      validateQuery(req.query);
+      const result = await articleService.getArticles(req.query);
+      res.json(result);
     } catch (err) {
 <span class="cstat-no" title="statement not covered" >      next(err);</span>
     }
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  as</span>ync getArticleById(req, res, next) {
-<span class="cstat-no" title="statement not covered" >    try {</span>
-      const result = <span class="cstat-no" title="statement not covered" >await articleService.getArticleById(req.params.id);</span>
+  async getArticleById(req, res, next) {
+    try {
+      const result = await articleService.getArticleById(req.params.id);
 <span class="cstat-no" title="statement not covered" >      res.json(result);</span>
     } catch (err) {
-<span class="cstat-no" title="statement not covered" >      next(err);</span>
+      next(err);
     }
   }
 &nbsp;
@@ -241,7 +241,7 @@ module.exports = new ArticleController();
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-26T13:21:13.877Z
+                at 2026-07-27T11:24:03.275Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
