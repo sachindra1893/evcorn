@@ -29,7 +29,6 @@ import { GlobalLocationComponent } from '../global-location/global-location.comp
       <nav class="nav-links">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
         <a routerLink="/evs" routerLinkActive="active">Browse EVs</a>
-        <a routerLink="/charging" routerLinkActive="active">Charging</a>
         <a routerLink="/energy" routerLinkActive="active">Energy</a>
         <a routerLink="/articles" routerLinkActive="active">Articles</a>
       </nav>
@@ -45,14 +44,9 @@ import { GlobalLocationComponent } from '../global-location/global-location.comp
         <span class="nav-icon">🔍</span>
         <span class="nav-label">Browse</span>
       </a>
-
       <a routerLink="/energy" routerLinkActive="active" class="bottom-nav-item">
         <span class="nav-icon">⚡</span>
         <span class="nav-label">Energy</span>
-      </a>
-      <a routerLink="/charging" routerLinkActive="active" class="bottom-nav-item">
-        <span class="nav-icon">🔌</span>
-        <span class="nav-label">Charging</span>
       </a>
       <a routerLink="/articles" routerLinkActive="active" class="bottom-nav-item">
         <span class="nav-icon">📖</span>

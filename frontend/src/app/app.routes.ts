@@ -10,7 +10,6 @@ export const routes: Routes = [
   { path: 'articles/:id', loadComponent: () => import('./views/article-detail/article-detail').then(m => m.ArticleDetailComponent) },
   { path: 'compare', loadComponent: () => import('./views/compare/compare').then(m => m.CompareComponent) },
   { path: 'energy', loadComponent: () => import('./views/energy/energy').then(m => m.EnergyComponent) },
-  { path: 'charging', loadComponent: () => import('./views/charging/charging').then(m => m.ChargingComponent) },
   { path: 'search', loadComponent: () => import('./views/search/search').then(m => m.SearchComponent) },
   { path: 'admin', loadComponent: () => import('./views/admin/admin').then(m => m.AdminComponent) },
   { path: 'login', loadComponent: () => import('./views/login/login').then(m => m.LoginComponent) },
