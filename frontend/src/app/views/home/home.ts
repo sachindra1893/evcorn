@@ -1633,13 +1633,12 @@ export class HomeComponent implements OnInit {
   }
 
   loadData() {
-    // Load articles from static CDN — instant, no backend call, no cold start
-    this.http.get<Article[]>('/data/articles-index.json').subscribe({
+    // Single cached call for articles (light payload for home cards)
+    this.dataService.getArticlesLight().subscribe({
       next: (articles) => {
-        // 1. Render static data instantly (0 latency)
-        this.allArticlesList = articles || [];
-        this.latestArticles = (articles || [])
-          .filter(a => a.active)
+        this.allArticlesList = (articles as Article[]) || [];
+        this.latestArticles = (this.allArticlesList || [])
+          .filter(a => a.active !== false)
           .sort((a, b) => {
             const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -1647,52 +1646,36 @@ export class HomeComponent implements OnInit {
           })
           .slice(0, 3);
         this.cdr.detectChanges();
-
-        // 2. Fetch fresh data from backend in background (Stale-While-Revalidate)
-        this.dataService.getArticles().subscribe({
-          next: (freshArticles) => {
-            this.allArticlesList = freshArticles || [];
-            this.latestArticles = (freshArticles || [])
-              .filter(a => a.active)
-              .sort((a, b) => {
-                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                return dateB - dateA;
-              })
-              .slice(0, 3);
-            this.cdr.detectChanges();
-          }
-        });
       },
       error: () => {
-        // Fallback directly to backend if static CDN fails
-        this.dataService.getArticles().subscribe({
-          next: (freshArticles) => {
-            this.allArticlesList = freshArticles || [];
-            this.latestArticles = (freshArticles || [])
-              .filter(a => a.active)
-              .sort((a, b) => {
-                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-                return dateB - dateA;
-              })
-              .slice(0, 3);
-            this.cdr.detectChanges();
-          }
-        });
+        this.allArticlesList = [];
+        this.latestArticles = [];
+        this.cdr.detectChanges();
       }
     });
 
-    // Load categories from static CDN
-    this.http.get<any[]>('/data/categories.json').subscribe(cats => {
-      this.categoriesList = cats;
-      this.cdr.detectChanges();
+    // Load categories from cached service
+    this.dataService.getCategories().subscribe({
+      next: (cats) => {
+        this.categoriesList = cats || [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.categoriesList = [];
+        this.cdr.detectChanges();
+      }
     });
 
     // Fetch vehicles for the EV Finder
-    this.dataService.getVehicles().subscribe(vehicles => {
-      this.vehiclesList = vehicles;
-      this.cdr.detectChanges();
+    this.dataService.getVehiclesLight().subscribe({
+      next: (vehicles) => {
+        this.vehiclesList = vehicles || [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.vehiclesList = [];
+        this.cdr.detectChanges();
+      }
     });
   }
 

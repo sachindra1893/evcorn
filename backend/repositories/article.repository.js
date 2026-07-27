@@ -40,6 +40,11 @@ class ArticleRepository {
       const articles = fileDb.getArticles();
       return articles.find(a => a.id === id) || null;
     }
+
+    const mongoose = require('mongoose');
+    if (!mongoose.isValidObjectId(id)) {
+      return null;
+    }
     return await Article.findById(id).lean();
   }
 

@@ -12,14 +12,22 @@ function toArticleDTO(doc) {
 
   return {
     id: articleId,
-    title: obj.title,
+    slug: obj.slug || '',
+    title: obj.title || '',
     description: obj.description || '',
     categoryId: obj.categoryId || 'general',
+    status: obj.status || 'published',
+    active: obj.active !== undefined ? obj.active : true,
+    publishAt: obj.publishAt || obj.createdAt,
     imageUrl: obj.imageUrl || '',
     paragraphs: obj.paragraphs || [],
     blocks: obj.blocks || [],
-    active: obj.active !== undefined ? obj.active : true,
+    author: obj.author || { name: 'EVCorn Editorial', role: 'Staff Writer' },
+    media: obj.media || { mainImage: obj.imageUrl || '' },
+    seo: obj.seo || { metaTitle: obj.title || '', metaDescription: obj.description || '' },
+    relationships: obj.relationships || { relatedArticles: [], relatedVehicles: [], relatedBrands: [] },
     cloudinaryImage: obj.cloudinaryImage || { url: obj.imageUrl || '', public_id: '' },
+    cloudinaryImages: obj.cloudinaryImages || [],
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt
   };

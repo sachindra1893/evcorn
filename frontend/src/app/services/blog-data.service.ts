@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { shareReplay, map } from 'rxjs/operators';
+import { shareReplay, map, catchError } from 'rxjs/operators';
 
 import { ArticleBlock } from '../models/blocks.model';
 
@@ -410,7 +410,7 @@ export class BlogDataService {
       const cached = this.loadCache('allVehicles') || [];
       const subject = new BehaviorSubject<CarSpec[]>(cached);
 
-      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles`).pipe(
+      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?status=Published`).pipe(
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
@@ -437,7 +437,7 @@ export class BlogDataService {
       const cached = this.loadCache('vehiclesLight') || [];
       const subject = new BehaviorSubject<any[]>(cached);
 
-      this.http.get<any[]>(`${this.apiUrl}/vehicles?light=true`).pipe(
+      this.http.get<any[]>(`${this.apiUrl}/vehicles?light=true&status=Published`).pipe(
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
@@ -591,16 +591,21 @@ export class BlogDataService {
     return v;
   }
 
-  // On-demand single car detail — fetches full specs for one car only
-  // (Since backend doesn't support /vehicles/:id, we filter from the cached all-vehicles list)
+  // On-demand single car detail — fetches full specs for one car directly from backend
   getVehicleById(id: string): Observable<CarSpec> {
-    return this.getVehicles().pipe(
-      map(vehicles => {
-        const vehicle = vehicles.find(v => v.id === id);
-        if (!vehicle) {
-          throw new Error('Vehicle not found');
-        }
-        return vehicle;
+    return this.http.get<CarSpec>(`${this.apiUrl}/vehicles/${id}`).pipe(
+      map(vehicle => this.enrichVehicle(vehicle)),
+      catchError(() => {
+        // Fallback to cache/list if direct lookup fails
+        return this.getVehicles().pipe(
+          map(vehicles => {
+            const vehicle = vehicles.find(v => v.id === id);
+            if (!vehicle) {
+              throw new Error('Vehicle not found');
+            }
+            return vehicle;
+          })
+        );
       })
     );
   }

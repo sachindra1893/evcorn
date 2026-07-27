@@ -17,13 +17,16 @@ class SearchService {
     }
 
     const searchTerm = q.trim().toLowerCase();
-    const regex = new RegExp(`^${searchTerm}`, 'i');
     const containsRegex = new RegExp(searchTerm, 'i');
+    const articleQueryFilter = {
+      active: true,
+      $or: [{ status: 'published' }, { status: { $exists: false } }]
+    };
 
     const [vehicles, articles, categories] = await Promise.all([
-      vehicleRepository.findAll({ $or: [{ name: containsRegex }, { parentModel: containsRegex }] }, 'id name categoryId parentModel imageUrl', { name: 1 }, 0, 5),
-      articleRepository.findAll({ active: true, status: 'published', title: containsRegex }, 'id title categoryId imageUrl', { createdAt: -1 }, 0, 5),
-      categoryRepository.findAll({}, 'id name')
+      vehicleRepository.findAll({ status: 'Published', $or: [{ name: containsRegex }, { parentModel: containsRegex }] }, 'id name categoryId parentModel imageUrl', { name: 1 }, 0, 5),
+      articleRepository.findAll({ ...articleQueryFilter, title: containsRegex }, 'id title categoryId imageUrl', { createdAt: -1 }, 0, 5),
+      categoryRepository.findAll()
     ]);
 
     const suggestions = [];
@@ -71,7 +74,7 @@ class SearchService {
     const searchTerm = (q || '').trim().toLowerCase();
     const regex = searchTerm ? new RegExp(searchTerm, 'i') : null;
 
-    const vehicleQuery = {};
+    const vehicleQuery = { status: 'Published' };
     if (filters.category || filters.categoryId) {
       vehicleQuery.categoryId = (filters.category || filters.categoryId).toLowerCase();
     }
@@ -83,7 +86,7 @@ class SearchService {
       ];
     }
 
-    const articleQuery = { active: true, status: 'published' };
+    const articleQuery = { active: true, $or: [{ status: 'published' }, { status: { $exists: false } }] };
     if (filters.category || filters.categoryId) {
       articleQuery.categoryId = (filters.category || filters.categoryId).toLowerCase();
     }

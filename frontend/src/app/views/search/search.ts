@@ -5,13 +5,15 @@ import { SchemaService } from '../../services/schema.service';
 import { BlogDataService } from '../../services/blog-data.service';
 
 interface SearchItem {
-  type: 'article' | 'company';
+  type: 'article' | 'company' | 'vehicle';
   title: string;
   description: string;
   id: string;
   logo?: string;
   active?: boolean;
   createdAt?: string;
+  brandSlug?: string;
+  modelSlug?: string;
 }
 
 @Component({
@@ -67,6 +69,12 @@ interface SearchItem {
                     <p>{{ item.description }}</p>
                   </div>
                 }
+              } @else if (item.type === 'vehicle') {
+                <a [routerLink]="['/ev', item.brandSlug || 'ev', item.modelSlug || item.id]" class="result-card vehicle-item">
+                  <div class="type-tag vehicle-tag" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">Electric Vehicle</div>
+                  <h2>{{ item.title }}</h2>
+                  <p>{{ item.description }}</p>
+                </a>
               } @else {
                 <div class="result-card company-item" (click)="showCompanyDetail(item)">
                   <div class="type-tag company-tag">Company</div>
@@ -389,6 +397,7 @@ export class SearchComponent implements OnInit {
   }
 
   loadSearchArticles() {
+    // Load articles
     this.dataService.getArticlesLight().subscribe({
       next: (articles) => {
         const articleSearchItems: SearchItem[] = articles.map(art => ({
@@ -400,11 +409,36 @@ export class SearchComponent implements OnInit {
           createdAt: art.createdAt
         }));
         
-        // Remove any old article search items and merge fresh ones
-        const companies = this.searchItems.filter(item => item.type === 'company');
-        this.searchItems = [...companies, ...articleSearchItems];
+        const nonArticles = this.searchItems.filter(item => item.type !== 'article');
+        this.searchItems = [...nonArticles, ...articleSearchItems];
       },
-      error: (err) => console.error('Error fetching search articles:', err)
+      error: () => {}
+    });
+
+    // Load vehicles for search
+    this.dataService.getVehiclesLight().subscribe({
+      next: (vehicles) => {
+        const vehicleSearchItems: SearchItem[] = vehicles.map(v => {
+          const item = v as any;
+          const range = item.performance?.rangeText || item.range || '';
+          const price = item.pricing?.priceText || item.price || '';
+          const descParts = [item.variantName, range, price].filter(Boolean);
+
+          return {
+            type: 'vehicle' as const,
+            id: item.id || '',
+            title: item.parentModel || item.name || '',
+            description: descParts.join(' • '),
+            active: true,
+            brandSlug: String(item.categoryId || '').toLowerCase().replace(/\s+/g, '-'),
+            modelSlug: String(item.parentModel || item.name || '').toLowerCase().replace(/\s+/g, '-')
+          };
+        });
+
+        const nonVehicles = this.searchItems.filter(item => item.type !== 'vehicle');
+        this.searchItems = [...nonVehicles, ...vehicleSearchItems];
+      },
+      error: () => {}
     });
   }
 

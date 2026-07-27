@@ -69,6 +69,15 @@ async function connectDatabase() {
       family: 4
     });
     logger.info('Successfully connected to MongoDB Atlas with connection pool (min: 10, max: 50).');
+
+    // Attach connection resilience handlers
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('MongoDB disconnected! Attempting reconnect...');
+    });
+
+    mongoose.connection.on('error', (err) => {
+      logger.error('MongoDB runtime connection error:', { error: err.message });
+    });
   } catch (err) {
     logger.error('Database connection error:', err.message);
     logger.warn('Falling back to local JSON file database mode.');

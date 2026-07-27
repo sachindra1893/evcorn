@@ -12,6 +12,9 @@ function toVehicleDTO(doc) {
   delete obj._id;
   delete obj.__v;
 
+  // Helper: return value if it exists and is not 'N/A'
+  const validVal = (val, fallback) => (val && val !== 'N/A' ? val : fallback);
+
   // Guarantee top-level fallback strings exist for legacy frontend components
   return {
     id: obj.id,
@@ -24,17 +27,19 @@ function toVehicleDTO(doc) {
     variantSlug: obj.variantSlug || obj.id,
     parentModel: obj.parentModel || '',
     variantName: obj.variantName || '',
-    price: obj.price || obj.pricing?.priceText || 'N/A',
-    seating: obj.seating || obj.dimensionsObj?.seatingText || '5 Seater',
-    dimensions: obj.dimensions || obj.dimensionsObj?.dimensionsText || 'N/A',
-    groundClearance: obj.groundClearance || obj.dimensionsObj?.groundClearanceText || 'N/A',
-    batteryCapacity: obj.batteryCapacity || obj.battery?.capacityText || 'N/A',
-    range: obj.range || obj.performance?.rangeText || 'N/A',
-    tyreSize: obj.tyreSize || obj.dimensionsObj?.tyreSize || 'N/A',
-    bootFrunkSpace: obj.bootFrunkSpace || obj.dimensionsObj?.bootFrunkText || 'N/A',
-    bhpTorque: obj.bhpTorque || 'N/A',
-    drivetrain: obj.drivetrain || obj.performance?.drivetrain || 'FWD',
-    safetyRating: obj.safetyRating || obj.safety?.safetyRatingText || 'N/A',
+
+    // Priority: Sub-document value first -> top-level string (if not 'N/A') -> fallback
+    price: validVal(obj.pricing?.priceText, obj.price || 'N/A'),
+    seating: validVal(obj.dimensionsObj?.seatingText, obj.seating || '5 Seater'),
+    dimensions: validVal(obj.dimensionsObj?.dimensionsText, obj.dimensions || 'N/A'),
+    groundClearance: validVal(obj.dimensionsObj?.groundClearanceText, obj.groundClearance || 'N/A'),
+    batteryCapacity: validVal(obj.battery?.capacityText, obj.batteryCapacity || 'N/A'),
+    range: validVal(obj.performance?.rangeText, obj.range || 'N/A'),
+    tyreSize: validVal(obj.dimensionsObj?.tyreSize, obj.tyreSize || 'N/A'),
+    bootFrunkSpace: validVal(obj.dimensionsObj?.bootFrunkText, obj.bootFrunkSpace || 'N/A'),
+    bhpTorque: validVal(obj.performance?.bhpTorque, obj.bhpTorque || 'N/A'),
+    drivetrain: validVal(obj.performance?.drivetrain, obj.drivetrain || 'FWD'),
+    safetyRating: validVal(obj.safety?.safetyRatingText, obj.safetyRating || 'N/A'),
     imageUrl: obj.imageUrl || obj.media?.mainImage || '',
     galleryImages: obj.galleryImages || obj.media?.gallery || [],
     keyHighlights: obj.keyHighlights || '',
@@ -54,6 +59,7 @@ function toVehicleDTO(doc) {
     seo: obj.seo || {},
 
     status: obj.status || 'Published',
+    publishedAt: obj.publishedAt || obj.createdAt,
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt
   };

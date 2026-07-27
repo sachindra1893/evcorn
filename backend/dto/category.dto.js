@@ -9,12 +9,14 @@ function toCategoryDTO(doc) {
   delete obj._id;
   delete obj.__v;
 
+  const logoUrl = obj.logoUrl || obj.logo || '';
+
   return {
     id: obj.id,
     name: obj.name,
-    logo: obj.logo || '',
-    cloudinaryLogo: obj.cloudinaryLogo || { url: obj.logo || '', public_id: '' },
-    createdAt: obj.createdAt
+    logo: logoUrl,
+    logoUrl: logoUrl,
+    cloudinaryLogo: obj.cloudinaryLogo || { url: logoUrl, public_id: '' }
   };
 }
 

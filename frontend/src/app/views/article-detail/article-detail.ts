@@ -551,16 +551,16 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
     if (article.blocks) {
       article.blocks.forEach(block => {
         if (block.type === 'paragraph' && block.data.text) {
-          wordCount += block.data.text.split(/\\s+/).length;
+          wordCount += block.data.text.split(/\s+/).length;
         } else if (block.type === 'heading' && block.data.text) {
-          wordCount += block.data.text.split(/\\s+/).length;
+          wordCount += block.data.text.split(/\s+/).length;
         } else if (block.type === 'quote' && block.data.text) {
-          wordCount += block.data.text.split(/\\s+/).length;
+          wordCount += block.data.text.split(/\s+/).length;
         }
       });
     } else if (article.paragraphs) {
       article.paragraphs.forEach(p => {
-        wordCount += p.split(/\\s+/).length;
+        wordCount += p.split(/\s+/).length;
       });
     }
     const mins = Math.ceil(wordCount / 200);
@@ -582,8 +582,7 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
     if (typeof document === 'undefined') return;
     const el = document.getElementById(id);
     if (el) {
-      const y = el.getBoundingClientRect().top + window.scrollY - 100; // 100px offset for sticky header
-      window.scrollTo({ top: y, behavior: 'smooth' });
+      el.scrollIntoView({ behavior: 'smooth' });
     }
   }
 

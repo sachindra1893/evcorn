@@ -275,10 +275,11 @@ export class ArticlesComponent implements OnInit {
   }
 
   get filteredArticles(): Article[] {
+    const activeArticles = this.articles.filter(art => art.active !== false);
     if (!this.selectedCategory || this.selectedCategory === 'all') {
-      return this.articles;
+      return activeArticles;
     }
-    return this.articles.filter(art => art.categoryId === this.selectedCategory);
+    return activeArticles.filter(art => art.categoryId === this.selectedCategory);
   }
 
   get heroArticle(): Article | null {

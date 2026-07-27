@@ -488,7 +488,6 @@ export class BrowseEvsComponent implements OnInit {
         this.categories = cats;
         this.loading = false;
         this.cdr.detectChanges();
-        this.loadTopRangeEvs();
       },
       error: (err) => {
         console.error('Failed to load categories', err);
@@ -604,6 +603,27 @@ export class BrowseEvsComponent implements OnInit {
         });
         
         this.modelCards = Array.from(uniqueModels.values());
+        
+        // Compute top range EVs directly from light index without extra API call
+        const parsed = vehicles.map(v => {
+          let rangeNum = 0;
+          const item = v as any;
+          const rangeText = item.performance?.rangeText || item.range;
+          if (rangeText) {
+            const match = String(rangeText).match(/\d+(\.\d+)?/);
+            if (match) rangeNum = parseFloat(match[0]);
+          }
+          return { ...v, rangeNum };
+        });
+        const dedupedMap = new Map<string, any>();
+        parsed.sort((a, b) => b.rangeNum - a.rangeNum).forEach(v => {
+          const pModel = v.parentModel || v.name;
+          if (!dedupedMap.has(pModel)) {
+            dedupedMap.set(pModel, v);
+          }
+        });
+        this.topRangeEvs = Array.from(dedupedMap.values()).slice(0, 5);
+
         this.vehiclesLoaded = true;
         this.loadingVehicles = false;
         this.cdr.detectChanges();
