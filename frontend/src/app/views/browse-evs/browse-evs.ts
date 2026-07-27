@@ -89,8 +89,8 @@ import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils'
                 @for (car of getFilteredModels(); track car.id) {
                   <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card">
                     <div class="model-image-container">
-                      <img [src]="getOptimizedUrl(car.imageUrl, 600)" 
-                           (error)="onImgError($event)"
+                      <img [src]="getOptimizedUrl(car.imageUrl, 600, car.parentModel || car.name)" 
+                           (error)="onImgError($event, car.parentModel || car.name)"
                            loading="lazy"
                            decoding="async"
                            class="model-thumb" alt="Vehicle Image">
@@ -125,8 +125,8 @@ import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils'
                     </div>
 
                     <div class="model-image-container">
-                      <img [src]="getOptimizedUrl(car.imageUrl, 600)" 
-                           (error)="onImgError($event)"
+                      <img [src]="getOptimizedUrl(car.imageUrl, 600, car.parentModel || car.name)" 
+                           (error)="onImgError($event, car.parentModel || car.name)"
                            loading="lazy"
                            decoding="async"
                            class="model-thumb" alt="Vehicle Image">
@@ -498,12 +498,12 @@ export class BrowseEvsComponent implements OnInit {
     });
   }
 
-  getOptimizedUrl(url: string | undefined | null, width?: number): string {
-    return getOptimizedImageUrl(url, width);
+  getOptimizedUrl(url: string | undefined | null, width?: number, modelName?: string): string {
+    return getOptimizedImageUrl(url, width, modelName);
   }
 
-  onImgError(event: Event): void {
-    handleImageError(event);
+  onImgError(event: Event, modelName?: string): void {
+    handleImageError(event, modelName);
   }
 
   loadTopRangeEvs() {

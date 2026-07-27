@@ -93,8 +93,8 @@ interface OverviewData {
               <div class="hero-visual" style="position: relative;">
                 <div class="gallery-container" style="position: relative; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 20px; background: #FAFAFC; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 12px 30px rgba(0,0,0,0.04);">
                   
-                  <img [src]="getOptimizedUrl(activeImageUrl, 1200)" 
-                       (error)="onImgError($event)" 
+                  <img [src]="getOptimizedUrl(activeImageUrl, 1200, modelName)" 
+                       (error)="onImgError($event, modelName)" 
                        class="hero-image" 
                        loading="lazy"
                        decoding="async"
@@ -743,8 +743,8 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   galleryImages: string[] = [];
   activeImageIndex = 0;
 
-  getOptimizedUrl(url: string | undefined | null, width?: number): string {
-    return getOptimizedImageUrl(url, width);
+  getOptimizedUrl(url: string | undefined | null, width?: number, modelName?: string): string {
+    return getOptimizedImageUrl(url, width, modelName || this.modelName);
   }
 
   get activeImageUrl(): string {
@@ -814,8 +814,8 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
     );
   }
 
-  onImgError(event: Event): void {
-    handleImageError(event);
+  onImgError(event: Event, modelName?: string): void {
+    handleImageError(event, modelName || this.modelName);
   }
 
   ngOnDestroy() {
