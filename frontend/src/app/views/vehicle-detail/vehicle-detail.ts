@@ -39,8 +39,14 @@ interface OverviewData {
         </div>
       } @else if (error) {
         <div class="error-container" style="margin-top: 100px; text-align: center; position: relative; z-index: 1;">
-          <h2>Vehicle Not Found</h2>
-          <p>We couldn't find the EV you're looking for.</p>
+          @if (errorKind === 'network') {
+            <h2>Unable to Load Vehicle Data</h2>
+            <p>Please try again in a few moments.</p>
+            <button type="button" (click)="retryLoad()" class="back-link" style="background: none; border: none; font: inherit; cursor: pointer; color: #0284C7; text-decoration: underline; margin-right: 16px;">↻ Try Again</button>
+          } @else {
+            <h2>Vehicle Not Found</h2>
+            <p>We couldn't find the EV you're looking for.</p>
+          }
           <a routerLink="/evs" class="back-link">← Back to Catalog</a>
         </div>
       } @else if (brand) {
@@ -728,9 +734,13 @@ interface OverviewData {
 })
 export class VehicleDetailComponent implements OnInit, OnDestroy {
   private sub = new Subscription();
-  private loadingSafetyTimer: ReturnType<typeof setTimeout> | null = null;
+  private dataSub: Subscription | null = null;
+  private currentBrandSlug: string | null = null;
+  private currentModelSlug: string | null = null;
   loading = true;
   error = false;
+  /** Distinguishes a confirmed-missing vehicle from a network/backend failure so the message and retry action are accurate (Task 12). */
+  errorKind: 'notFound' | 'network' = 'notFound';
   safetyExpanded = false;
   entertainmentExpanded = false;
   chargingExpanded = false;
@@ -809,7 +819,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
         if (brandSlug && modelSlug) {
           this.loadModelData(brandSlug, modelSlug);
         } else {
-          this.handleError();
+          this.handleError('notFound');
         }
       })
     );
@@ -821,21 +831,25 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.sub.unsubscribe();
-    this.clearLoadingSafetyTimer();
+    this.dataSub?.unsubscribe();
   }
 
-  private clearLoadingSafetyTimer() {
-    if (this.loadingSafetyTimer !== null) {
-      clearTimeout(this.loadingSafetyTimer);
-      this.loadingSafetyTimer = null;
-    }
-  }
-
-  private handleError() {
-    this.clearLoadingSafetyTimer();
+  private handleError(kind: 'notFound' | 'network') {
+    this.errorKind = kind;
     this.error = true;
     this.loading = false;
     this.cdr.detectChanges();
+  }
+
+  retryLoad() {
+    if (this.currentBrandSlug && this.currentModelSlug) {
+      // The underlying BlogDataService caches are BehaviorSubjects that
+      // terminate permanently on a network error, so a bare re-subscribe
+      // would just replay the same stale failure. Clearing forces a fresh
+      // network attempt, which is what a "Try Again" button must do.
+      this.blogData.clearAllCaches();
+      this.loadModelData(this.currentBrandSlug, this.currentModelSlug);
+    }
   }
   
   slugify(text: string): string {
@@ -848,58 +862,64 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   }
 
   private loadModelData(brandSlug: string, modelSlug: string) {
+    this.currentBrandSlug = brandSlug;
+    this.currentModelSlug = modelSlug;
     this.loading = true;
     this.error = false;
 
-    // Defense-in-depth safety net (not the root-cause fix — that's the
-    // backend's status filter — but a second, independent layer): if
-    // categories/vehicles are legitimately empty (network failure that
-    // resolves as an empty success payload rather than an HTTP error, an API
-    // regression, a filter bug, etc.), the `next` handler below intentionally
-    // just "waits" for another emission that will never come, which used to
-    // leave `loading` stuck at `true` forever with no way out. Cap the wait
-    // so the page always resolves to a definite state within a bounded time
-    // instead of spinning indefinitely. 20s comfortably covers the cold-start
-    // retry sequence (up to 2 retries with 2s/4s backoff) plus normal network
-    // latency.
-    this.clearLoadingSafetyTimer();
-    this.loadingSafetyTimer = setTimeout(() => {
-      if (this.loading) {
-        this.handleError();
-      }
-    }, 20000);
-    
-    // Fetch categories and ALL full vehicle specs simultaneously.
-    // Using combineLatest ensures we render instantly from cache, and re-render when fresh data arrives.
-    this.sub.add(
-      combineLatest({
-        categories: this.blogData.getCategories(),
-        allVehicles: this.blogData.getVehicles()
-      }).subscribe({
-      next: ({ categories, allVehicles }) => {
-        // If cache is empty, just wait. The network response will trigger this again.
-        if (categories.length === 0 || allVehicles.length === 0) return;
+    // Dedicated subscription (rather than added to `this.sub`) so a manual
+    // retry cleanly replaces the previous attempt instead of accumulating a
+    // new listener on every click.
+    this.dataSub?.unsubscribe();
 
-        this.brand = categories.find(c => this.slugify(c.name) === brandSlug) || null;
+    // AsyncState-driven: each source resolves to an explicit loading /
+    // success / empty / error / timeout / offline status instead of a plain
+    // array, so "network confirmed this is empty" is known immediately
+    // rather than guessed at via a timeout. This is the root-cause fix that
+    // replaced the old 20s safety timer entirely.
+    this.dataSub =
+      combineLatest({
+        categories: this.blogData.getCategoriesState(),
+        allVehicles: this.blogData.getVehiclesState()
+      }).subscribe(({ categories, allVehicles }) => {
+        // Still waiting on one or both sources to resolve for the first time.
+        if (categories.status === 'loading' || allVehicles.status === 'loading') return;
+
+        // Either source confirmed a failure - show a network error state
+        // with a retry action instead of waiting forever or misreporting it
+        // as "Vehicle Not Found".
+        if (categories.status !== 'success' && categories.status !== 'empty') {
+          this.handleError('network');
+          return;
+        }
+        if (allVehicles.status !== 'success' && allVehicles.status !== 'empty') {
+          this.handleError('network');
+          return;
+        }
+
+        const categoriesData = categories.status === 'success' ? categories.data : [];
+        const vehiclesData = allVehicles.status === 'success' ? allVehicles.data : [];
+
+        this.brand = categoriesData.find(c => this.slugify(c.name) === brandSlug) || null;
         if (!this.brand) {
-          this.handleError();
+          this.handleError('notFound');
           return;
         }
         
         // Filter out the sibling variants belonging to this model
-        const modelVariants = allVehicles.filter(v => 
+        const modelVariants = vehiclesData.filter(v => 
           v.categoryId === this.brand!.id && 
           this.slugify(v.parentModel || v.name) === modelSlug
         );
         
         if (modelVariants.length === 0) {
-          this.handleError();
+          this.handleError('notFound');
           return;
         }
 
         const validSpecs = modelVariants.filter(s => s && s.id);
         if (validSpecs.length === 0) {
-          this.handleError();
+          this.handleError('notFound');
           return;
         }
         
@@ -925,13 +945,9 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
             this.calculateOverview(validSpecs);
             this.updateSEO();
             
-            this.clearLoadingSafetyTimer();
             this.loading = false;
             this.cdr.detectChanges();
-      },
-      error: () => this.handleError()
-    })
-    );
+      });
   }
 
   private calculateOverview(variants: CarSpec[]) {
