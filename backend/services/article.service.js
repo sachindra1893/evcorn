@@ -9,14 +9,36 @@ const { parseQueryParams, buildArticleFilterQuery, formatResponse } = require('.
 const { toArticleDTO, toArticleListDTO } = require('../dto/article.dto');
 const { NotFoundError } = require('../errors/AppError');
 const appCache = require('../utils/cache');
+const perf = require('../utils/perf');
 
 // Light projection: return only fields needed for article listing cards
-// Exclude heavy body content (paragraphs, blocks) to cut payload by ~90%
+// Exclude heavy body content (paragraphs, blocks) to cut payload by ~90%.
+// `media` / `cloudinaryImage` are legacy mirrors of `imageUrl` and, for
+// articles whose image was stored as an inline base64 data URI instead of a
+// Cloudinary URL, each mirror re-embeds the full image (tens of KB to 200+KB)
+// a second and third time. They are excluded here — nothing in the frontend
+// reads them for listing cards — so Mongo never even transfers that data.
 const ARTICLE_LIGHT_PROJECTION = {
   paragraphs: 0,
   blocks: 0,
   revisions: 0,
   'audit.archivedAt': 0,
+  media: 0,
+  cloudinaryImage: 0,
+  cloudinaryImages: 0,
+};
+
+// Single-article (detail-page) projection: keep body content (paragraphs/
+// blocks) since the detail page renders them, but still drop the legacy
+// media/cloudinaryImage mirrors — the DTO no longer reads them (see
+// dto/article.dto.js), so there's no reason to pull tens-to-hundreds of KB
+// of duplicate base64 image data out of Mongo just to discard it.
+const ARTICLE_SINGLE_PROJECTION = {
+  revisions: 0,
+  'audit.archivedAt': 0,
+  media: 0,
+  cloudinaryImage: 0,
+  cloudinaryImages: 0,
 };
 
 class ArticleService {
@@ -64,17 +86,25 @@ class ArticleService {
   }
 
   async getArticleById(id) {
+    perf.mark('service_entry');
     const cacheKey = appCache.KEYS.ARTICLE_SINGLE(id);
     const cached = appCache.get(cacheKey);
-    if (cached !== undefined) return cached;
+    perf.mark('cache_lookup');
+    if (cached !== undefined) {
+      perf.mark('cache_hit');
+      return cached;
+    }
 
-    const doc = await articleRepository.findById(id);
+    const doc = await articleRepository.findById(id, ARTICLE_SINGLE_PROJECTION);
+    perf.mark('mongo_query');
     if (!doc) {
       throw new NotFoundError(`Article with id "${id}" not found`);
     }
 
     const result = toArticleDTO(doc);
+    perf.mark('dto_serialize');
     appCache.set(cacheKey, result, appCache.TTL.ARTICLE_SINGLE);
+    perf.mark('cache_store');
     return result;
   }
 

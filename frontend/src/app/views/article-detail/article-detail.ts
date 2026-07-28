@@ -9,13 +9,30 @@ import { BlockRendererComponent } from '../../components/block-renderer/block-re
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { CommonModule } from '@angular/common';
 
+type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
+
 @Component({
   selector: 'app-article-detail',
   standalone: true,
   imports: [RouterLink, BlockRendererComponent, CommonModule, BreadcrumbComponent],
   template: `
     <div class="article-page animate-premium-fade">
-      @if (loadedArticles.length > 0) {
+      @if (state === 'loading') {
+        <div class="article-container" aria-busy="true" aria-live="polite">
+          <div class="banner-container skeleton-block"></div>
+          <div class="article-content">
+            <div class="skeleton-line skeleton-breadcrumb"></div>
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-title short"></div>
+            <div class="skeleton-line skeleton-meta"></div>
+            <div class="skeleton-line skeleton-paragraph"></div>
+            <div class="skeleton-line skeleton-paragraph"></div>
+            <div class="skeleton-line skeleton-paragraph short"></div>
+            <div class="skeleton-line skeleton-paragraph"></div>
+            <div class="skeleton-line skeleton-paragraph medium"></div>
+          </div>
+        </div>
+      } @else if (state === 'loaded' && loadedArticles.length > 0) {
         @for (article of loadedArticles; track article.id) {
           <div class="article-container">
             @if (article.imageUrl) {
@@ -168,6 +185,58 @@ import { CommonModule } from '@angular/common';
     }
     .not-found {
       text-align: center;
+    }
+
+    /* Loading skeleton */
+    .skeleton-block {
+      background: linear-gradient(90deg, #EEF1F4 25%, #E4E8EC 37%, #EEF1F4 63%);
+      background-size: 400% 100%;
+      animation: skeleton-shimmer 1.4s ease infinite;
+    }
+    .skeleton-line {
+      height: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      background: linear-gradient(90deg, #EEF1F4 25%, #E4E8EC 37%, #EEF1F4 63%);
+      background-size: 400% 100%;
+      animation: skeleton-shimmer 1.4s ease infinite;
+    }
+    .skeleton-breadcrumb {
+      width: 40%;
+      height: 14px;
+      margin-bottom: 24px;
+    }
+    .skeleton-title {
+      width: 90%;
+      height: 30px;
+      margin-bottom: 12px;
+    }
+    .skeleton-title.short {
+      width: 55%;
+      margin-bottom: 25px;
+    }
+    .skeleton-meta {
+      width: 45%;
+      height: 14px;
+      margin-bottom: 25px;
+    }
+    .skeleton-paragraph {
+      width: 100%;
+    }
+    .skeleton-paragraph.short {
+      width: 65%;
+    }
+    .skeleton-paragraph.medium {
+      width: 80%;
+    }
+    @keyframes skeleton-shimmer {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0 50%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton-block, .skeleton-line {
+        animation: none;
+      }
     }
     .category-tag {
       display: inline-block;
@@ -455,6 +524,14 @@ import { CommonModule } from '@angular/common';
 })
 export class ArticleDetailComponent implements OnInit, OnDestroy {
   private sub = new Subscription();
+  /**
+   * Explicit tri-state instead of inferring "not found" from an empty array.
+   * `loadedArticles` starts empty every time (before this fix, the template
+   * treated "empty" and "confirmed missing" identically, so it rendered
+   * "Article Not Found" for the ~2-3s the network request was in flight,
+   * then swapped to the real article once the response arrived).
+   */
+  state: ArticleLoadState = 'loading';
   loadedArticles: Article[] = [];
   articlesQueue: Article[] = [];
   vehicles: any[] = [];
@@ -480,37 +557,60 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
     this.sub.add(
       this.route.paramMap.subscribe(params => {
         const id = params.get('id');
-        if (id) {
-          this.sub.add(
-            this.dataService.getArticleById(id).subscribe({
-              next: (article) => {
-                if (!article) return;
-                // Restore blocks from the serialized payload if the backend stripped the blocks array
-                if ((!article.blocks || article.blocks.length === 0) && article.paragraphs && article.paragraphs.length > 0) {
-                  if (article.paragraphs[0].startsWith('__EVBLOCKS__')) {
-                    try {
-                      article.blocks = JSON.parse(article.paragraphs[0].substring(12));
-                      article.paragraphs.shift(); // Remove the serialized block from paragraphs array
-                    } catch (e) {
-                      console.error('Failed to parse serialized blocks', e);
-                    }
+        if (!id) {
+          this.state = 'notFound';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        // Reset for every new article id (e.g. navigating from one article's
+        // "Keep Reading" link to another re-uses this component instance).
+        this.state = 'loading';
+        this.loadedArticles = [];
+        this.errorMessage = '';
+        this.cdr.detectChanges();
+
+        this.sub.add(
+          this.dataService.getArticleById(id).subscribe({
+            next: (article) => {
+              // getArticleById seeds its observable with the last localStorage
+              // snapshot (or `null` if none exists) so it can emit synchronously
+              // before the network request resolves. A `null` here just means
+              // "no cached snapshot yet" — it is NOT confirmation the article is
+              // missing, so we stay in the `loading` state and wait for either a
+              // real article (this same `next`) or a confirmed failure (`error`).
+              if (!article) return;
+
+              // Restore blocks from the serialized payload if the backend stripped the blocks array
+              if ((!article.blocks || article.blocks.length === 0) && article.paragraphs && article.paragraphs.length > 0) {
+                if (article.paragraphs[0].startsWith('__EVBLOCKS__')) {
+                  try {
+                    article.blocks = JSON.parse(article.paragraphs[0].substring(12));
+                    article.paragraphs.shift(); // Remove the serialized block from paragraphs array
+                  } catch (e) {
+                    console.error('Failed to parse serialized blocks', e);
                   }
                 }
-
-                this.loadedArticles = [article];
-                this.errorMessage = '';
-                this.updateSEOMetadata(article);
-                this.cdr.detectChanges();
-              },
-              error: (err) => {
-                this.errorMessage = err.message || JSON.stringify(err);
-                this.loadedArticles = [];
-                this.updateSEOMetadata(null);
-                this.cdr.detectChanges();
               }
-            })
-          );
-        }
+
+              this.loadedArticles = [article];
+              this.errorMessage = '';
+              this.state = 'loaded';
+              this.updateSEOMetadata(article);
+              this.cdr.detectChanges();
+            },
+            error: (err) => {
+              // Only reached once the API request has actually completed and
+              // failed (404 for a missing article, or another confirmed error) —
+              // this is the sole path that is allowed to show "Article Not Found".
+              this.errorMessage = err.message || JSON.stringify(err);
+              this.loadedArticles = [];
+              this.state = 'notFound';
+              this.updateSEOMetadata(null);
+              this.cdr.detectChanges();
+            }
+          })
+        );
       })
     );
   }

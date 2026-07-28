@@ -35,7 +35,7 @@ class ArticleRepository {
     return await Article.countDocuments(filterQuery);
   }
 
-  async findById(id) {
+  async findById(id, projection = null) {
     if (isLocalFileDb()) {
       const articles = fileDb.getArticles();
       return articles.find(a => a.id === id) || null;
@@ -45,7 +45,7 @@ class ArticleRepository {
     if (!mongoose.isValidObjectId(id)) {
       return null;
     }
-    return await Article.findById(id).lean();
+    return await Article.findById(id, projection).lean();
   }
 
   async create(articleData) {

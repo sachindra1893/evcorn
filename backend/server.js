@@ -20,23 +20,34 @@ const errorHandler = require('./middlewares/error.middleware');
 const { sanitizeInput } = require('./middlewares/sanitize.middleware');
 const { apiLimiter } = require('./middlewares/rateLimit.middleware');
 const Article = require('./models/Article');
+const perf = require('./utils/perf');
 
 const app = express();
+
+// 0. Performance Trace Start (must be the very first middleware so every
+// subsequent stage — including Helmet/CORS/compression — is accounted for)
+app.use((req, res, next) => {
+  perf.startTrace();
+  next();
+});
 
 // 1. Correlation, Maintenance & Observability Middleware
 app.use(requestIdMiddleware);
 app.use(requestLoggerMiddleware);
 app.use(maintenanceMiddleware);
 app.use(conditionalRequestMiddleware);
+app.use((req, res, next) => { perf.mark('correlation_mw'); next(); });
 
 // 2. Cheap Security Middleware (Helmet)
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
+app.use((req, res, next) => { perf.mark('helmet'); next(); });
 
 // 3. Strict CORS Policy
 app.use(corsMiddleware);
+app.use((req, res, next) => { perf.mark('cors'); next(); });
 
 // 4. Response Compression (Gzip / Brotli Level 6, Threshold > 512 bytes)
 app.use(compression({
@@ -47,13 +58,16 @@ app.use(compression({
     return compression.filter(req, res);
   }
 }));
+app.use((req, res, next) => { perf.mark('compression_setup'); next(); });
 
 // 5. Request Body Parsing & Limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use((req, res, next) => { perf.mark('body_parsers'); next(); });
 
 // 6. MongoDB Operator Injection Sanitization Guard
 app.use(sanitizeInput);
+app.use((req, res, next) => { perf.mark('sanitize'); next(); });
 
 // 7. Enterprise HTTP Cache-Control & CDN Edge Caching Strategy (Pillar II)
 // Granular per-route headers maximise Vercel Edge CDN hit rates.
@@ -124,6 +138,7 @@ app.use((req, res, next) => {
   res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
   next();
 });
+app.use((req, res, next) => { perf.mark('cache_control_mw'); next(); });
 
 
 // Serve development test static files (disabled in production)
@@ -196,7 +211,7 @@ app.get('/', (req, res) => {
 });
 
 // 8. Mount Aggregated Enterprise REST API Router (Protected with API Rate Limiter)
-app.use('/api', apiLimiter, apiRouter);
+app.use('/api', apiLimiter, (req, res, next) => { perf.mark('rate_limiter'); next(); }, apiRouter);
 
 // 9. Centralized Global Error Handling Middleware (Leakage Guard)
 app.use(errorHandler);
