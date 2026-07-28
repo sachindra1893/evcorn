@@ -728,6 +728,7 @@ interface OverviewData {
 })
 export class VehicleDetailComponent implements OnInit, OnDestroy {
   private sub = new Subscription();
+  private loadingSafetyTimer: ReturnType<typeof setTimeout> | null = null;
   loading = true;
   error = false;
   safetyExpanded = false;
@@ -820,9 +821,18 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.sub.unsubscribe();
+    this.clearLoadingSafetyTimer();
   }
-  
+
+  private clearLoadingSafetyTimer() {
+    if (this.loadingSafetyTimer !== null) {
+      clearTimeout(this.loadingSafetyTimer);
+      this.loadingSafetyTimer = null;
+    }
+  }
+
   private handleError() {
+    this.clearLoadingSafetyTimer();
     this.error = true;
     this.loading = false;
     this.cdr.detectChanges();
@@ -840,6 +850,24 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   private loadModelData(brandSlug: string, modelSlug: string) {
     this.loading = true;
     this.error = false;
+
+    // Defense-in-depth safety net (not the root-cause fix — that's the
+    // backend's status filter — but a second, independent layer): if
+    // categories/vehicles are legitimately empty (network failure that
+    // resolves as an empty success payload rather than an HTTP error, an API
+    // regression, a filter bug, etc.), the `next` handler below intentionally
+    // just "waits" for another emission that will never come, which used to
+    // leave `loading` stuck at `true` forever with no way out. Cap the wait
+    // so the page always resolves to a definite state within a bounded time
+    // instead of spinning indefinitely. 20s comfortably covers the cold-start
+    // retry sequence (up to 2 retries with 2s/4s backoff) plus normal network
+    // latency.
+    this.clearLoadingSafetyTimer();
+    this.loadingSafetyTimer = setTimeout(() => {
+      if (this.loading) {
+        this.handleError();
+      }
+    }, 20000);
     
     // Fetch categories and ALL full vehicle specs simultaneously.
     // Using combineLatest ensures we render instantly from cache, and re-render when fresh data arrives.
@@ -897,6 +925,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
             this.calculateOverview(validSpecs);
             this.updateSEO();
             
+            this.clearLoadingSafetyTimer();
             this.loading = false;
             this.cdr.detectChanges();
       },

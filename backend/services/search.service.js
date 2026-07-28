@@ -6,6 +6,7 @@ const articleRepository = require('../repositories/article.repository');
 const categoryRepository = require('../repositories/category.repository');
 const { toVehicleListDTO } = require('../dto/vehicle.dto');
 const { toArticleListDTO } = require('../dto/article.dto');
+const { publishedVehicleStatusFilter } = require('../utils/apiQuery');
 
 class SearchService {
   /**
@@ -24,7 +25,12 @@ class SearchService {
     };
 
     const [vehicles, articles, categories] = await Promise.all([
-      vehicleRepository.findAll({ status: 'Published', $or: [{ name: containsRegex }, { parentModel: containsRegex }] }, 'id name categoryId parentModel imageUrl', { name: 1 }, 0, 5),
+      vehicleRepository.findAll({
+        $and: [
+          publishedVehicleStatusFilter('Published'),
+          { $or: [{ name: containsRegex }, { parentModel: containsRegex }] }
+        ]
+      }, 'id name categoryId parentModel imageUrl', { name: 1 }, 0, 5),
       articleRepository.findAll({ ...articleQueryFilter, title: containsRegex }, 'id title categoryId imageUrl', { createdAt: -1 }, 0, 5),
       categoryRepository.findAll()
     ]);
@@ -74,16 +80,24 @@ class SearchService {
     const searchTerm = (q || '').trim().toLowerCase();
     const regex = searchTerm ? new RegExp(searchTerm, 'i') : null;
 
-    const vehicleQuery = { status: 'Published' };
+    const vehicleAndConditions = [publishedVehicleStatusFilter('Published')];
+    const vehicleQuery = {};
     if (filters.category || filters.categoryId) {
       vehicleQuery.categoryId = (filters.category || filters.categoryId).toLowerCase();
     }
     if (regex) {
-      vehicleQuery.$or = [
-        { name: regex },
-        { parentModel: regex },
-        { variantName: regex }
-      ];
+      vehicleAndConditions.push({
+        $or: [
+          { name: regex },
+          { parentModel: regex },
+          { variantName: regex }
+        ]
+      });
+    }
+    if (vehicleAndConditions.length === 1) {
+      Object.assign(vehicleQuery, vehicleAndConditions[0]);
+    } else {
+      vehicleQuery.$and = vehicleAndConditions;
     }
 
     const articleQuery = { active: true, $or: [{ status: 'published' }, { status: { $exists: false } }] };

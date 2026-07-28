@@ -69,10 +69,39 @@ function parseQueryParams(query) {
 }
 
 /**
+ * P0 root cause (Vehicle Detail infinite spinner / Browse EVs empty / Search
+ * returning zero vehicles): the Vehicle schema declares `status` with
+ * `default: 'Published'`, but that default only applies when a document is
+ * constructed *through Mongoose*. The production vehicle collection was
+ * seeded via a script that bypassed the Mongoose model (same root cause
+ * class as the `bodyStyle` field fixed in the Browse EV commit), so `status`
+ * is genuinely absent — not the string `'Published'` — on every existing
+ * document. An exact-match query for `{ status: 'Published' }` therefore
+ * matches zero documents, even though the DTO's own read-side fallback
+ * (`obj.status || 'Published'`) already treats a missing field as Published
+ * for display. This helper makes the *query* side agree with the *display*
+ * side: a request for the default "Published" status also matches documents
+ * where the field was never persisted. Requests for the other explicit enum
+ * values (Upcoming/Discontinued) are unaffected — those are genuine,
+ * intentional states that a missing field should never satisfy.
+ */
+function publishedVehicleStatusFilter(status) {
+  if (status === 'Published') {
+    return { $or: [{ status: 'Published' }, { status: { $exists: false } }] };
+  }
+  return { status };
+}
+
+/**
  * Build Mongoose Filter Query from HTTP Request Query
  */
 function buildVehicleFilterQuery(query) {
   const mongoQuery = {};
+  // Collected separately (not written straight onto mongoQuery) because both
+  // the status tolerance and the search keyword filter below need their own
+  // top-level $or — writing both directly would let the second silently
+  // clobber the first. Combined into $and at the end if more than one exists.
+  const andConditions = [];
 
   // Brand / Category filter
   if (query.brand || query.categoryId || query.category) {
@@ -86,7 +115,12 @@ function buildVehicleFilterQuery(query) {
 
   // Status filter
   if (query.status) {
-    mongoQuery.status = query.status;
+    const statusFilter = publishedVehicleStatusFilter(query.status);
+    if (statusFilter.$or) {
+      andConditions.push(statusFilter);
+    } else {
+      Object.assign(mongoQuery, statusFilter);
+    }
   }
 
   // Price Min/Max Range ($gte, $lte)
@@ -119,11 +153,19 @@ function buildVehicleFilterQuery(query) {
   // Search Keyword Filter
   if (query.search && typeof query.search === 'string') {
     const searchRegex = new RegExp(query.search.trim(), 'i');
-    mongoQuery.$or = [
-      { name: searchRegex },
-      { parentModel: searchRegex },
-      { variantName: searchRegex }
-    ];
+    andConditions.push({
+      $or: [
+        { name: searchRegex },
+        { parentModel: searchRegex },
+        { variantName: searchRegex }
+      ]
+    });
+  }
+
+  if (andConditions.length === 1) {
+    Object.assign(mongoQuery, andConditions[0]);
+  } else if (andConditions.length > 1) {
+    mongoQuery.$and = andConditions;
   }
 
   return mongoQuery;
@@ -207,6 +249,7 @@ module.exports = {
   parseQueryParams,
   buildVehicleFilterQuery,
   buildArticleFilterQuery,
+  publishedVehicleStatusFilter,
   formatResponse,
   ALLOWED_SORT_FIELDS,
   MAX_LIMIT
