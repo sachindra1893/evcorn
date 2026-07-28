@@ -10,3 +10,51 @@
   text-align: center;
   border-bottom: 1px solid #fde68a;
 }
+
+.app-global-notice {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  width: 100%;
+  padding: 10px 16px;
+  background: #0F172A;
+  color: #F8FAFC;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  text-align: center;
+}
+.app-global-notice-message {
+  line-height: 1.4;
+}
+.app-global-notice-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app-global-notice-action {
+  background: #38BDF8;
+  color: #0F172A;
+  border: none;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.app-global-notice-dismiss {
+  background: transparent;
+  border: none;
+  color: #CBD5E1;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.app-global-notice-dismiss:hover {
+  color: #F8FAFC;
+}

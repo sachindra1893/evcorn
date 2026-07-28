@@ -1,6 +1,20 @@
-@if (isBackendWaking$ | async) {
+<app-offline-banner></app-offline-banner>
+
+@if (isBackendWaking()) {
   <div class="backend-waking-banner" role="status">
     Waking up the server… this can take up to a minute on the first request. Your content will appear automatically.
+  </div>
+}
+
+@if (notice()) {
+  <div class="app-global-notice" role="alert">
+    <span class="app-global-notice-message">{{ notice()!.message }}</span>
+    <span class="app-global-notice-actions">
+      @if (notice()!.actionLabel) {
+        <button type="button" class="app-global-notice-action" (click)="runNoticeAction()">{{ notice()!.actionLabel }}</button>
+      }
+      <button type="button" class="app-global-notice-dismiss" (click)="dismissNotice()" aria-label="Dismiss">×</button>
+    </span>
   </div>
 }
 
