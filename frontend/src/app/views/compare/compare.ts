@@ -64,9 +64,15 @@ import { RouterLink } from '@angular/router';
         <div class="loading-overlay">
           <div class="spinner"></div>
           <p>Connecting to database...</p>
-          @if (error) {
+          @if (retrying) {
             <p class="retry-hint">Server is waking up (takes about 30 seconds). Retrying automatically...</p>
           }
+        </div>
+      } @else if (error) {
+        <div class="loading-overlay">
+          <p style="font-weight: 700; color: #0F172A; margin-bottom: 8px;">Unable to Load Comparison Data</p>
+          <p class="retry-hint" style="margin-bottom: 20px;">Please check your connection and try again.</p>
+          <button type="button" (click)="retryLoad()" class="add-col-card" style="width: auto; height: auto; padding: 12px 24px; flex-direction: row; gap: 8px;">↻ Try Again</button>
         </div>
       } @else {
         <div class="compare-dropdowns">
@@ -881,6 +887,9 @@ export class CompareComponent implements OnInit {
   
   loading = true;
   error = false;
+  retrying = false;
+  private retryAttempts = 0;
+  private readonly MAX_RETRY_ATTEMPTS = 3;
 
   constructor(
     private dataService: BlogDataService, 
@@ -958,6 +967,9 @@ export class CompareComponent implements OnInit {
   }
 
   loadData() {
+    this.loading = true;
+    this.error = false;
+
     // All data loaded from STATIC files on Vercel CDN.
     // Zero backend calls. Zero lag. Specs show instantly.
     this.http.get<any[]>('/data/categories.json').subscribe({
@@ -975,6 +987,8 @@ export class CompareComponent implements OnInit {
                   return acc;
                 }, {} as Record<string, CarSpec>);
 
+                this.retryAttempts = 0;
+                this.retrying = false;
                 this.loading = false;
 
                 // Auto-populate dropdowns for pre-selected cars from shared URL
@@ -999,6 +1013,11 @@ export class CompareComponent implements OnInit {
     });
   }
 
+  retryLoad() {
+    this.retryAttempts = 0;
+    this.loadData();
+  }
+
   // Fetch full specs for a single car only when needed, cache result
   fetchCarDetails(carId: string) {
     if (!carId || this.carsMap[carId]) return; // already cached
@@ -1014,11 +1033,26 @@ export class CompareComponent implements OnInit {
     });
   }
 
-  scheduleRetry() {
-    this.error = true;
+  private scheduleRetry() {
+    this.retryAttempts++;
+
+    // Bounded retry with exponential backoff (Task 4) - after
+    // MAX_RETRY_ATTEMPTS, stop and surface a terminal error state with a
+    // manual "Try Again" action instead of retrying forever (Task 11).
+    if (this.retryAttempts > this.MAX_RETRY_ATTEMPTS) {
+      this.retrying = false;
+      this.loading = false;
+      this.error = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.retrying = true;
+    this.cdr.detectChanges();
+    const backoffMs = 1000 * 2 ** (this.retryAttempts - 1);
     setTimeout(() => {
       this.loadData();
-    }, 3000);
+    }, backoffMs);
   }
 
   updateSEOMetadata() {
