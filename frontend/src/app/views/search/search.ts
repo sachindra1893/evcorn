@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { BlogDataService } from '../../services/blog-data.service';
+import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 
 interface SearchItem {
   type: 'article' | 'company' | 'vehicle';
@@ -19,7 +20,7 @@ interface SearchItem {
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, ErrorStateComponent],
   template: `
     <div class="search-page">
       <h1>Search EVCorn</h1>
@@ -52,7 +53,16 @@ interface SearchItem {
       </div>
 
       <div class="results-container">
-        @if (filteredItems.length > 0) {
+        @if (loadState === 'loading') {
+          <div class="no-results" aria-busy="true" aria-live="polite">
+            <p>Loading search results…</p>
+          </div>
+        } @else if (loadState === 'error') {
+          <app-error-state
+            message="Unable to load search results right now. Please try again in a few moments."
+            (retry)="loadSearchArticles()">
+          </app-error-state>
+        } @else if (filteredItems.length > 0) {
           <div class="results-grid">
             @for (item of filteredItems; track item.id) {
               @if (item.type === 'article') {
@@ -325,6 +335,20 @@ export class SearchComponent implements OnInit {
   activeFilter: 'all' | 'article' | 'company' = 'all';
   selectedCompany: SearchItem | null = null;
 
+  /** True once each source's request has settled (succeeded or failed) at least once. */
+  private articlesSettled = false;
+  private vehiclesSettled = false;
+  private articlesFailed = false;
+  private vehiclesFailed = false;
+
+  get loadState(): 'loading' | 'loaded' | 'error' {
+    if (!this.articlesSettled || !this.vehiclesSettled) return 'loading';
+    // Only show a terminal error if BOTH sources failed - a partial failure
+    // still has useful results to show (companies + whichever source succeeded).
+    if (this.articlesFailed && this.vehiclesFailed) return 'error';
+    return 'loaded';
+  }
+
   searchItems: SearchItem[] = [
     {
       type: 'company',
@@ -367,7 +391,8 @@ export class SearchComponent implements OnInit {
     private dataService: BlogDataService,
     private seoService: SeoService,
     private schemaService: SchemaService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -397,6 +422,11 @@ export class SearchComponent implements OnInit {
   }
 
   loadSearchArticles() {
+    this.articlesSettled = false;
+    this.vehiclesSettled = false;
+    this.articlesFailed = false;
+    this.vehiclesFailed = false;
+
     // Load articles
     this.dataService.getArticlesLight().subscribe({
       next: (articles) => {
@@ -411,8 +441,14 @@ export class SearchComponent implements OnInit {
         
         const nonArticles = this.searchItems.filter(item => item.type !== 'article');
         this.searchItems = [...nonArticles, ...articleSearchItems];
+        this.articlesSettled = true;
+        this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => {
+        this.articlesSettled = true;
+        this.articlesFailed = true;
+        this.cdr.detectChanges();
+      }
     });
 
     // Load vehicles for search
@@ -437,8 +473,14 @@ export class SearchComponent implements OnInit {
 
         const nonVehicles = this.searchItems.filter(item => item.type !== 'vehicle');
         this.searchItems = [...nonVehicles, ...vehicleSearchItems];
+        this.vehiclesSettled = true;
+        this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => {
+        this.vehiclesSettled = true;
+        this.vehiclesFailed = true;
+        this.cdr.detectChanges();
+      }
     });
   }
 

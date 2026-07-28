@@ -7,11 +7,12 @@ import { BlogDataService, Article } from '../../services/blog-data.service';
 import { getOptimizedImageUrl } from '../../utils/image.utils';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, FormsModule, CommonModule],
+  imports: [RouterLink, FormsModule, CommonModule, ErrorStateComponent],
   template: `
     <section class="hero">
       <!-- Animated Background and Vignette Overlay -->
@@ -763,19 +764,36 @@ import { RouterLink } from '@angular/router';
 
     <section class="section articles" id="articles">
       <h2>Latest Insights</h2>
-      <div class="grid animate-premium-fade">
-        @for (art of latestArticles; track art.id) {
-          <a class="card" [routerLink]="['/articles', art.id]" style="display: block; text-decoration: none; color: inherit; cursor: pointer;">
-            <h3>{{ art.title }}</h3>
-            <p>{{ art.description }}</p>
-          </a>
-        } @empty {
-          <div class="card">
-            <h3>No Insights Yet</h3>
-            <p>Stay tuned for upcoming EV insights and comparisons!</p>
-          </div>
-        }
-      </div>
+      @if (articlesState === 'loading') {
+        <div class="grid animate-premium-fade">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="card skeleton-card" aria-hidden="true">
+              <div class="skeleton-line" style="width: 70%; height: 20px;"></div>
+              <div class="skeleton-line" style="width: 100%; height: 14px; margin-top: 14px;"></div>
+              <div class="skeleton-line" style="width: 85%; height: 14px;"></div>
+            </div>
+          }
+        </div>
+      } @else if (articlesState === 'error') {
+        <app-error-state
+          message="Unable to load the latest insights right now. Please try again in a few moments."
+          (retry)="loadData()">
+        </app-error-state>
+      } @else {
+        <div class="grid animate-premium-fade">
+          @for (art of latestArticles; track art.id) {
+            <a class="card" [routerLink]="['/articles', art.id]" style="display: block; text-decoration: none; color: inherit; cursor: pointer;">
+              <h3>{{ art.title }}</h3>
+              <p>{{ art.description }}</p>
+            </a>
+          } @empty {
+            <div class="card">
+              <h3>No Insights Yet</h3>
+              <p>Stay tuned for upcoming EV insights and comparisons!</p>
+            </div>
+          }
+        </div>
+      }
     </section>
 
 
@@ -1152,6 +1170,25 @@ import { RouterLink } from '@angular/router';
       color: #718096;
       font-size: 0.95rem;
     }
+    .skeleton-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      cursor: default;
+    }
+    .skeleton-line {
+      border-radius: 6px;
+      background: linear-gradient(90deg, #EEF1F4 25%, #E4E8EC 37%, #EEF1F4 63%);
+      background-size: 400% 100%;
+      animation: skeleton-shimmer-home 1.4s ease infinite;
+    }
+    @keyframes skeleton-shimmer-home {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0 50%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton-line { animation: none; }
+    }
     a {
       text-decoration: none;
     }
@@ -1177,6 +1214,8 @@ export class HomeComponent implements OnInit {
   allArticlesList: Article[] = [];
   categoriesList: any[] = [];
   searchQuery = '';
+  /** Drives the "Latest Insights" section only - the rest of this page (calculators, quiz) has no server dependency. */
+  articlesState: 'loading' | 'loaded' | 'error' = 'loading';
 
 
 
@@ -1633,6 +1672,8 @@ export class HomeComponent implements OnInit {
   }
 
   loadData() {
+    this.articlesState = 'loading';
+
     // Single cached call for articles (light payload for home cards)
     this.dataService.getArticlesLight().subscribe({
       next: (articles) => {
@@ -1645,11 +1686,15 @@ export class HomeComponent implements OnInit {
             return dateB - dateA;
           })
           .slice(0, 3);
+        this.articlesState = 'loaded';
         this.cdr.detectChanges();
       },
       error: () => {
         this.allArticlesList = [];
         this.latestArticles = [];
+        // Distinct from "loaded" so a genuine backend failure shows a
+        // retry-able error instead of silently looking like "no articles yet".
+        this.articlesState = 'error';
         this.cdr.detectChanges();
       }
     });
