@@ -1,9 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, timer } from 'rxjs';
-import { shareReplay, map, catchError, retry } from 'rxjs/operators';
+import { Observable, BehaviorSubject, combineLatest, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import { ArticleBlock } from '../models/blocks.model';
+import { getApiBaseUrl } from '../core/http/api-base-url';
+import { AsyncState, isEmptyValue } from '../core/async-state/async-state';
+import { classifyHttpError } from '../core/http/app-http-error';
 
 export interface Category {
   id: string; // e.g. 'tesla'
@@ -185,47 +188,29 @@ export interface CarSpec {
   providedIn: 'root'
 })
 export class BlogDataService {
-  private readonly apiUrl = (() => {
-    if (typeof window === 'undefined') {
-      return 'http://localhost:3000/api';
-    }
-    const host = window.location.hostname;
-    const isLocal = host === 'localhost' || 
-                    host === '127.0.0.1' || 
-                    host.startsWith('10.') || 
-                    host.startsWith('192.') || 
-                    host.startsWith('172.');
-    return isLocal 
-      ? `http://${host}:3000/api` 
-      : 'https://evcorn-backend.onrender.com/api';
-  })();
+  private readonly apiUrl = getApiBaseUrl();
 
   // Caches for read-heavy static data
   private categoriesCache$: Observable<Category[]> | null = null;
   private articlesLightCache$: Observable<Partial<Article>[]> | null = null;
   private vehiclesLightCache$: Observable<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel'>[]> | null = null;
 
+  // Tracks whether the underlying network call for each cache has settled
+  // (succeeded or failed) at least once, so AsyncState-aware consumers
+  // (getCategoriesState()/getVehiclesState()) can tell "not loaded yet" apart
+  // from "network confirmed this is genuinely empty" - the ambiguity that
+  // previously required a 20s guess-and-wait timer in vehicle-detail.ts.
+  private readonly categoriesSettled$ = new BehaviorSubject<boolean>(false);
+  private readonly allVehiclesSettled$ = new BehaviorSubject<boolean>(false);
+
   constructor(private http: HttpClient) {}
 
   /**
-   * Root-Cause Cluster F (frontend handling): the backend (Render free tier)
-   * sleeps after inactivity and can take 15-45s to wake, so the very first
-   * request after any idle period used to fail outright — every page then
-   * silently rendered its empty state with no indication anything was wrong.
-   * This retries a couple of times with a growing delay so a cold-start
-   * failure resolves itself instead of turning into a permanent blank page.
+   * Retry-on-transient-failure and the "backend waking up" signal are now
+   * handled once, centrally, by httpErrorInterceptor + NetworkStatusService
+   * for every HTTP call in the app - not just these 6 methods. Nothing to
+   * do here anymore beyond making the underlying http.get() call.
    */
-  readonly isRetrying$ = new BehaviorSubject<boolean>(false);
-
-  private coldStartRetry<T>() {
-    return retry<T>({
-      count: 2,
-      delay: (_error: unknown, retryCount: number) => {
-        this.isRetrying$.next(true);
-        return timer(2000 * retryCount);
-      }
-    });
-  }
 
   /**
    * Upload single image file to Cloudinary via POST /api/upload
@@ -302,17 +287,14 @@ export class BlogDataService {
       const cached = this.loadCache('categories') || [];
       const subject = new BehaviorSubject<Category[]>(cached);
       
-      this.http.get<Category[]>(`${this.apiUrl}/categories`).pipe(
-        this.coldStartRetry(),
-        shareReplay(1)
-      ).subscribe({
+      this.http.get<Category[]>(`${this.apiUrl}/categories`).subscribe({
         next: (data) => {
-          this.isRetrying$.next(false);
+          this.categoriesSettled$.next(true);
           this.saveCache('categories', data);
           subject.next(data);
         },
         error: (err) => {
-          this.isRetrying$.next(false);
+          this.categoriesSettled$.next(true);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -324,11 +306,13 @@ export class BlogDataService {
 
   addCategory(catData: { id: string; name: string }): Observable<Category> {
     this.categoriesCache$ = null;
+    this.categoriesSettled$.next(false);
     return this.http.post<Category>(`${this.apiUrl}/categories`, catData, { headers: this.getHeaders() });
   }
 
   deleteCategory(id: string): Observable<any> {
     this.categoriesCache$ = null;
+    this.categoriesSettled$.next(false);
     return this.http.delete(`${this.apiUrl}/categories/${id}`, { headers: this.getHeaders() });
   }
 
@@ -341,17 +325,12 @@ export class BlogDataService {
       const cached = this.loadCache('articles') || [];
       const subject = new BehaviorSubject<Article[]>(cached);
 
-      this.http.get<Article[]>(`${this.apiUrl}/articles`).pipe(
-        this.coldStartRetry(),
-        shareReplay(1)
-      ).subscribe({
+      this.http.get<Article[]>(`${this.apiUrl}/articles`).subscribe({
         next: (data) => {
-          this.isRetrying$.next(false);
           this.saveCache('articles', data);
           subject.next(data);
         },
         error: (err) => {
-          this.isRetrying$.next(false);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -367,17 +346,12 @@ export class BlogDataService {
       const cached = this.loadCache('articlesLight') || [];
       const subject = new BehaviorSubject<any[]>(cached);
 
-      this.http.get<Partial<Article>[]>(`${this.apiUrl}/articles?light=true`).pipe(
-        this.coldStartRetry(),
-        shareReplay(1)
-      ).subscribe({
+      this.http.get<Partial<Article>[]>(`${this.apiUrl}/articles?light=true`).subscribe({
         next: (data) => {
-          this.isRetrying$.next(false);
           this.saveCache('articlesLight', data);
           subject.next(data);
         },
         error: (err) => {
-          this.isRetrying$.next(false);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -393,19 +367,14 @@ export class BlogDataService {
       const cached = this.loadCache(cachedKey);
       const subject = new BehaviorSubject<Article | null>(cached);
 
-      this.http.get<Article>(`${this.apiUrl}/articles/${id}`).pipe(
-        this.coldStartRetry(),
-        shareReplay(1)
-      ).subscribe({
+      this.http.get<Article>(`${this.apiUrl}/articles/${id}`).subscribe({
         next: (data) => {
-          this.isRetrying$.next(false);
           // NOTE: intentionally left as the pre-existing raw (non-enveloped) write here —
           // that mismatch is Root-Cause Cluster H (Latent), out of scope for this pass.
           try { localStorage.setItem(cachedKey, JSON.stringify(data)); } catch {}
           subject.next(data);
         },
         error: (err) => {
-          this.isRetrying$.next(false);
           if (!cached) subject.error(err);
         }
       });
@@ -445,20 +414,18 @@ export class BlogDataService {
       const subject = new BehaviorSubject<CarSpec[]>(cached);
 
       this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?status=Published`).pipe(
-        this.coldStartRetry(),
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
-        }),
-        shareReplay(1)
+        })
       ).subscribe({
         next: (data) => {
-          this.isRetrying$.next(false);
+          this.allVehiclesSettled$.next(true);
           this.saveCache('allVehicles', data);
           subject.next(data);
         },
         error: (err) => {
-          this.isRetrying$.next(false);
+          this.allVehiclesSettled$.next(true);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -468,6 +435,39 @@ export class BlogDataService {
     return this.allVehiclesCache$;
   }
 
+  /**
+   * AsyncState-aware version of getCategories() for consumers that need to
+   * distinguish "not loaded yet" from "network confirmed empty" without a
+   * timer (see NetworkStatusService/AsyncState docs). Purely additive -
+   * getCategories() itself is unchanged for all existing consumers.
+   */
+  getCategoriesState(): Observable<AsyncState<Category[]>> {
+    return this.toCachedAsyncState(this.getCategories(), this.categoriesSettled$);
+  }
+
+  /** AsyncState-aware version of getVehicles() - see getCategoriesState(). */
+  getVehiclesState(): Observable<AsyncState<CarSpec[]>> {
+    return this.toCachedAsyncState(this.getVehicles(), this.allVehiclesSettled$);
+  }
+
+  private toCachedAsyncState<T>(
+    cache$: Observable<T[]>,
+    settled$: Observable<boolean>
+  ): Observable<AsyncState<T[]>> {
+    return combineLatest([cache$, settled$]).pipe(
+      map(([data, settled]): AsyncState<T[]> => {
+        if (!settled && isEmptyValue(data)) return { status: 'loading' };
+        return isEmptyValue(data) ? { status: 'empty' } : { status: 'success', data };
+      }),
+      catchError((err): Observable<AsyncState<T[]>> => {
+        const classified = classifyHttpError(err, typeof navigator === 'undefined' ? true : navigator.onLine);
+        if (classified.category === 'offline') return of({ status: 'offline' });
+        if (classified.category === 'timeout') return of({ status: 'timeout' });
+        return of({ status: 'error', error: classified });
+      })
+    );
+  }
+
   // Lightweight index — returns only id, name, categoryId for instant dropdown population
   getVehiclesLight(): Observable<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel' | 'variantName' | 'imageUrl' | 'bodyStyle'>[]> {
     if (!this.vehiclesLightCache$) {
@@ -475,20 +475,16 @@ export class BlogDataService {
       const subject = new BehaviorSubject<any[]>(cached);
 
       this.http.get<any[]>(`${this.apiUrl}/vehicles?light=true&status=Published`).pipe(
-        this.coldStartRetry(),
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
-        }),
-        shareReplay(1)
+        })
       ).subscribe({
         next: (data) => {
-          this.isRetrying$.next(false);
           this.saveCache('vehiclesLight', data);
           subject.next(data);
         },
         error: (err) => {
-          this.isRetrying$.next(false);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -661,6 +657,7 @@ export class BlogDataService {
   clearVehicleCache() {
     this.allVehiclesCache$ = null;
     this.vehiclesLightCache$ = null;
+    this.allVehiclesSettled$.next(false);
     try {
       localStorage.removeItem('allVehicles');
       localStorage.removeItem('vehiclesLight');
@@ -674,6 +671,8 @@ export class BlogDataService {
     this.articlesCache$ = null;
     this.articlesLightCache$ = null;
     this.articleByIdCache.clear();
+    this.allVehiclesSettled$.next(false);
+    this.categoriesSettled$.next(false);
     try {
       ['allVehicles', 'vehiclesLight', 'categories', 'articles', 'articlesLight'].forEach(k =>
         localStorage.removeItem(k)
