@@ -945,6 +945,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
             this.calculateOverview(validSpecs);
             this.updateSEO();
             
+            this.error = false;
             this.loading = false;
             this.cdr.detectChanges();
       });

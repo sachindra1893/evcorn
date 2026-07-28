@@ -289,9 +289,11 @@ export class BlogDataService {
       
       this.http.get<Category[]>(`${this.apiUrl}/categories`).subscribe({
         next: (data) => {
-          this.categoriesSettled$.next(true);
           this.saveCache('categories', data);
           subject.next(data);
+          // Settled AFTER the cache emits so AsyncState consumers never see
+          // a transient (empty, settled) race that looks like "confirmed empty".
+          this.categoriesSettled$.next(true);
         },
         error: (err) => {
           this.categoriesSettled$.next(true);
@@ -420,9 +422,10 @@ export class BlogDataService {
         })
       ).subscribe({
         next: (data) => {
-          this.allVehiclesSettled$.next(true);
           this.saveCache('allVehicles', data);
           subject.next(data);
+          // Settled AFTER the cache emits — see getCategories() comment.
+          this.allVehiclesSettled$.next(true);
         },
         error: (err) => {
           this.allVehiclesSettled$.next(true);
