@@ -29,6 +29,8 @@ describe('Reliability, Maintenance & Resilience Tests', () => {
     const res = await request(app).get('/api/vehicles');
     expect(res.statusCode).toBe(503);
     expect(res.body.error.code).toBe('SERVICE_MAINTENANCE');
+    expect(res.body.requestId).toBeDefined();
+    expect(res.body.requestId).not.toBe('N/A');
 
     // Health endpoints bypass maintenance
     const healthRes = await request(app).get('/api/health');
@@ -36,5 +38,15 @@ describe('Reliability, Maintenance & Resilience Tests', () => {
 
     // Reset maintenance mode flag
     delete process.env.MAINTENANCE_MODE;
+  });
+
+  it('Unmatched /api routes should return JSON 404 with requestId', async () => {
+    const res = await request(app).get('/api/this-route-does-not-exist');
+    expect(res.statusCode).toBe(404);
+    expect(res.headers['content-type']).toMatch(/json/);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('NOT_FOUND');
+    expect(res.body.requestId).toBeDefined();
+    expect(res.body.requestId).not.toBe('N/A');
   });
 });
