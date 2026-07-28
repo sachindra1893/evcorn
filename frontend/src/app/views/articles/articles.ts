@@ -7,11 +7,12 @@ import { BlogDataService, Article, Category } from '../../services/blog-data.ser
 import { AuthService } from '../../services/auth.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { getOptimizedImageUrl } from '../../utils/image.utils';
+import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 
 @Component({
   selector: 'app-articles',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent],
+  imports: [RouterLink, BreadcrumbComponent, ErrorStateComponent],
   template: `
     <div class="articles-page animate-premium-fade">
       <div class="articles-header">
@@ -31,6 +32,11 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
             </div>
           }
         </div>
+      } @else if (error) {
+        <app-error-state
+          message="Unable to load insights right now. Please try again in a few moments."
+          (retry)="loadData()">
+        </app-error-state>
       } @else {
         @if (filteredArticles.length > 0) {
           
@@ -167,6 +173,8 @@ export class ArticlesComponent implements OnInit {
   categories: Category[] = [];
   selectedCategory = 'all';
   loading = true;
+  /** Distinguishes a confirmed backend failure from genuinely zero articles (Task 6/8). */
+  error = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -215,6 +223,7 @@ export class ArticlesComponent implements OnInit {
 
   loadData() {
     this.loading = true;
+    this.error = false;
 
     // Load categories
     this.dataService.getCategories().subscribe({
@@ -222,7 +231,10 @@ export class ArticlesComponent implements OnInit {
         this.categories = cats || [];
         this.cdr.detectChanges();
       },
-      error: () => { this.categories = []; }
+      error: () => {
+        this.categories = [];
+        this.cdr.detectChanges();
+      }
     });
 
     // Load lightweight article overview cards (no heavy body content) — 0ms instant load
@@ -237,8 +249,12 @@ export class ArticlesComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
+        // Confirmed network/server failure - distinct from a genuinely empty
+        // catalog, so the user sees a retry-able error instead of "No
+        // insights published yet" (Task 6/8).
         this.articles = [];
         this.loading = false;
+        this.error = true;
         this.cdr.detectChanges();
       }
     });

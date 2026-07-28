@@ -8,6 +8,8 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
 import { BlockRendererComponent } from '../../components/block-renderer/block-renderer.component';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { CommonModule } from '@angular/common';
+import { classifyHttpError } from '../../core/http/app-http-error';
+import { NetworkStatusService } from '../../core/network/network-status.service';
 
 type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
 
@@ -137,12 +139,13 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
       } @else {
         <div class="article-container not-found">
           <div class="article-content">
-            <h1>Article Not Found</h1>
-            <p>The requested article could not be loaded.</p>
-            @if (errorMessage) {
-              <p style="color: #E53E3E; font-size: 0.9rem; margin: 15px 0; padding: 10px; background: #FFF5F5; border: 1px dashed #FEB2B2; border-radius: 6px; font-family: monospace; word-break: break-all; text-align: left;">
-                {{ errorMessage }}
-              </p>
+            @if (errorKind === 'network') {
+              <h1>Unable to Load Article</h1>
+              <p>{{ errorMessage }}</p>
+              <button type="button" (click)="retryLoad()" class="back-btn" style="background: none; cursor: pointer; margin-right: 12px;">↻ Try Again</button>
+            } @else {
+              <h1>Article Not Found</h1>
+              <p>The requested article could not be loaded.</p>
             }
             <a routerLink="/articles" class="back-btn">Back to Articles</a>
           </div>
@@ -532,19 +535,23 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
    * then swapped to the real article once the response arrived).
    */
   state: ArticleLoadState = 'loading';
+  /** Distinguishes a confirmed-missing article (404) from a network/backend failure so the message and retry action are accurate (Task 12). */
+  errorKind: 'notFound' | 'network' = 'notFound';
   loadedArticles: Article[] = [];
   articlesQueue: Article[] = [];
   vehicles: any[] = [];
   commentsLoaded: { [articleId: string]: boolean } = {};
   errorMessage = '';
   loadingNext = false;
+  private currentArticleId: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private dataService: BlogDataService,
     private cdr: ChangeDetectorRef,
     private seoService: SeoService,
-    private schemaService: SchemaService
+    private schemaService: SchemaService,
+    private network: NetworkStatusService
   ) {}
 
   getOptimizedUrl(url: string | undefined | null, width?: number): string {
@@ -552,8 +559,6 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    console.log('ArticleDetailComponent: OnInit executed!');
-    
     this.sub.add(
       this.route.paramMap.subscribe(params => {
         const id = params.get('id');
@@ -563,56 +568,74 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
           return;
         }
 
-        // Reset for every new article id (e.g. navigating from one article's
-        // "Keep Reading" link to another re-uses this component instance).
-        this.state = 'loading';
-        this.loadedArticles = [];
-        this.errorMessage = '';
-        this.cdr.detectChanges();
-
-        this.sub.add(
-          this.dataService.getArticleById(id).subscribe({
-            next: (article) => {
-              // getArticleById seeds its observable with the last localStorage
-              // snapshot (or `null` if none exists) so it can emit synchronously
-              // before the network request resolves. A `null` here just means
-              // "no cached snapshot yet" — it is NOT confirmation the article is
-              // missing, so we stay in the `loading` state and wait for either a
-              // real article (this same `next`) or a confirmed failure (`error`).
-              if (!article) return;
-
-              // Restore blocks from the serialized payload if the backend stripped the blocks array
-              if ((!article.blocks || article.blocks.length === 0) && article.paragraphs && article.paragraphs.length > 0) {
-                if (article.paragraphs[0].startsWith('__EVBLOCKS__')) {
-                  try {
-                    article.blocks = JSON.parse(article.paragraphs[0].substring(12));
-                    article.paragraphs.shift(); // Remove the serialized block from paragraphs array
-                  } catch (e) {
-                    console.error('Failed to parse serialized blocks', e);
-                  }
-                }
-              }
-
-              this.loadedArticles = [article];
-              this.errorMessage = '';
-              this.state = 'loaded';
-              this.updateSEOMetadata(article);
-              this.cdr.detectChanges();
-            },
-            error: (err) => {
-              // Only reached once the API request has actually completed and
-              // failed (404 for a missing article, or another confirmed error) —
-              // this is the sole path that is allowed to show "Article Not Found".
-              this.errorMessage = err.message || JSON.stringify(err);
-              this.loadedArticles = [];
-              this.state = 'notFound';
-              this.updateSEOMetadata(null);
-              this.cdr.detectChanges();
-            }
-          })
-        );
+        this.currentArticleId = id;
+        this.loadArticle(id);
       })
     );
+  }
+
+  private loadArticle(id: string) {
+    // Reset for every new article id (e.g. navigating from one article's
+    // "Keep Reading" link to another re-uses this component instance).
+    this.state = 'loading';
+    this.loadedArticles = [];
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+
+    this.sub.add(
+      this.dataService.getArticleById(id).subscribe({
+        next: (article) => {
+          // getArticleById seeds its observable with the last localStorage
+          // snapshot (or `null` if none exists) so it can emit synchronously
+          // before the network request resolves. A `null` here just means
+          // "no cached snapshot yet" — it is NOT confirmation the article is
+          // missing, so we stay in the `loading` state and wait for either a
+          // real article (this same `next`) or a confirmed failure (`error`).
+          if (!article) return;
+
+          // Restore blocks from the serialized payload if the backend stripped the blocks array
+          if ((!article.blocks || article.blocks.length === 0) && article.paragraphs && article.paragraphs.length > 0) {
+            if (article.paragraphs[0].startsWith('__EVBLOCKS__')) {
+              try {
+                article.blocks = JSON.parse(article.paragraphs[0].substring(12));
+                article.paragraphs.shift(); // Remove the serialized block from paragraphs array
+              } catch {
+                // Malformed serialized blocks - fall back to rendering plain paragraphs.
+              }
+            }
+          }
+
+          this.loadedArticles = [article];
+          this.errorMessage = '';
+          this.state = 'loaded';
+          this.updateSEOMetadata(article);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          // Only reached once the API request has actually completed and
+          // failed - either a confirmed 404 (article genuinely missing) or a
+          // transient network/server failure. Distinguishing the two avoids
+          // telling a user "Not Found" when the real cause is a dropped
+          // connection or a sleeping backend, and gives them a way to retry.
+          const classified = classifyHttpError(err, this.network.isOnline());
+          const isConfirmedMissing = classified.category === 'client' && classified.status === 404;
+
+          this.errorKind = isConfirmedMissing ? 'notFound' : 'network';
+          this.errorMessage = isConfirmedMissing ? '' : classified.userMessage;
+          this.loadedArticles = [];
+          this.state = 'notFound';
+          this.updateSEOMetadata(null);
+          this.cdr.detectChanges();
+        }
+      })
+    );
+  }
+
+  retryLoad() {
+    if (this.currentArticleId) {
+      this.dataService.clearAllCaches();
+      this.loadArticle(this.currentArticleId);
+    }
   }
 
   ngOnDestroy() {
@@ -839,7 +862,6 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
 
     const nextArt = this.articlesQueue.shift();
     if (nextArt) {
-      console.log('InfiniteScroll: Loading next story:', nextArt.title);
       this.loadedArticles.push(nextArt);
       this.cdr.detectChanges();
     }
@@ -871,8 +893,6 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
     }
 
     if (activeId && activeArticle && window.location.pathname !== `/articles/${activeId}`) {
-      console.log('InfiniteScroll: Active viewport article changed to:', activeId);
-      
       // Update URL silently without full page refresh
       window.history.pushState(null, '', `/articles/${activeId}`);
       

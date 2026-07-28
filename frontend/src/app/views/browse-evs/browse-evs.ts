@@ -6,11 +6,12 @@ import { Category, CarSpec, BlogDataService } from '../../services/blog-data.ser
 import { SeoService } from '../../services/seo.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
+import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 
 @Component({
   selector: 'app-browse-evs',
   standalone: true,
-  imports: [CommonModule, RouterLink, BreadcrumbComponent, FormsModule],
+  imports: [CommonModule, RouterLink, BreadcrumbComponent, FormsModule, ErrorStateComponent],
   template: `
     <div class="browse-page animate-premium-fade">
       
@@ -53,6 +54,11 @@ import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils'
           <div class="spinner"></div>
           <p>Loading vehicle catalog...</p>
         </div>
+      } @else if (error) {
+        <app-error-state
+          message="Unable to load the vehicle catalog right now. Please try again in a few moments."
+          (retry)="retryLoad()">
+        </app-error-state>
       } @else {
         
         <div class="content-section animate-fade">
@@ -84,6 +90,11 @@ import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils'
                 <div class="small-spinner"></div>
                 <span>Loading models...</span>
               </div>
+            } @else if (vehiclesError) {
+              <app-error-state
+                message="Unable to load models right now. Please try again in a few moments."
+                (retry)="retryLoadVehicles()">
+              </app-error-state>
             } @else {
               <div class="models-grid">
                 @for (car of getFilteredModels(); track car.id) {
@@ -448,8 +459,10 @@ import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils'
 })
 export class BrowseEvsComponent implements OnInit {
   loading = true;
+  error = false;
   loadingVehicles = false;
   vehiclesLoaded = false;
+  vehiclesError = false;
   
   categories: Category[] = [];
   allVehiclesIndex: any[] = []; // raw lightweight index
@@ -483,6 +496,12 @@ export class BrowseEvsComponent implements OnInit {
     // Instantly preload lightweight vehicles index for 0ms brand/category filtering
     this.loadVehiclesIndex();
 
+    this.loadCategories();
+  }
+
+  private loadCategories() {
+    this.loading = true;
+    this.error = false;
     this.blogData.getCategories().subscribe({
       next: (cats) => {
         this.categories = cats;
@@ -492,9 +511,22 @@ export class BrowseEvsComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load categories', err);
         this.loading = false;
+        this.error = true;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  retryLoad() {
+    this.blogData.clearAllCaches();
+    this.loadCategories();
+  }
+
+  retryLoadVehicles() {
+    this.vehiclesLoaded = false;
+    this.vehiclesError = false;
+    this.blogData.clearVehicleCache();
+    this.loadVehiclesIndex();
   }
 
   getOptimizedUrl(url: string | undefined | null, width?: number, modelName?: string): string {
@@ -586,6 +618,7 @@ export class BrowseEvsComponent implements OnInit {
     if (this.vehiclesLoaded || this.loadingVehicles) return;
     
     this.loadingVehicles = true;
+    this.vehiclesError = false;
     this.blogData.getVehiclesLight().subscribe({
       next: (vehicles) => {
         this.allVehiclesIndex = vehicles;
@@ -631,6 +664,7 @@ export class BrowseEvsComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load vehicles index', err);
         this.loadingVehicles = false;
+        this.vehiclesError = true;
         this.cdr.detectChanges();
       }
     });
