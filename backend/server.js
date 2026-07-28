@@ -213,7 +213,23 @@ app.get('/', (req, res) => {
 // 8. Mount Aggregated Enterprise REST API Router (Protected with API Rate Limiter)
 app.use('/api', apiLimiter, (req, res, next) => { perf.mark('rate_limiter'); next(); }, apiRouter);
 
-// 9. Centralized Global Error Handling Middleware (Leakage Guard)
+// 9. JSON 404 Catch-All for unmatched /api/* routes. Without this, Express's
+// default handler returns an HTML page for unknown API paths, which breaks
+// every frontend consumer expecting a JSON envelope (typos, deprecated
+// routes, misconfigured clients) - they'd fail to parse the response instead
+// of getting a clean, classifiable 404.
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    success: false,
+    requestId: req.id || req.headers['x-request-id'] || 'N/A',
+    error: {
+      code: 'NOT_FOUND',
+      message: `The requested endpoint ${req.method} ${req.originalUrl} does not exist.`
+    }
+  });
+});
+
+// 10. Centralized Global Error Handling Middleware (Leakage Guard)
 app.use(errorHandler);
 
 // Graceful Shutdown & Uncaught Exception Handlers

@@ -42,6 +42,7 @@ function maintenanceMiddleware(req, res, next) {
   // Block Public Traffic with HTTP 503
   res.status(503).json({
     success: false,
+    requestId: req.id || req.headers['x-request-id'] || 'N/A',
     error: {
       code: 'SERVICE_MAINTENANCE',
       message: 'EVCorn platform is currently undergoing scheduled maintenance. Please try again shortly.',
