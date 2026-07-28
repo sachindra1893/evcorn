@@ -131,9 +131,20 @@ function buildVehicleFilterQuery(query) {
 
 /**
  * Build Mongoose Filter Query for Articles
+ *
+ * NOTE on publishAt/status tolerance (Root-Cause Cluster A fix):
+ * Mongo's range/equality operators do NOT match documents where the field is
+ * absent (e.g. `{ publishAt: { $lte: new Date() } }` silently excludes any
+ * document missing `publishAt` entirely, and `{ status: 'published' }` excludes
+ * a document where `status` is missing/null). Legacy/partially-written article
+ * documents can be missing either field, which made real, active, published
+ * articles invisible to every listing endpoint. Both conditions below treat a
+ * missing field as "eligible" via an explicit `$exists: false` fallback, mirroring
+ * the tolerance the `status` check already had.
  */
 function buildArticleFilterQuery(query) {
   const mongoQuery = {};
+  const andConditions = [];
 
   if (query.category || query.categoryId) {
     mongoQuery.categoryId = (query.category || query.categoryId).toLowerCase();
@@ -149,28 +160,25 @@ function buildArticleFilterQuery(query) {
   if (query.status) {
     mongoQuery.status = query.status;
   } else if (!query.admin) {
-    mongoQuery.$or = [
-      { status: 'published' },
-      { status: { $exists: false } }
-    ];
-    mongoQuery.publishAt = { $lte: new Date() };
+    andConditions.push({
+      $or: [{ status: 'published' }, { status: { $exists: false } }]
+    });
+    andConditions.push({
+      $or: [{ publishAt: { $lte: new Date() } }, { publishAt: { $exists: false } }]
+    });
   }
 
   if (query.search && typeof query.search === 'string') {
     const searchRegex = new RegExp(query.search.trim(), 'i');
-    const searchConditions = [
-      { title: searchRegex },
-      { description: searchRegex }
-    ];
-    if (mongoQuery.$or) {
-      mongoQuery.$and = [
-        { $or: mongoQuery.$or },
-        { $or: searchConditions }
-      ];
-      delete mongoQuery.$or;
-    } else {
-      mongoQuery.$or = searchConditions;
-    }
+    andConditions.push({
+      $or: [{ title: searchRegex }, { description: searchRegex }]
+    });
+  }
+
+  if (andConditions.length === 1) {
+    Object.assign(mongoQuery, andConditions[0]);
+  } else if (andConditions.length > 1) {
+    mongoQuery.$and = andConditions;
   }
 
   return mongoQuery;

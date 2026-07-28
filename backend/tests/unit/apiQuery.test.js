@@ -1,4 +1,4 @@
-const { parseQueryParams, buildVehicleFilterQuery, formatResponse } = require('../../utils/apiQuery');
+const { parseQueryParams, buildVehicleFilterQuery, buildArticleFilterQuery, formatResponse } = require('../../utils/apiQuery');
 
 describe('API Query Utilities (Unit Tests)', () => {
   describe('parseQueryParams()', () => {
@@ -35,6 +35,65 @@ describe('API Query Utilities (Unit Tests)', () => {
       expect(filter.categoryId).toBe('tata');
       expect(filter.$or).toBeDefined();
       expect(filter.$or.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('buildArticleFilterQuery() — Root-Cause Cluster A regression tests', () => {
+    it('should tolerate articles missing publishAt/status instead of silently excluding them', () => {
+      // Regression test for the "invisible articles" bug: a document with a
+      // real, valid `status: 'published'` and `publishAt` in the past MUST be
+      // matched by this filter — but so must a legacy document where either
+      // field is entirely absent from the stored document.
+      const filter = buildArticleFilterQuery({});
+
+      expect(filter.active).toBe(true);
+      expect(filter.$or).toBeUndefined();
+      expect(Array.isArray(filter.$and)).toBe(true);
+      expect(filter.$and).toHaveLength(2);
+
+      const statusClause = filter.$and.find(c => c.$or.some(o => 'status' in o));
+      expect(statusClause.$or).toContainEqual({ status: 'published' });
+      expect(statusClause.$or).toContainEqual({ status: { $exists: false } });
+
+      const publishAtClause = filter.$and.find(c => c.$or.some(o => 'publishAt' in o));
+      expect(publishAtClause.$or).toContainEqual({ publishAt: { $exists: false } });
+      expect(publishAtClause.$or[0].publishAt.$lte).toBeInstanceOf(Date);
+    });
+
+    it('should not apply default status/publishAt/active filtering for admin requests', () => {
+      const filter = buildArticleFilterQuery({ admin: 'true' });
+      expect(filter.active).toBeUndefined();
+      expect(filter.$and).toBeUndefined();
+      expect(filter.$or).toBeUndefined();
+    });
+
+    it('should skip the publishAt tolerance branch when an explicit status is requested', () => {
+      const filter = buildArticleFilterQuery({ status: 'draft' });
+      expect(filter.status).toBe('draft');
+      expect(filter.active).toBe(true);
+      expect(filter.$and).toBeUndefined();
+      expect(filter.$or).toBeUndefined();
+    });
+
+    it('should combine the default tolerant filter with a search regex via $and', () => {
+      const filter = buildArticleFilterQuery({ search: 'nexon' });
+      expect(Array.isArray(filter.$and)).toBe(true);
+      expect(filter.$and).toHaveLength(3);
+      const searchClause = filter.$and.find(c => c.$or.some(o => 'title' in o));
+      expect(searchClause.$or.some(o => o.title instanceof RegExp)).toBe(true);
+    });
+
+    it('should combine an explicit status with a search regex via top-level $or (no $and needed)', () => {
+      const filter = buildArticleFilterQuery({ status: 'published', search: 'nexon' });
+      expect(filter.status).toBe('published');
+      expect(filter.$and).toBeUndefined();
+      expect(Array.isArray(filter.$or)).toBe(true);
+      expect(filter.$or.some(o => o.title instanceof RegExp)).toBe(true);
+    });
+
+    it('should filter by category when provided', () => {
+      const filter = buildArticleFilterQuery({ category: 'Tata' });
+      expect(filter.categoryId).toBe('tata');
     });
   });
 

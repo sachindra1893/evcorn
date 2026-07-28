@@ -13,6 +13,15 @@ class RecommendationService {
    */
   async getRelatedVehicles(currentVehicleId, categoryId, targetPriceINR) {
     const allVehicles = await vehicleRepository.findAll({}, null, { name: 1 });
+
+    // No reference vehicle or category to compare against (e.g. the "trending"
+    // widget, which calls this with (null, null)). categoryMatch/brandMatch below
+    // can never be true without a reference point, which made this always return
+    // zero results. Fall back to a deterministic top-N slate instead.
+    if (!currentVehicleId && !categoryId) {
+      return toVehicleListDTO(allVehicles.slice(0, 6));
+    }
+
     const current = allVehicles.find(v => v.id === currentVehicleId);
 
     const filtered = allVehicles.filter(v => {

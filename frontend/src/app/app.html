@@ -1,3 +1,9 @@
+@if (isBackendWaking$ | async) {
+  <div class="backend-waking-banner" role="status">
+    Waking up the server… this can take up to a minute on the first request. Your content will appear automatically.
+  </div>
+}
+
 <header>
   <app-navbar></app-navbar>
 </header>

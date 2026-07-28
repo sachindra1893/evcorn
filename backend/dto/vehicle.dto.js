@@ -59,6 +59,7 @@ function toVehicleDTO(doc) {
     seo: obj.seo || {},
 
     status: obj.status || 'Published',
+    bodyStyle: obj.bodyStyle || null,
     publishedAt: obj.publishedAt || obj.createdAt,
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt

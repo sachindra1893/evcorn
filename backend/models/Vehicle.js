@@ -124,7 +124,13 @@ const VehicleSchema = new mongoose.Schema({
   seo: { type: SEOSchema, default: () => ({}) },
   
   status: { type: String, enum: ['Published', 'Upcoming', 'Discontinued'], default: 'Published', index: true },
-  publishedAt: { type: Date, default: Date.now, index: true }
+  publishedAt: { type: Date, default: Date.now, index: true },
+
+  // Root-Cause Cluster E fix: Browse EV's category chips (SUV/Hatchback/Sedan/
+  // MPV/Sports) filter on this field, and vehicle.service.js's LIGHT_PROJECTION
+  // already listed it, but it was never actually defined on the schema — so it
+  // was always undefined and every chip filter matched zero vehicles.
+  bodyStyle: { type: String, enum: ['SUV', 'Hatchback', 'Sedan', 'MPV', 'Sports', null], default: null, index: true }
 }, {
   timestamps: true
 });

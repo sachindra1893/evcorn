@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { shareReplay, map, catchError } from 'rxjs/operators';
+import { Observable, BehaviorSubject, timer } from 'rxjs';
+import { shareReplay, map, catchError, retry } from 'rxjs/operators';
 
 import { ArticleBlock } from '../models/blocks.model';
 
@@ -208,6 +208,26 @@ export class BlogDataService {
   constructor(private http: HttpClient) {}
 
   /**
+   * Root-Cause Cluster F (frontend handling): the backend (Render free tier)
+   * sleeps after inactivity and can take 15-45s to wake, so the very first
+   * request after any idle period used to fail outright — every page then
+   * silently rendered its empty state with no indication anything was wrong.
+   * This retries a couple of times with a growing delay so a cold-start
+   * failure resolves itself instead of turning into a permanent blank page.
+   */
+  readonly isRetrying$ = new BehaviorSubject<boolean>(false);
+
+  private coldStartRetry<T>() {
+    return retry<T>({
+      count: 2,
+      delay: (_error: unknown, retryCount: number) => {
+        this.isRetrying$.next(true);
+        return timer(2000 * retryCount);
+      }
+    });
+  }
+
+  /**
    * Upload single image file to Cloudinary via POST /api/upload
    */
   uploadImage(file: File): Observable<{ url: string; public_id: string; width: number; height: number; format: string; original_filename: string }> {
@@ -283,13 +303,16 @@ export class BlogDataService {
       const subject = new BehaviorSubject<Category[]>(cached);
       
       this.http.get<Category[]>(`${this.apiUrl}/categories`).pipe(
+        this.coldStartRetry(),
         shareReplay(1)
       ).subscribe({
         next: (data) => {
+          this.isRetrying$.next(false);
           this.saveCache('categories', data);
           subject.next(data);
         },
         error: (err) => {
+          this.isRetrying$.next(false);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -319,13 +342,16 @@ export class BlogDataService {
       const subject = new BehaviorSubject<Article[]>(cached);
 
       this.http.get<Article[]>(`${this.apiUrl}/articles`).pipe(
+        this.coldStartRetry(),
         shareReplay(1)
       ).subscribe({
         next: (data) => {
+          this.isRetrying$.next(false);
           this.saveCache('articles', data);
           subject.next(data);
         },
         error: (err) => {
+          this.isRetrying$.next(false);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -342,13 +368,16 @@ export class BlogDataService {
       const subject = new BehaviorSubject<any[]>(cached);
 
       this.http.get<Partial<Article>[]>(`${this.apiUrl}/articles?light=true`).pipe(
+        this.coldStartRetry(),
         shareReplay(1)
       ).subscribe({
         next: (data) => {
+          this.isRetrying$.next(false);
           this.saveCache('articlesLight', data);
           subject.next(data);
         },
         error: (err) => {
+          this.isRetrying$.next(false);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -365,13 +394,18 @@ export class BlogDataService {
       const subject = new BehaviorSubject<Article | null>(cached);
 
       this.http.get<Article>(`${this.apiUrl}/articles/${id}`).pipe(
+        this.coldStartRetry(),
         shareReplay(1)
       ).subscribe({
         next: (data) => {
+          this.isRetrying$.next(false);
+          // NOTE: intentionally left as the pre-existing raw (non-enveloped) write here —
+          // that mismatch is Root-Cause Cluster H (Latent), out of scope for this pass.
           try { localStorage.setItem(cachedKey, JSON.stringify(data)); } catch {}
           subject.next(data);
         },
         error: (err) => {
+          this.isRetrying$.next(false);
           if (!cached) subject.error(err);
         }
       });
@@ -411,6 +445,7 @@ export class BlogDataService {
       const subject = new BehaviorSubject<CarSpec[]>(cached);
 
       this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?status=Published`).pipe(
+        this.coldStartRetry(),
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
@@ -418,10 +453,12 @@ export class BlogDataService {
         shareReplay(1)
       ).subscribe({
         next: (data) => {
+          this.isRetrying$.next(false);
           this.saveCache('allVehicles', data);
           subject.next(data);
         },
         error: (err) => {
+          this.isRetrying$.next(false);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -438,6 +475,7 @@ export class BlogDataService {
       const subject = new BehaviorSubject<any[]>(cached);
 
       this.http.get<any[]>(`${this.apiUrl}/vehicles?light=true&status=Published`).pipe(
+        this.coldStartRetry(),
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
@@ -445,10 +483,12 @@ export class BlogDataService {
         shareReplay(1)
       ).subscribe({
         next: (data) => {
+          this.isRetrying$.next(false);
           this.saveCache('vehiclesLight', data);
           subject.next(data);
         },
         error: (err) => {
+          this.isRetrying$.next(false);
           if (cached.length === 0) subject.error(err);
         }
       });

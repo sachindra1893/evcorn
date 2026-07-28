@@ -32,4 +32,14 @@ describe('Search & Recommendation API Integration Tests', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.popularSearches).toBeDefined();
   });
+
+  it('GET /api/search/trending should return actual trending vehicles when vehicles exist (Root-Cause Cluster D regression)', async () => {
+    // Regression test: getRelatedVehicles(null, null) used to always return []
+    // because categoryMatch/brandMatch can never be true without a reference
+    // vehicle/category. Seed data has vehicles, so this must be non-empty.
+    const res = await request(app).get('/api/search/trending');
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body.data.trendingVehicles)).toBe(true);
+    expect(res.body.data.trendingVehicles.length).toBeGreaterThan(0);
+  });
 });

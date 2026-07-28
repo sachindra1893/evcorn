@@ -71,7 +71,8 @@
       "airbagsCount": 6,
       "hasADAS": true
     },
-    "status": "Published"
+    "status": "Published",
+    "bodyStyle": "SUV"
   },
   {
     "id": "tata-tiago-ev",
@@ -144,7 +145,8 @@
       "airbagsCount": 2,
       "hasADAS": false
     },
-    "status": "Published"
+    "status": "Published",
+    "bodyStyle": "Hatchback"
   },
   {
     "id": "tata-punch-ev",
@@ -218,7 +220,8 @@
       "airbagsCount": 6,
       "hasADAS": false
     },
-    "status": "Published"
+    "status": "Published",
+    "bodyStyle": "SUV"
   },
   {
     "id": "mg-windsor-ev",
@@ -291,7 +294,8 @@
       "airbagsCount": 6,
       "hasADAS": false
     },
-    "status": "Published"
+    "status": "Published",
+    "bodyStyle": "SUV"
   },
   {
     "id": "mahindra-xuv400",
@@ -364,7 +368,8 @@
       "airbagsCount": 6,
       "hasADAS": false
     },
-    "status": "Published"
+    "status": "Published",
+    "bodyStyle": "SUV"
   },
   {
     "id": "byd-atto-3",
@@ -437,7 +442,8 @@
       "airbagsCount": 7,
       "hasADAS": true
     },
-    "status": "Published"
+    "status": "Published",
+    "bodyStyle": "SUV"
   },
   {
     "id": "hyundai-ioniq-5",
@@ -511,6 +517,7 @@
       "airbagsCount": 6,
       "hasADAS": true
     },
-    "status": "Published"
+    "status": "Published",
+    "bodyStyle": "SUV"
   }
 ]
