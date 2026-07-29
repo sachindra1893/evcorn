@@ -575,6 +575,22 @@ export class BlogDataService {
         v.bodyStyle = capParts[6];
       }
     }
+    // Keep nested text fields in sync so Compare never prefers the packed raw string.
+    if (v.battery && typeof v.battery === 'object') {
+      if (v.batteryCapacity) v.battery.capacityText = v.batteryCapacity;
+      else if (typeof v.battery.capacityText === 'string' && v.battery.capacityText.includes('||')) {
+        v.battery.capacityText = v.battery.capacityText.split('||')[0] !== 'N/A'
+          ? v.battery.capacityText.split('||')[0]
+          : '';
+      }
+    }
+    if (v.charging && typeof v.charging === 'object') {
+      if (v.acCharging) v.charging.acChargingText = v.acCharging;
+      if (v.dcCharging) v.charging.dcChargingText = v.dcCharging;
+    }
+    if (v.performance && typeof v.performance === 'object' && v.range) {
+      v.performance.rangeText = v.range;
+    }
     
     // Parse dimensions and wheelbase
     if (v.dimensions && v.dimensions.includes('||')) {

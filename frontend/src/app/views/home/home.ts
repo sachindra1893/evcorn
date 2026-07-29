@@ -27,60 +27,64 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
         </div>
         
         <!-- Embedded Search Bar -->
-        <div class="search-bar-container">
-          <div class="input-wrapper">
-            <input 
-              type="text" 
-              placeholder="Search EV specifications, articles, or brands..." 
-              (input)="onSearchInput($event)"
-              [value]="searchQuery"
-            >
-            <div class="search-icon">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
+        <div class="hero-search-block">
+          <div class="search-bar-container">
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                placeholder="Search EV specifications, articles, or brands..." 
+                (input)="onSearchInput($event)"
+                [value]="searchQuery"
+              >
+              <div class="search-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
             </div>
-          </div>
-          
-          <!-- Floating Results Dropdown -->
-          @if (searchQuery.trim().length > 0) {
-            <div class="search-results-dropdown">
-              <!-- Articles Group -->
-              @if (matchingArticles.length > 0) {
-                <div class="results-group">
-                  <div style="font-weight: 700; color: #64748B; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 0.5rem;">Articles</div>
-                  @for (art of matchingArticles; track art.id) {
-                    <a [routerLink]="['/articles', art.id]" (click)="clearSearch()">
-                      <div class="result-item article-item">
-                        @if (art.imageUrl) {
-                          <img 
-                            [src]="getOptimizedUrl(art.imageUrl, 200)" 
-                            class="result-img" 
-                            alt="{{art.title}}"
-                            loading="lazy"
-                            decoding="async"
-                            width="60"
-                            height="40"
-                            onerror="this.onerror=null; this.style.display='none'; const sibling = this.parentNode.querySelector('.result-placeholder'); if(sibling) sibling.style.display='flex';"
-                          >
-                        }
-                        <div class="result-placeholder" [style.display]="art.imageUrl ? 'none' : 'flex'">⚡</div>
-                        <div class="result-text">
-                          <span class="result-title">{{ art.title }}</span>
-                          <span class="result-desc">{{ art.description }}</span>
+            
+            <!-- Floating Results Dropdown -->
+            @if (searchQuery.trim().length > 0) {
+              <div class="search-results-dropdown">
+                <!-- Articles Group -->
+                @if (matchingArticles.length > 0) {
+                  <div class="results-group">
+                    <div style="font-weight: 700; color: #64748B; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 0.5rem;">Articles</div>
+                    @for (art of matchingArticles; track art.id) {
+                      <a [routerLink]="['/articles', art.id]" (click)="clearSearch()">
+                        <div class="result-item article-item">
+                          @if (art.imageUrl) {
+                            <img 
+                              [src]="getOptimizedUrl(art.imageUrl, 200)" 
+                              class="result-img" 
+                              alt="{{art.title}}"
+                              loading="lazy"
+                              decoding="async"
+                              width="60"
+                              height="40"
+                              onerror="this.onerror=null; this.style.display='none'; const sibling = this.parentNode.querySelector('.result-placeholder'); if(sibling) sibling.style.display='flex';"
+                            >
+                          }
+                          <div class="result-placeholder" [style.display]="art.imageUrl ? 'none' : 'flex'">⚡</div>
+                          <div class="result-text">
+                            <span class="result-title">{{ art.title }}</span>
+                            <span class="result-desc">{{ art.description }}</span>
+                          </div>
                         </div>
-                      </div>
-                    </a>
-                  }
-                </div>
-              }
-              
-              @if (matchingArticles.length === 0) {
-                <div class="no-results">No matches found for "{{ searchQuery }}"</div>
-              }
-            </div>
-          }
+                      </a>
+                    }
+                  </div>
+                }
+                
+                @if (matchingArticles.length === 0) {
+                  <div class="no-results">No matches found for "{{ searchQuery }}"</div>
+                }
+              </div>
+            }
+          </div>
+
+          <a routerLink="/compare" class="hero-compare-cta">Compare EVs</a>
         </div>
       </div>
     </section>
@@ -1025,12 +1029,44 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       border-radius: 20px;
       font-weight: 500;
     }
+    .hero-search-block {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: auto;
+    }
     .search-bar-container {
       position: relative;
       width: 100%;
       max-width: 600px;
-      margin: 2.5rem auto 0 auto;
+      margin: 0 auto;
       z-index: 100;
+    }
+    .hero-compare-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 1.1rem auto 0;
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      letter-spacing: 0.01em;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 100;
+    }
+    .hero-compare-cta:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.55);
+      transform: translateY(-1px);
     }
     .input-wrapper {
       position: relative;

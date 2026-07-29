@@ -1,20 +1,34 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
+import {
+  COMPARE_MAX_VEHICLES,
+  CompareSelectionResult,
+  clampCompareIds,
+  tryAddCompareId
+} from '../compare/compare-engine';
 
 export interface CompareVehicle {
-  id: string; // The car's ID
+  id: string;
 }
 
+/**
+ * Compare selection state — localStorage + shareable URL consumers.
+ * MVP max = 2 (COMPARE_MAX_VEHICLES). Isolated from Browse/Detail data loads.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class CompareStateService {
   private readonly STORAGE_KEY = 'evcorn_compare_tray';
-  private maxCompareSlots = 4;
-  
+  private readonly maxCompareSlots = COMPARE_MAX_VEHICLES;
+
   private selectedVehiclesSubject = new BehaviorSubject<string[]>([]);
   public selectedVehicles$: Observable<string[]> = this.selectedVehiclesSubject.asObservable();
+
+  /** Soft notice for UI (full tray / duplicate) — no window.alert. */
+  private noticeSubject = new BehaviorSubject<string | null>(null);
+  public notice$: Observable<string | null> = this.noticeSubject.asObservable();
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     this.loadInitialState();
@@ -27,19 +41,22 @@ export class CompareStateService {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            // Keep up to maxCompareSlots
-            this.selectedVehiclesSubject.next(parsed.slice(0, this.maxCompareSlots));
+            this.selectedVehiclesSubject.next(clampCompareIds(parsed, this.maxCompareSlots));
           }
         }
-      } catch (e) {
-        console.error('Error parsing compare state from localStorage', e);
+      } catch {
+        // Corrupt storage — start empty; do not break the site.
       }
     }
   }
 
   private saveState(ids: string[]): void {
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(ids));
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(ids));
+      } catch {
+        // Quota / private mode — selection still works in-memory.
+      }
     }
   }
 
@@ -47,28 +64,48 @@ export class CompareStateService {
     return this.selectedVehiclesSubject.getValue();
   }
 
+  get maxSlots(): number {
+    return this.maxCompareSlots;
+  }
+
+  clearNotice(): void {
+    this.noticeSubject.next(null);
+  }
+
   addVehicle(carId: string): boolean {
-    const current = this.currentSelectedIds;
-    if (current.includes(carId)) {
-      return false; // Already added
+    const result = this.addVehicleDetailed(carId);
+    return result.ok;
+  }
+
+  addVehicleDetailed(carId: string): CompareSelectionResult {
+    const result = tryAddCompareId(this.currentSelectedIds, carId, this.maxCompareSlots);
+    if (!result.ok) {
+      if (result.reason === 'full') {
+        this.noticeSubject.next(`You can compare up to ${this.maxCompareSlots} EVs. Remove one to add another.`);
+      } else if (result.reason === 'duplicate') {
+        this.noticeSubject.next('This EV is already in your comparison.');
+      }
+      return result;
     }
-    
-    if (current.length >= this.maxCompareSlots) {
-      alert(`You can only compare up to ${this.maxCompareSlots} vehicles at once.`);
+    this.noticeSubject.next(null);
+    this.selectedVehiclesSubject.next(result.ids);
+    this.saveState(result.ids);
+    return result;
+  }
+
+  toggleVehicle(carId: string): boolean {
+    if (this.isSelected(carId)) {
+      this.removeVehicle(carId);
       return false;
     }
-    
-    const updated = [...current, carId];
-    this.selectedVehiclesSubject.next(updated);
-    this.saveState(updated);
-    return true;
+    return this.addVehicle(carId);
   }
 
   removeVehicle(carId: string): void {
-    const current = this.currentSelectedIds;
-    const updated = current.filter(id => id !== carId);
+    const updated = this.currentSelectedIds.filter((id) => id !== carId);
     this.selectedVehiclesSubject.next(updated);
     this.saveState(updated);
+    this.noticeSubject.next(null);
   }
 
   isSelected(carId: string): boolean {
@@ -78,10 +115,11 @@ export class CompareStateService {
   clear(): void {
     this.selectedVehiclesSubject.next([]);
     this.saveState([]);
+    this.noticeSubject.next(null);
   }
 
   setVehicles(carIds: string[]): void {
-    const clamped = carIds.slice(0, this.maxCompareSlots);
+    const clamped = clampCompareIds(carIds, this.maxCompareSlots);
     this.selectedVehiclesSubject.next(clamped);
     this.saveState(clamped);
   }

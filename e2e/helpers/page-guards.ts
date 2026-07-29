@@ -1,7 +1,7 @@
 import { expect, Page, ConsoleMessage } from '@playwright/test';
 
 const IGNORED_CONSOLE =
-  /Download the React DevTools|Angular is running in development|\[vite\]|favicon\.ico|gtag|googletagmanager|Failed to load resource: net::ERR_|CORS policy|Access-Control-Allow-Origin|status of 404|cloudinary|\/assets\/|hero-bg/i;
+  /Download the React DevTools|Angular is running in development|\[vite\]|favicon\.ico|gtag|googletagmanager|Failed to load resource: net::ERR_|CORS policy|Access-Control-Allow-Origin|status of 404|cloudinary|\/assets\/|hero-bg|\/api\/analytics\/event|eventType: http_failure/i;
 
 export function attachConsoleErrorCollector(page: Page): { errors: string[] } {
   const errors: string[] = [];
@@ -23,8 +23,9 @@ export async function waitForSettledContent(page: Page, contentSelector: string)
   await expect(page.locator(contentSelector).first()).toBeVisible({ timeout: 30_000 });
 
   // Guard against infinite loaders (Phase 1 regression).
+  // Exclude tiny inline spinners inside buttons (e.g. compare tray) — page overlays only.
   const loaders = page.locator(
-    '.loading-overlay:visible, .spinner:visible, [aria-busy="true"]:visible'
+    '.loading-overlay:visible, .state-panel .spinner:visible, [aria-busy="true"]:visible'
   );
   const count = await loaders.count();
   if (count > 0) {

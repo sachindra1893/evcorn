@@ -1,9 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { Category, CarSpec, BlogDataService } from '../../services/blog-data.service';
 import { SeoService } from '../../services/seo.service';
+import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
@@ -98,22 +100,33 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
             } @else {
               <div class="models-grid">
                 @for (car of getFilteredModels(); track car.id) {
-                  <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card">
-                    <div class="model-image-container">
-                      <img [src]="getOptimizedUrl(car.imageUrl, 600, car.parentModel || car.name)" 
-                           (error)="onImgError($event, car.parentModel || car.name)"
-                           loading="lazy"
-                           decoding="async"
-                           class="model-thumb" alt="Vehicle Image">
-                    </div>
-                    <div class="model-info-row">
-                      <div class="model-info">
-                        <h3 class="model-name">{{ car.parentModel || car.name }}</h3>
-                        <p class="variant-name">{{ car.variantCount }} Variant{{ car.variantCount !== 1 ? 's' : '' }} Available</p>
+                  <div class="model-card">
+                    <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card-link">
+                      <div class="model-image-container">
+                        <img [src]="getOptimizedUrl(car.imageUrl, 600, car.parentModel || car.name)" 
+                             (error)="onImgError($event, car.parentModel || car.name)"
+                             loading="lazy"
+                             decoding="async"
+                             class="model-thumb" alt="Vehicle Image">
                       </div>
-                      <span class="arrow">→</span>
+                      <div class="model-info-row">
+                        <div class="model-info">
+                          <h3 class="model-name">{{ car.parentModel || car.name }}</h3>
+                          <p class="variant-name">{{ car.variantCount }} Variant{{ car.variantCount !== 1 ? 's' : '' }} Available</p>
+                        </div>
+                      </div>
+                    </a>
+                    <div class="model-card-actions">
+                      <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="card-action-btn details-btn">View Details</a>
+                      <button
+                        type="button"
+                        class="card-action-btn compare-btn"
+                        [class.selected]="isInCompare(car.id)"
+                        (click)="toggleCompare(car, $event)">
+                        {{ isInCompare(car.id) ? 'In Compare' : 'Compare' }}
+                      </button>
                     </div>
-                  </a>
+                  </div>
                 }
                 @if (getFilteredModels().length === 0) {
                   <div class="no-models">No models found for this selection.</div>
@@ -129,33 +142,44 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
               
               <div class="models-grid">
                 @for (car of topRangeEvs; track car.id; let i = $index) {
-                  <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card trending-card" style="position: relative;">
-                    
+                  <div class="model-card trending-card" style="position: relative;">
                     <div style="position: absolute; top: 12px; left: 12px; z-index: 10; background: #0F172A; color: white; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                       #{{ i + 1 }}
                     </div>
 
-                    <div class="model-image-container">
-                      <img [src]="getOptimizedUrl(car.imageUrl, 600, car.parentModel || car.name)" 
-                           (error)="onImgError($event, car.parentModel || car.name)"
-                           loading="lazy"
-                           decoding="async"
-                           class="model-thumb" alt="Vehicle Image">
-                    </div>
-                    <div class="model-info-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
-                      <div class="model-info" style="width: 100%;">
-                        <h3 class="model-name" style="font-size: 1.1rem; line-height: 1.2;">{{ car.parentModel || car.name }}</h3>
-                        <p class="variant-name" style="font-size: 0.8rem; color: #94A3B8;">{{ car.variantName }}</p>
+                    <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card-link">
+                      <div class="model-image-container">
+                        <img [src]="getOptimizedUrl(car.imageUrl, 600, car.parentModel || car.name)" 
+                             (error)="onImgError($event, car.parentModel || car.name)"
+                             loading="lazy"
+                             decoding="async"
+                             class="model-thumb" alt="Vehicle Image">
                       </div>
-                      
-                      <div style="display: flex; justify-content: space-between; width: 100%; align-items: flex-end;">
-                        <div style="background: rgba(16, 185, 129, 0.1); color: #047857; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); width: fit-content;">
-                          <span style="font-weight: 800; font-size: 1.05rem;">{{ car.range }}</span>
+                      <div class="model-info-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                        <div class="model-info" style="width: 100%;">
+                          <h3 class="model-name" style="font-size: 1.1rem; line-height: 1.2;">{{ car.parentModel || car.name }}</h3>
+                          <p class="variant-name" style="font-size: 0.8rem; color: #94A3B8;">{{ car.variantName }}</p>
                         </div>
-                        <span style="font-size: 0.8rem; font-weight: 600; color: #64748B;">{{ car.batteryCapacity }}</span>
+                        
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: flex-end;">
+                          <div style="background: rgba(16, 185, 129, 0.1); color: #047857; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); width: fit-content;">
+                            <span style="font-weight: 800; font-size: 1.05rem;">{{ car.range }}</span>
+                          </div>
+                          <span style="font-size: 0.8rem; font-weight: 600; color: #64748B;">{{ car.batteryCapacity }}</span>
+                        </div>
                       </div>
+                    </a>
+                    <div class="model-card-actions">
+                      <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="card-action-btn details-btn">View Details</a>
+                      <button
+                        type="button"
+                        class="card-action-btn compare-btn"
+                        [class.selected]="isInCompare(car.id)"
+                        (click)="toggleCompare(car, $event)">
+                        {{ isInCompare(car.id) ? 'In Compare' : 'Compare' }}
+                      </button>
                     </div>
-                  </a>
+                  </div>
                 }
               </div>
             </div>
@@ -336,6 +360,57 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       box-shadow: 0 4px 12px rgba(0,0,0,0.02);
       overflow: hidden;
     }
+
+    .model-card-link {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .model-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .card-action-btn {
+      flex: 1;
+      text-align: center;
+      padding: 9px 10px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .details-btn {
+      background: #F8FAFC;
+      color: #0F172A;
+      border-color: #E2E8F0;
+    }
+    .details-btn:hover {
+      border-color: #0284C7;
+      color: #0284C7;
+    }
+
+    .compare-btn {
+      background: rgba(2, 132, 199, 0.08);
+      color: #0284C7;
+      border-color: rgba(2, 132, 199, 0.25);
+    }
+    .compare-btn:hover {
+      background: rgba(2, 132, 199, 0.14);
+    }
+    .compare-btn.selected {
+      background: #0284C7;
+      color: white;
+      border-color: #0284C7;
+    }
     
     .model-image-container {
       width: 100%;
@@ -457,7 +532,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
     }
   `]
 })
-export class BrowseEvsComponent implements OnInit {
+export class BrowseEvsComponent implements OnInit, OnDestroy {
   loading = true;
   error = false;
   loadingVehicles = false;
@@ -476,12 +551,15 @@ export class BrowseEvsComponent implements OnInit {
   selectedCategory: string | null = null;
   
   topRangeEvs: any[] = [];
+  compareIds: string[] = [];
+  private compareSub?: Subscription;
 
   popularBrandNames = ['Tata Motors', 'Mahindra', 'MG', 'Hyundai', 'BYD', 'Kia'];
 
   constructor(
     private seoService: SeoService,
     private blogData: BlogDataService,
+    private compareState: CompareStateService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
@@ -493,10 +571,30 @@ export class BrowseEvsComponent implements OnInit {
       url: 'https://evcorn.com/evs'
     });
 
+    this.compareSub = this.compareState.selectedVehicles$.subscribe((ids) => {
+      this.compareIds = ids;
+      this.cdr.detectChanges();
+    });
+
     // Instantly preload lightweight vehicles index for 0ms brand/category filtering
     this.loadVehiclesIndex();
 
     this.loadCategories();
+  }
+
+  ngOnDestroy() {
+    this.compareSub?.unsubscribe();
+  }
+
+  isInCompare(carId: string | undefined): boolean {
+    return !!carId && this.compareIds.includes(carId);
+  }
+
+  toggleCompare(car: { id?: string }, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!car?.id) return;
+    this.compareState.toggleVehicle(car.id);
   }
 
   private loadCategories() {
