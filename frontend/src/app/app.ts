@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Navbar } from './components/navbar/navbar';
 import { Footer } from './components/footer/footer';
-import { CompareTrayComponent } from './components/compare-tray/compare-tray';
 import { OfflineBannerComponent } from './components/offline-banner/offline-banner.component';
 import { NetworkStatusService } from './core/network/network-status.service';
 import { AppNotificationService } from './core/error-handling/app-notification.service';
@@ -11,7 +10,7 @@ import { RouteTimingService } from './core/observability/route-timing.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, Navbar, Footer, CompareTrayComponent, OfflineBannerComponent],
+  imports: [RouterOutlet, Navbar, Footer, OfflineBannerComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

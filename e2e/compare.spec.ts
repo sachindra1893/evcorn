@@ -7,15 +7,17 @@ import {
 } from './helpers/page-guards';
 
 test.describe('Compare EVs flow (Phase 5.1)', () => {
-  test('Home CTA navigates to Compare', async ({ page }) => {
+  test('Home CTA navigates to Compare (no tray on Home)', async ({ page }) => {
     const console = attachConsoleErrorCollector(page);
     await expectHttpOk(page, '/');
     await waitForSettledContent(page, 'h1, .hero-compare-cta');
     await expect(page.locator('.hero-compare-cta')).toBeVisible();
+    await expect(page.locator('app-compare-tray .compare-tray-wrapper')).toHaveCount(0);
     await page.locator('.hero-compare-cta').click();
     await expect(page).toHaveURL(/\/compare/);
     await waitForSettledContent(page, 'h1, app-compare');
     await expect(page.locator('.loading-overlay, .state-panel .spinner')).toHaveCount(0, { timeout: 30000 });
+    await expect(page.locator('app-compare-tray .compare-tray-wrapper')).toHaveCount(0);
     await expectNoBlankScreen(page);
     expect(console.errors, console.errors.join('\n')).toEqual([]);
   });
@@ -33,11 +35,14 @@ test.describe('Compare EVs flow (Phase 5.1)', () => {
     expect(count).toBeGreaterThanOrEqual(2);
 
     await compareButtons.nth(0).click();
-    await compareButtons.nth(1).click();
-
     const trayBtn = page.locator('.compare-now-btn');
     await expect(trayBtn).toBeVisible({ timeout: 5000 });
+    await expect(trayBtn).toContainText(/Select one more EV to compare/);
+    await expect(trayBtn).toBeDisabled();
+
+    await compareButtons.nth(1).click();
     await expect(trayBtn).toContainText(/Compare \(2\)/);
+    await expect(trayBtn).toBeEnabled();
     await trayBtn.click();
 
     await expect(page).toHaveURL(/\/compare\?ids=/);
@@ -49,7 +54,7 @@ test.describe('Compare EVs flow (Phase 5.1)', () => {
     expect(console.errors, console.errors.join('\n')).toEqual([]);
   });
 
-  test('Empty compare shows guidance (not blank / not infinite load)', async ({ page }) => {
+  test('Empty compare shows Browse CTA guidance (not blank / not infinite load)', async ({ page }) => {
     const console = attachConsoleErrorCollector(page);
     await expectHttpOk(page, '/compare');
     await waitForSettledContent(page, 'h1, app-compare');
@@ -58,6 +63,10 @@ test.describe('Compare EVs flow (Phase 5.1)', () => {
     // Either pickers ready with empty guidance, or catalog empty-state.
     const emptyOrPickers = page.locator('app-empty-state, .picker-grid');
     await expect(emptyOrPickers.first()).toBeVisible({ timeout: 15000 });
+    const browseCta = page.locator('.app-empty-state-action');
+    if (await browseCta.count()) {
+      await expect(browseCta.first()).toContainText(/Browse EVs/i);
+    }
     await expectNoBlankScreen(page);
     expect(console.errors, console.errors.join('\n')).toEqual([]);
   });

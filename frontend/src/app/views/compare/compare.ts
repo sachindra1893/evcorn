@@ -165,15 +165,15 @@ type CompareLoadState = AsyncState<CarSpec[]>;
           @if (selectedCount === 0) {
             <app-empty-state
               icon="⚖️"
-              message="Pick two EVs above to see a clear side-by-side buying comparison."
-              actionLabel="Browse EVs"
+              message="No EVs selected yet. Use the pickers above, or browse the catalog to choose two vehicles."
+              actionLabel="Browse EVs to select"
               (action)="goBrowse()">
             </app-empty-state>
           } @else if (selectedCount === 1) {
             <app-empty-state
               icon="➕"
               message="Select one more EV to compare side-by-side."
-              actionLabel="Browse EVs"
+              actionLabel="Browse EVs to select"
               (action)="goBrowse()">
             </app-empty-state>
           } @else {

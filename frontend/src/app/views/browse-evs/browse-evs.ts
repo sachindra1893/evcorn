@@ -7,13 +7,14 @@ import { Category, CarSpec, BlogDataService } from '../../services/blog-data.ser
 import { SeoService } from '../../services/seo.service';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
+import { CompareTrayComponent } from '../../components/compare-tray/compare-tray';
 import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 
 @Component({
   selector: 'app-browse-evs',
   standalone: true,
-  imports: [CommonModule, RouterLink, BreadcrumbComponent, FormsModule, ErrorStateComponent],
+  imports: [CommonModule, RouterLink, BreadcrumbComponent, FormsModule, ErrorStateComponent, CompareTrayComponent],
   template: `
     <div class="browse-page animate-premium-fade">
       
@@ -199,6 +200,8 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
         </div>
       }
     </div>
+
+    <app-compare-tray></app-compare-tray>
   `,
   styles: [`
     .browse-page {

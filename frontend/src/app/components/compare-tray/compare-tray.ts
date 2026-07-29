@@ -1,22 +1,21 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NavigationEnd, Router } from '@angular/router';
-import { Subscription, filter } from 'rxjs';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BlogDataService } from '../../services/blog-data.service';
 import { COMPARE_MAX_VEHICLES, buildCompareQueryString } from '../../compare/compare-engine';
 
 /**
  * Floating compare tray — MVP max 2.
- * Isolated: failures here must not affect Browse / Detail / Home.
- * Hidden on the Compare page itself (page owns the experience).
+ * Mounted only on Browse EVs. Isolated: failures must not affect Browse.
  */
 @Component({
   selector: 'app-compare-tray',
   standalone: true,
   imports: [CommonModule],
   template: `
-    @if (visible && selectedIds.length > 0) {
+    @if (selectedIds.length > 0) {
       <div class="compare-tray-wrapper animate-slide-up" role="region" aria-label="Compare selection">
         <div class="compare-tray-content">
           <div class="tray-header">
@@ -41,9 +40,11 @@ import { COMPARE_MAX_VEHICLES, buildCompareQueryString } from '../../compare/com
           <button
             type="button"
             class="compare-now-btn"
-            [disabled]="selectedIds.length < 2"
+            [class.needs-more]="!canCompare"
+            [disabled]="!canCompare"
+            [attr.aria-disabled]="!canCompare"
             (click)="goToCompare()">
-            Compare ({{ selectedIds.length }})
+            {{ canCompare ? ('Compare (' + selectedIds.length + ')') : 'Select one more EV to compare.' }}
           </button>
         </div>
 
@@ -193,10 +194,13 @@ import { COMPARE_MAX_VEHICLES, buildCompareQueryString } from '../../compare/com
       background: #0369A1;
       transform: translateY(-1px);
     }
-    .compare-now-btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
+    .compare-now-btn:disabled,
+    .compare-now-btn.needs-more {
+      opacity: 0.9;
+      cursor: default;
       box-shadow: none;
+      background: #E2E8F0;
+      color: #475569;
     }
 
     .tray-notice {
@@ -222,7 +226,6 @@ import { COMPARE_MAX_VEHICLES, buildCompareQueryString } from '../../compare/com
 export class CompareTrayComponent implements OnInit, OnDestroy {
   selectedIds: string[] = [];
   notice: string | null = null;
-  visible = true;
   readonly maxSlots = COMPARE_MAX_VEHICLES;
 
   private nameCache = new Map<string, string>();
@@ -235,16 +238,11 @@ export class CompareTrayComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef
   ) {}
 
+  get canCompare(): boolean {
+    return this.selectedIds.length >= 2;
+  }
+
   ngOnInit(): void {
-    this.visible = !this.router.url.startsWith('/compare');
-
-    this.subs.push(
-      this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)).subscribe((e) => {
-        this.visible = !e.urlAfterRedirects.startsWith('/compare');
-        this.cdr.detectChanges();
-      })
-    );
-
     this.subs.push(
       this.compareState.selectedVehicles$.subscribe((ids) => {
         this.selectedIds = ids;
@@ -278,6 +276,7 @@ export class CompareTrayComponent implements OnInit, OnDestroy {
   }
 
   goToCompare(): void {
+    if (!this.canCompare) return;
     const qs = buildCompareQueryString(this.selectedIds);
     this.router.navigateByUrl(qs ? `/compare?${qs}` : '/compare');
   }
