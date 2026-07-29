@@ -49,4 +49,14 @@ describe('Reliability, Maintenance & Resilience Tests', () => {
     expect(res.body.requestId).toBeDefined();
     expect(res.body.requestId).not.toBe('N/A');
   });
+
+  it('should accept inbound x-request-id and echo it on the response', async () => {
+    const clientId = 'phase2-client-correlation-id';
+    const res = await request(app)
+      .get('/api/health')
+      .set('x-request-id', clientId);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['x-request-id']).toBe(clientId);
+  });
 });

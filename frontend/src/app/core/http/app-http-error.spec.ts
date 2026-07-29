@@ -1,13 +1,13 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { classifyHttpError, isTransientStatus } from './app-http-error';
+import { classifyHttpError, extractRequestId, isTransientStatus } from './app-http-error';
 
-function httpErr(status: number, body?: unknown): HttpErrorResponse {
+function httpErr(status: number, body?: unknown, headers?: HttpHeaders): HttpErrorResponse {
   return new HttpErrorResponse({
     status,
     statusText: 'Error',
     url: '/api/test',
     error: body,
-    headers: new HttpHeaders()
+    headers: headers ?? new HttpHeaders()
   });
 }
 
@@ -61,6 +61,40 @@ describe('classifyHttpError', () => {
     const result = classifyHttpError(new Error('boom'), true);
     expect(result.category).toBe('unknown');
     expect(result.retryable).toBe(false);
+  });
+
+  it('propagates requestId from error body', () => {
+    const result = classifyHttpError(
+      httpErr(500, { requestId: 'body-id-1', error: { code: 'INTERNAL_SERVER_ERROR' } }),
+      true
+    );
+    expect(result.requestId).toBe('body-id-1');
+    expect(result.code).toBe('INTERNAL_SERVER_ERROR');
+  });
+
+  it('falls back to outbound requestId when response has no id', () => {
+    const result = classifyHttpError(httpErr(0), true, 'outbound-abc');
+    expect(result.requestId).toBe('outbound-abc');
+  });
+
+  it('prefers body requestId over outbound fallback', () => {
+    const result = classifyHttpError(
+      httpErr(404, { requestId: 'from-body', error: { code: 'NOT_FOUND' } }),
+      true,
+      'outbound'
+    );
+    expect(result.requestId).toBe('from-body');
+  });
+});
+
+describe('extractRequestId', () => {
+  it('reads x-request-id response header', () => {
+    const headers = new HttpHeaders({ 'x-request-id': 'hdr-99' });
+    expect(extractRequestId(httpErr(500, {}, headers))).toBe('hdr-99');
+  });
+
+  it('returns fallback when nothing else is present', () => {
+    expect(extractRequestId(httpErr(500), 'fb')).toBe('fb');
   });
 });
 

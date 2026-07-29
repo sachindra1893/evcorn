@@ -2,15 +2,21 @@ import { HttpClient, HttpContext, provideHttpClient, withInterceptors } from '@a
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
-import { LoggingService } from '../logging/logging.service';
+import { DiagnosticsService } from '../diagnostics/diagnostics.service';
 import { NetworkStatusService } from '../network/network-status.service';
+import { REQUEST_ID_HEADER } from '../observability/observability.constants';
 import { DISABLE_HTTP_RETRY, HTTP_TIMEOUT_MS } from './http-context-tokens';
 import { httpErrorInterceptor } from './http-error.interceptor';
 
 describe('httpErrorInterceptor', () => {
   let http: HttpClient;
   let httpMock: HttpTestingController;
-  let logging: { error: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn> };
+  let diagnostics: {
+    httpFailure: ReturnType<typeof vi.fn>;
+    httpSlow: ReturnType<typeof vi.fn>;
+    coldStart: ReturnType<typeof vi.fn>;
+    retry: ReturnType<typeof vi.fn>;
+  };
   let network: {
     isOnline: ReturnType<typeof vi.fn>;
     beginBackendWaking: ReturnType<typeof vi.fn>;
@@ -18,9 +24,11 @@ describe('httpErrorInterceptor', () => {
   };
 
   beforeEach(() => {
-    logging = {
-      error: vi.fn(),
-      warn: vi.fn()
+    diagnostics = {
+      httpFailure: vi.fn(),
+      httpSlow: vi.fn(),
+      coldStart: vi.fn(),
+      retry: vi.fn()
     };
     network = {
       isOnline: vi.fn(() => true),
@@ -32,7 +40,7 @@ describe('httpErrorInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([httpErrorInterceptor])),
         provideHttpClientTesting(),
-        { provide: LoggingService, useValue: logging },
+        { provide: DiagnosticsService, useValue: diagnostics },
         { provide: NetworkStatusService, useValue: network }
       ]
     });
@@ -50,17 +58,47 @@ describe('httpErrorInterceptor', () => {
     const req = httpMock.expectOne('/api/ok');
     req.flush({ ok: true });
     await expect(promise).resolves.toEqual({ ok: true });
-    expect(logging.error).not.toHaveBeenCalled();
+    expect(diagnostics.httpFailure).not.toHaveBeenCalled();
   });
 
-  it('does not retry non-transient 404 failures', async () => {
+  it('attaches X-Request-Id to outbound requests', async () => {
+    const promise = firstValueFrom(http.get('/api/ok'));
+    const req = httpMock.expectOne('/api/ok');
+    const id = req.request.headers.get(REQUEST_ID_HEADER);
+    expect(id).toBeTruthy();
+    expect(id!.length).toBeGreaterThan(8);
+    req.flush({ ok: true });
+    await promise;
+  });
+
+  it('preserves an existing X-Request-Id header', async () => {
+    const promise = firstValueFrom(
+      http.get('/api/ok', { headers: { [REQUEST_ID_HEADER]: 'client-fixed-id' } })
+    );
+    const req = httpMock.expectOne('/api/ok');
+    expect(req.request.headers.get(REQUEST_ID_HEADER)).toBe('client-fixed-id');
+    req.flush({ ok: true });
+    await promise;
+  });
+
+  it('does not retry non-transient 404 failures and logs with requestId', async () => {
     const promise = firstValueFrom(http.get('/api/missing'));
     const req = httpMock.expectOne('/api/missing');
-    req.flush({ error: { code: 'NOT_FOUND' } }, { status: 404, statusText: 'Not Found' });
+    const outboundId = req.request.headers.get(REQUEST_ID_HEADER);
+    req.flush(
+      { requestId: 'server-rid', error: { code: 'NOT_FOUND' } },
+      { status: 404, statusText: 'Not Found' }
+    );
 
     await expect(promise).rejects.toMatchObject({ status: 404 });
     httpMock.expectNone('/api/missing');
-    expect(logging.error).toHaveBeenCalled();
+    expect(diagnostics.httpFailure).toHaveBeenCalled();
+    const [, classified, extras] = diagnostics.httpFailure.mock.calls[0];
+    expect(classified.category).toBe('client');
+    expect(classified.requestId).toBe('server-rid');
+    expect(extras.requestId).toBe('server-rid');
+    expect(extras.endpoint).toContain('/api/missing');
+    expect(outboundId).toBeTruthy();
     expect(network.beginBackendWaking).not.toHaveBeenCalled();
   });
 
@@ -78,8 +116,9 @@ describe('httpErrorInterceptor', () => {
       await expect(promise).rejects.toMatchObject({ status: 503 });
       expect(network.beginBackendWaking).toHaveBeenCalled();
       expect(network.endBackendWaking).toHaveBeenCalled();
-      expect(logging.warn).toHaveBeenCalled();
-      expect(logging.error).toHaveBeenCalled();
+      expect(diagnostics.coldStart).toHaveBeenCalled();
+      expect(diagnostics.retry).toHaveBeenCalled();
+      expect(diagnostics.httpFailure).toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }

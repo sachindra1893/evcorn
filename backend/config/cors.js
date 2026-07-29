@@ -25,7 +25,10 @@ const corsOptions = {
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-password'],
+  // Phase 2: allow inbound correlation ID; expose response ID + Server-Timing
+  // so the browser can read them on cross-origin API calls.
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-password', 'x-request-id', 'X-Request-Id'],
+  exposedHeaders: ['x-request-id', 'X-Request-Id', 'Server-Timing'],
   credentials: true,
   maxAge: 86400 // 24 hours preflight cache
 };

@@ -6,6 +6,7 @@ import { CompareTrayComponent } from './components/compare-tray/compare-tray';
 import { OfflineBannerComponent } from './components/offline-banner/offline-banner.component';
 import { NetworkStatusService } from './core/network/network-status.service';
 import { AppNotificationService } from './core/error-handling/app-notification.service';
+import { RouteTimingService } from './core/observability/route-timing.service';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +21,8 @@ export class App {
 
   private readonly network = inject(NetworkStatusService);
   private readonly notifications = inject(AppNotificationService);
+  /** Eagerly construct so router navigation timing is recorded app-wide. */
+  private readonly _routeTiming = inject(RouteTimingService);
 
   /**
    * Root-Cause Cluster F (frontend handling): surfaced globally so any

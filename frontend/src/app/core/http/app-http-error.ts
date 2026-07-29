@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { REQUEST_ID_HEADER } from '../observability/observability.constants';
 
 export type ErrorCategory =
   | 'network'
@@ -14,6 +15,8 @@ export interface AppHttpError {
   category: ErrorCategory;
   status: number;
   code?: string;
+  /** End-to-end correlation ID (from response body/header or outbound request). */
+  requestId?: string;
   userMessage: string;
   retryable: boolean;
   originalError: unknown;
@@ -29,6 +32,28 @@ export function isTransientStatus(status: number): boolean {
 function backendErrorCode(err: HttpErrorResponse): string | undefined {
   const body = err.error;
   return body && typeof body === 'object' ? body?.error?.code : undefined;
+}
+
+/**
+ * Extract request/correlation ID from an HTTP error response.
+ * Prefer body.requestId (always readable cross-origin), then response header,
+ * then a caller-supplied outbound ID.
+ */
+export function extractRequestId(
+  err: unknown,
+  fallbackRequestId?: string | null
+): string | undefined {
+  if (err instanceof HttpErrorResponse) {
+    const body = err.error;
+    if (body && typeof body === 'object' && typeof body.requestId === 'string' && body.requestId) {
+      return body.requestId;
+    }
+    const headerId =
+      err.headers?.get(REQUEST_ID_HEADER) ??
+      err.headers?.get('x-request-id');
+    if (headerId) return headerId;
+  }
+  return fallbackRequestId || undefined;
 }
 
 /**
@@ -62,10 +87,26 @@ function messageFor(category: ErrorCategory, status: number): string {
  * Classifies any error that can come out of an HttpClient call into a
  * normalized shape with a professional user-facing message and a retryable
  * flag. Never throws.
+ *
+ * @param outboundRequestId Optional ID we attached to the request (Phase 2
+ *   correlation) — used when the response never arrived or headers are opaque.
  */
-export function classifyHttpError(err: unknown, isOnline: boolean): AppHttpError {
+export function classifyHttpError(
+  err: unknown,
+  isOnline: boolean,
+  outboundRequestId?: string | null
+): AppHttpError {
+  const requestId = extractRequestId(err, outboundRequestId);
+
   if (!isOnline) {
-    return { category: 'offline', status: 0, userMessage: messageFor('offline', 0), retryable: true, originalError: err };
+    return {
+      category: 'offline',
+      status: 0,
+      requestId,
+      userMessage: messageFor('offline', 0),
+      retryable: true,
+      originalError: err
+    };
   }
 
   if (err instanceof HttpErrorResponse) {
@@ -73,30 +114,92 @@ export function classifyHttpError(err: unknown, isOnline: boolean): AppHttpError
     const code = backendErrorCode(err);
 
     if (status === 0) {
-      return { category: 'network', status, code, userMessage: messageFor('network', status), retryable: true, originalError: err };
+      return {
+        category: 'network',
+        status,
+        code,
+        requestId,
+        userMessage: messageFor('network', status),
+        retryable: true,
+        originalError: err
+      };
     }
     if (status === 401 || status === 403) {
-      return { category: 'auth', status, code, userMessage: messageFor('auth', status), retryable: false, originalError: err };
+      return {
+        category: 'auth',
+        status,
+        code,
+        requestId,
+        userMessage: messageFor('auth', status),
+        retryable: false,
+        originalError: err
+      };
     }
     if (status === 429) {
-      return { category: 'rateLimit', status, code, userMessage: messageFor('rateLimit', status), retryable: false, originalError: err };
+      return {
+        category: 'rateLimit',
+        status,
+        code,
+        requestId,
+        userMessage: messageFor('rateLimit', status),
+        retryable: false,
+        originalError: err
+      };
     }
     if (status === 408) {
-      return { category: 'timeout', status, code, userMessage: messageFor('timeout', status), retryable: true, originalError: err };
+      return {
+        category: 'timeout',
+        status,
+        code,
+        requestId,
+        userMessage: messageFor('timeout', status),
+        retryable: true,
+        originalError: err
+      };
     }
     if (status >= 500) {
-      return { category: 'server', status, code, userMessage: messageFor('server', status), retryable: isTransientStatus(status), originalError: err };
+      return {
+        category: 'server',
+        status,
+        code,
+        requestId,
+        userMessage: messageFor('server', status),
+        retryable: isTransientStatus(status),
+        originalError: err
+      };
     }
     if (status >= 400) {
-      return { category: 'client', status, code, userMessage: messageFor('client', status), retryable: false, originalError: err };
+      return {
+        category: 'client',
+        status,
+        code,
+        requestId,
+        userMessage: messageFor('client', status),
+        retryable: false,
+        originalError: err
+      };
     }
   }
 
   // RxJS TimeoutError (from the interceptor's timeout()) has name 'TimeoutError'
   // but isn't an HttpErrorResponse.
   if (err && typeof err === 'object' && (err as { name?: string }).name === 'TimeoutError') {
-    return { category: 'timeout', status: 0, userMessage: messageFor('timeout', 0), retryable: true, originalError: err };
+    return {
+      category: 'timeout',
+      status: 0,
+      requestId,
+      userMessage: messageFor('timeout', 0),
+      retryable: true,
+      originalError: err
+    };
   }
 
-  return { category: 'unknown', status: 0, userMessage: messageFor('unknown', 0), retryable: false, originalError: err };
+  return {
+    category: 'unknown',
+    status: 0,
+    requestId,
+    userMessage: messageFor('unknown', 0),
+    retryable: false,
+    originalError: err
+  };
 }

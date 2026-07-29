@@ -13,12 +13,21 @@ const errorHandler = (err, req, res, next) => {
   const errorCode = err.errorCode || 'INTERNAL_SERVER_ERROR';
   const reqId = req.id || req.headers['x-request-id'] || 'N/A';
 
-  // Log non-operational (unexpected) errors or 500s as system errors
+  // Log non-operational (unexpected) errors or 500s as system errors.
+  // Operational 4xx are already captured by requestLogger access logs — avoid duplicate logging.
   if (statusCode >= 500 || !err.isOperational) {
-    logger.error(`API Error [${statusCode}] [${errorCode}] [reqId:${reqId}]: ${err.message}`, {
+    logger.error(`API Error [${statusCode}] [${errorCode}]: ${err.message}`, {
+      requestId: reqId,
       reqId,
       url: req.originalUrl || req.url,
       method: req.method,
+      status: statusCode,
+      code: errorCode,
+      eventType: 'http_failure',
+      kind: statusCode >= 500 ? 'backend_5xx' : 'unknown',
+      what: err.message,
+      where: req.originalUrl || req.url,
+      why: errorCode,
       stack: config.NODE_ENV === 'development' ? err.stack : undefined,
       isOperational: err.isOperational
     });

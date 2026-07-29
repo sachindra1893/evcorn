@@ -16,10 +16,20 @@ async function measureQuery(operationName, queryFn, meta = {}) {
       logger.warn(`SLOW QUERY DETECTED [${durationMs}ms > ${SLOW_QUERY_THRESHOLD_MS}ms] in ${operationName}`, {
         operationName,
         durationMs,
+        eventType: 'http_slow',
+        kind: 'slow_request',
+        what: `Slow database query in ${operationName}`,
+        where: operationName,
+        why: `durationMs=${durationMs} > ${SLOW_QUERY_THRESHOLD_MS}`,
+        requestId: meta.requestId || meta.reqId,
         ...meta
       });
     } else {
-      logger.debug(`Query [${operationName}] executed in ${durationMs}ms`);
+      logger.debug(`Query [${operationName}] executed in ${durationMs}ms`, {
+        operationName,
+        durationMs,
+        requestId: meta.requestId || meta.reqId
+      });
     }
 
     return result;
