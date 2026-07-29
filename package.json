@@ -4,9 +4,25 @@
   "private": true,
   "description": "EVCorn Monorepo - Angular Frontend & Express Node.js Backend",
   "scripts": {
-    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run start",
     "dev:backend": "npm --prefix backend start",
-    "build:frontend": "npm --prefix frontend run build"
+    "build:frontend": "npm --prefix frontend run build",
+    "install:all": "npm --prefix backend ci && npm --prefix frontend ci && npm ci",
+    "lint:backend": "npm --prefix backend run lint",
+    "test:backend": "npm --prefix backend test",
+    "test:frontend": "npm --prefix frontend run test:ci",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "smoke": "node scripts/smoke-validate.mjs",
+    "perf:check": "node scripts/check-bundle-size.mjs",
+    "seo:check": "node scripts/seo-validate.mjs",
+    "release:report": "node scripts/release-report.mjs",
+    "predeploy": "node scripts/pre-deploy.mjs",
+    "validate:production": "node scripts/validate-production.mjs",
+    "validate:local": "node scripts/validate-local.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
   },
   "keywords": [
     "evcorn",

@@ -33,13 +33,17 @@ EVCorn operates a decoupled Cloud-Native monorepo architecture:
 
 ## 3. Pre-Flight Deployment Verification Checklist
 
-Before pushing any release to production:
+Before pushing any release to production (see also **`docs/RELEASE.md`**):
 
-- [ ] **Automated Tests:** All 17 Jest unit & Supertest integration tests pass (`npm test`).
-- [ ] **Angular Build:** Production bundle compiles with zero TypeScript errors (`npm run build`).
+- [ ] **Local / CI gate:** `npm run validate:local` or green GitHub Actions on the PR.
+- [ ] **Automated Tests:** Backend Jest + Frontend Vitest pass with coverage.
+- [ ] **Playwright E2E:** Core routes + regression specs pass.
+- [ ] **Angular Build:** Production bundle compiles (`npm run build`) and bundle-size gate passes.
+- [ ] **SEO / Smoke:** Static SEO + API smoke (Published vehicles non-empty) pass.
 - [ ] **Static Sitemap:** Sitemap auto-generates without errors (`public/sitemap.xml`).
 - [ ] **Environment Validation:** All required secrets (`MONGO_URI`, `JWT_SECRET`, `CLOUDINARY_*`) present in production settings.
-- [ ] **Health Endpoint Probes:** `/api/health`, `/api/health/live`, and `/api/health/ready` return HTTP 200 `READY`.
+- [ ] **Post-deploy:** `npm run validate:production` (or **Production Post-Deploy Validate** workflow) PASS before marking COMPLETE.
+- [ ] **Health Endpoint Probes (LIVE):** `/api/health`, `/api/health/live`, and `/api/health/ready` healthy after deploy.
 
 ---
 
@@ -63,7 +67,7 @@ If a production deployment encounters critical failures:
 
 ### Recommended Branch Protection Rules (`main` branch):
 - Require Pull Request reviews before merging.
-- Require status checks to pass before merging (`backend-test`, `frontend-build`).
+- Require status checks to pass before merging (`backend`, `frontend`, `smoke`, `e2e`, `release-report`).
 - Enforce Linear History and require signed commits.
 
 ### Semantic Versioning Convention:

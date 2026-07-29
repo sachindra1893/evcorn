@@ -13,7 +13,13 @@ const config = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : ['https://evcorn.com', 'https://www.evcorn.com', 'https://evcorn.vercel.app', 'http://localhost:4200'],
+    : [
+        'https://evcorn.com',
+        'https://www.evcorn.com',
+        'https://evcorn.vercel.app',
+        'http://localhost:4200',
+        'http://127.0.0.1:4200'
+      ],
   CLOUDINARY: {
     CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
     API_KEY: process.env.CLOUDINARY_API_KEY || '',

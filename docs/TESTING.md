@@ -1,62 +1,75 @@
 # EVCorn Enterprise Testing & Quality Assurance Standard
 
-> **Document Status:** Active QA & Test Suite Standard (Phase 8 Complete)  
-> **Version:** 1.0.0  
+> **Document Status:** Active QA & Test Suite Standard (Phase 3 Release Engineering)  
+> **Version:** 2.0.0  
 
 ---
 
-## 1. Test Suite Execution Summary
+## 1. Test layers
 
-- **Total Test Suites:** 5 (100% PASS)
-- **Total Tests:** 17 (100% PASS)
-- **Execution Time:** ~1.5 seconds
-- **Line Coverage:** 50.28% overall (focusing on core business logic & security boundaries)
+| Layer | Location | Runner |
+| :--- | :--- | :--- |
+| Backend unit/integration | `backend/tests/**` | Jest (`npm test` / `npm run test:ci`) |
+| Frontend unit | `frontend/src/**/*.spec.ts` | Vitest via `ng test` (`npm run test:ci`) |
+| Playwright E2E | `e2e/*.spec.ts` | Playwright (`npm run test:e2e` from repo root) |
+| Smoke / perf / SEO gates | `scripts/*.mjs` | Node |
+| Full local gate | `npm run validate:local` | Orchestrator |
+
+Release handbook: **`docs/RELEASE.md`**.
+
+---
+
+## 2. Backend suites (representative)
 
 ```bash
-PASS  tests/unit/auth.utils.test.js
-PASS  tests/unit/apiQuery.test.js
-PASS  tests/integration/health.api.test.js
-PASS  tests/integration/auth.api.test.js
-PASS  tests/integration/vehicle.api.test.js
+cd backend && npm test
 ```
 
----
-
-## 2. Test Classification Breakdown
-
-| Test Suite | Type | Test Cases | Status | Scope / Verification |
-| :--- | :--- | :--- | :--- | :--- |
-| `tests/unit/apiQuery.test.js` | Unit | 5 | **PASS** | Pagination, limit capping (max 100), sorting whitelist, projections, format envelopes. |
-| `tests/unit/auth.utils.test.js` | Unit | 2 | **PASS** | JWT token generation, payload decoding, malformed token rejection. |
-| `tests/integration/health.api.test.js` | Integration | 4 | **PASS** | `/api/health`, `/api/health/live`, `/api/health/ready`, `/api/metrics`, request ID injection. |
-| `tests/integration/vehicle.api.test.js` | Integration | 3 | **PASS** | `GET /api/vehicles`, `GET /api/vehicles?format=envelope`, 404 AppError handling. |
-| `tests/integration/auth.api.test.js` | Integration | 2 | **PASS** | Valid admin login, JWT issuance, 401 Unauthorized handling for invalid password. |
+Includes (non-exhaustive): `apiQuery` (Published-status P0 regressions), `auth`, `health`, `vehicle`, `search`, `reliability`, `observability-regression` (Server-Timing + request-id + retry), contracts, admin, analytics, evDomain.
 
 ---
 
-## 3. Frontend & Build Integrity Verification
-
-- **Angular Build Test:** `npm run build` executed in `frontend/` $\rightarrow$ **0 TypeScript / Angular Compiler Errors**, 6 static routes prerendered cleanly.
-- **Sitemap Generator:** `generate-sitemap.js` generates valid dynamic `sitemap.xml`.
-
----
-
-## 4. How to Execute Tests
+## 3. Frontend suites
 
 ```bash
-# Run backend test suite with coverage
-cd backend && npm test
+cd frontend && npm run test:ci
+```
 
-# Run tests in single-threaded mode for debugging
-cd backend && npx jest --runInBand
+Includes HTTP interceptor (retry/timeout/request-id), AsyncState (empty/offline/timeout), diagnostics, logging, global error handler, and `reliability-regression.spec.ts`.
+
+---
+
+## 4. Playwright E2E
+
+```bash
+npm ci   # root — installs @playwright/test
+npx playwright install chromium
+npm run test:e2e
+```
+
+Covers Home, Browse EVs, Vehicle Detail, Articles, Article Detail, Search, Compare, Health API, SEO head tags, and permanent loader/navigation regressions. Uses local file DB (empty `MONGO_URI`).
+
+---
+
+## 5. How to Execute (quick)
+
+```bash
+# Full Phase 3 local validation
+npm run validate:local
+
+# Backend only
+npm --prefix backend test
+
+# Frontend only
+npm --prefix frontend run test:ci
 
 # Build Angular frontend
-cd frontend && npm run build
+npm --prefix frontend run build
 ```
 
 ---
 
-## 5. Remaining Testing Gaps & Quality Roadmap
+## 6. Remaining gaps
 
-1. **Playwright / Cypress E2E Tests:** In a future phase, headful E2E browser tests can automate multi-step visual workflows (interactive vehicle comparison tray, search dropdowns, article block rendering).
-2. **Cloudinary Mock Upload Testing:** Add mock stream interceptors to unit test `UploadService` image deletions without contacting Cloudinary servers.
+1. **Cloudinary mock upload testing** — optional; do not hit live Cloudinary in CI.
+2. **Expanded visual compare-tray interactions** — add only if stable selectors exist.

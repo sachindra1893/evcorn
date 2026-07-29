@@ -1,13 +1,18 @@
 # EVCorn Enterprise CI/CD Pipeline Documentation
 
-> **Document Status:** Active CI/CD Pipeline Standard (Phase 9 Complete)  
-> **Version:** 1.0.0  
+> **Document Status:** Active CI/CD Pipeline Standard (Phase 3 Release Engineering)  
+> **Version:** 2.0.0  
 
 ---
 
 ## 1. CI/CD Architecture & Pipeline Flow
 
-The EVCorn automated CI/CD pipeline is powered by **GitHub Actions** (`.github/workflows/ci-cd.yml`). Every code change submitted via Pull Request or merged to `main` executes 3 automated quality jobs:
+The EVCorn automated CI pipeline is powered by **GitHub Actions**:
+
+- **PR / push to `main`:** `.github/workflows/ci-cd.yml` (merge gate)
+- **Post-deploy LIVE check:** `.github/workflows/production-validate.yml` (`workflow_dispatch` only)
+
+Vercel (frontend) and Render (backend) auto-deploy remain unchanged. CI gates merges; it does not replace provider deploys.
 
 ```
                   ┌───────────────────────┐
@@ -15,55 +20,56 @@ The EVCorn automated CI/CD pipeline is powered by **GitHub Actions** (`.github/w
                   │        'main'         │
                   └───────────┬───────────┘
                               │
-         ┌────────────────────┼────────────────────┐
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│   backend-test   │ │  frontend-build  │ │  security-audit  │
-│  - npm ci        │ │  - npm ci        │ │  - npm audit     │
-│  - Jest Unit     │ │  - ng build      │ │  - High/Critical │
-│  - Supertest     │ │  - Prerender 6   │ │    Vulnerability │
-│    Integration   │ │    Static Routes │ │    Reporting     │
-└────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
-         │                    │                    │
-         └────────────────────┼────────────────────┘
+    ┌─────────────┬───────────┼───────────┬─────────────┐
+    ▼             ▼           ▼           ▼             ▼
+ backend      frontend      smoke        e2e      security-audit
+ lint/test    test/build   file-DB    Playwright   (advisory)
+ coverage     size/SEO      API
+    └─────────────┴───────────┴───────────┴─────────────┘
                               │
                               ▼
-                  ┌───────────────────────┐
-                  │  All Checks Passed    │
-                  │  Ready for Production │
-                  └───────────────────────┘
+                     release-report (PASS/FAIL)
 ```
+
+Full release process, local commands, rollback, and checklists: **`docs/RELEASE.md`**.
 
 ---
 
 ## 2. GitHub Actions Job Specifications
 
-### Job 1: `backend-test`
-- **Environment:** `ubuntu-latest`, Node.js `20.x`.
-- **Steps:**
-  1. Check out repository code (`actions/checkout@v4`).
-  2. Restore/cache backend npm dependencies (`actions/setup-node@v4`).
-  3. Execute backend test suite with line coverage reporting (`npm test`).
-  4. Ensures 100% test pass rate across all 17 unit and integration tests.
+### `backend` (critical)
+Node 20 · `npm ci` · syntax lint · Jest with coverage · uploads coverage artifact.
 
-### Job 2: `frontend-build`
-- **Environment:** `ubuntu-latest`, Node.js `20.x`.
-- **Steps:**
-  1. Check out repository code.
-  2. Restore/cache frontend npm dependencies.
-  3. Compile TypeScript and generate Angular production bundle (`npm run build`).
-  4. Validates zero compilation errors and verifies static sitemap generation (`public/sitemap.xml`).
+### `frontend` (critical)
+Node 20 · `npm ci` · `ng test --watch=false --coverage` · production build · bundle size gate · static SEO gate · uploads `dist` + artifacts.
 
-### Job 3: `security-audit`
-- **Environment:** `ubuntu-latest`, Node.js `20.x`.
-- **Steps:**
-  1. Scans backend and frontend dependencies for high/critical security vulnerabilities (`npm audit`).
-  2. Flags outdated dependencies for review without performing unverified auto-upgrades.
+### `smoke` (critical)
+Starts backend with empty `MONGO_URI` (file DB) · `scripts/smoke-validate.mjs` against `/api/health*`, vehicles (Published non-empty), articles, search.
+
+### `e2e` (critical)
+Installs Playwright Chromium · runs `e2e/*.spec.ts` with local `ng serve` + file-DB backend (see `playwright.config.ts`).
+
+### `security-audit` (advisory)
+`npm audit --audit-level=high` on backend and frontend (`continue-on-error`).
+
+### `release-report` (critical aggregator)
+Merges job artifacts and runs `scripts/release-report.mjs` → `artifacts/RELEASE_REPORT.md`.
+
+### Production validate (manual)
+`scripts/validate-production.mjs` against `https://evcorn.com` + Render API. **Not** part of PR CI.
 
 ---
 
-## 3. Future CI/CD Pipeline Enhancements
+## 3. Caching & timeouts
 
-1. **Automated Staging Preview Deployments:** Provisioning temporary PR preview environments on Vercel and Render for visual design QA before merging to `main`.
-2. **Playwright E2E Integration Job:** Adding a headful Playwright browser testing job to the pipeline to validate dynamic UI interactions automatically on every PR.
+- npm cache via `actions/setup-node` per lockfile
+- Job timeouts: backend 15m, frontend 25m, e2e 35m, smoke 10m
+- Concurrency group cancels outdated runs on the same ref
+
+---
+
+## 4. Related documentation
+
+- `docs/RELEASE.md` — release engineering handbook (Phase 3)
+- `docs/TESTING.md` — test inventory
+- `docs/DEPLOYMENT.md` — env vars & rollback

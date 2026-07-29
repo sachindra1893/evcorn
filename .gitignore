@@ -21,3 +21,10 @@ dist/
 **/.DS_Store
 .vscode/
 **/.vscode/
+
+# Phase 3 release engineering artifacts
+artifacts/
+playwright-report/
+test-results/
+**/coverage/
+frontend/coverage/

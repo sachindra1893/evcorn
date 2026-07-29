@@ -1,0 +1,42 @@
+# Optional post-deploy LIVE production validation.
+# Does not run on PRs. Trigger manually after Vercel/Render deploy completes.
+
+name: Production Post-Deploy Validate
+
+on:
+  workflow_dispatch:
+    inputs:
+      prod_web:
+        description: 'Production frontend URL'
+        required: true
+        default: 'https://evcorn.com'
+      prod_api:
+        description: 'Production API base (…/api)'
+        required: true
+        default: 'https://evcorn-backend.onrender.com/api'
+
+jobs:
+  validate-production:
+    name: Validate LIVE production routes + health
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Post-deploy production validation
+        run: node scripts/validate-production.mjs
+        env:
+          PROD_WEB: ${{ inputs.prod_web }}
+          PROD_API: ${{ inputs.prod_api }}
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-validate-results
+          path: artifacts/production-validate-results.json
+          retention-days: 30
