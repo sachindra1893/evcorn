@@ -117,13 +117,15 @@ E2E backend uses **`MONGO_URI=` (empty)** so `backend/data/*.json` file DB is us
 
 ## 5. Rollback
 
-Unchanged from `docs/DEPLOYMENT.md`:
+Provider rollback unchanged from `docs/DEPLOYMENT.md`:
 
 1. **Frontend:** Vercel → previous deployment → Promote to Production  
 2. **Backend:** Render → prior successful deploy → Roll Back  
 3. **Data:** Atlas PITR / `backend/data/vehicles_backup_*.json`
 
-If post-deploy validation fails: rollback first, then investigate — do not “COMPLETE” the release.
+**Feature-level disable (preferred when flagged):** set the relevant `FLAG_*` env on Render via `backend/config/featureFlags.js` so the surface fails closed without a full site rollback. Full preference order, graceful rules, and deprecation removal sequence: **`docs/PRODUCT_EXPERIENCE_ARCHITECTURE.md`** §§9–10.
+
+If post-deploy validation fails: rollback or flag-off first, then investigate — do not “COMPLETE” the release.
 
 ---
 
@@ -181,3 +183,8 @@ All under `artifacts/` (gitignored):
 - `docs/DEPLOYMENT.md` — env vars & rollback  
 - `docs/RELIABILITY.md` / `docs/OBSERVABILITY.md` — **LOCKED** Phase 1/2 standards  
 - `docs/SEO.md` / `docs/PERFORMANCE.md` — product standards exercised by gates  
+- `docs/PRODUCT_EXPERIENCE_ARCHITECTURE.md` — Phase 5 feature design / lifecycle / rollback / deprecation (**LOCKED**)  
+- `docs/ARCHITECTURE_DECISIONS.md` — standing ADRs for future feature phases  
+- `docs/FEATURE_ACCEPTANCE_CHECKLIST.md` — pre-merge product checklist  
+- `docs/TESTING_REQUIREMENTS.md` — feature test expectations aligned with these gates  
+- `docs/PERFORMANCE_BUDGET.md` — bundle / API / cache budgets for new features

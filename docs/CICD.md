@@ -73,3 +73,6 @@ Merges job artifacts and runs `scripts/release-report.mjs` → `artifacts/RELEAS
 - `docs/RELEASE.md` — release engineering handbook (Phase 3)
 - `docs/TESTING.md` — test inventory
 - `docs/DEPLOYMENT.md` — env vars & rollback
+- `docs/TESTING_REQUIREMENTS.md` — Phase 5 feature testing requirements (no merge without critical gates)
+- `docs/PRODUCT_EXPERIENCE_ARCHITECTURE.md` — Phase 5 product experience standards (**LOCKED**)
+- `docs/ARCHITECTURE_DECISIONS.md` — ADRs for future feature phases

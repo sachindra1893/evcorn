@@ -36,11 +36,13 @@ Controlled platform maintenance triggered via environment variable:
 ## 4. Feature Flag System (`config/featureFlags.js`)
 
 Lightweight, environment-configurable feature toggles without third-party dependencies:
-- `ENABLE_ADVANCED_SEARCH`
-- `ENABLE_ANALYTICS_TELEMETRY`
-- `ENABLE_EDITORIAL_WORKFLOW`
-- `ENABLE_COMMUNITY_FEATURES`
-- `ENABLE_AI_RECOMMENDATIONS`
+- `ENABLE_ADVANCED_SEARCH` (`FLAG_ENABLE_ADVANCED_SEARCH`, default on unless `'false'`)
+- `ENABLE_ANALYTICS_TELEMETRY` (`FLAG_ENABLE_ANALYTICS_TELEMETRY`, default on unless `'false'`)
+- `ENABLE_EDITORIAL_WORKFLOW` (`FLAG_ENABLE_EDITORIAL_WORKFLOW`, default on unless `'false'`)
+- `ENABLE_COMMUNITY_FEATURES` (`FLAG_ENABLE_COMMUNITY_FEATURES`, default off unless `'true'`)
+- `ENABLE_AI_RECOMMENDATIONS` (`FLAG_ENABLE_AI_RECOMMENDATIONS`, default off unless `'true'`)
+
+Feature disable / graceful rollback without downtime: **`docs/PRODUCT_EXPERIENCE_ARCHITECTURE.md`** §9. Deprecation removal order: §10.
 
 ---
 

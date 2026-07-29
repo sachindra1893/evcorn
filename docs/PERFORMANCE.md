@@ -1,7 +1,9 @@
 # EVCorn Enterprise Frontend Performance & Rendering Optimization Standard
 
-> **Document Status:** Active Performance Standard (Phase 5 Complete)  
+> **Document Status:** Active Frontend Performance Standard  
 > **Version:** 1.0.0  
+
+Budgets and feature-level performance contracts: **`docs/PERFORMANCE_BUDGET.md`** · measured Phase 4 baselines: **`docs/PHASE4_PERFORMANCE.md`**.
 
 ---
 

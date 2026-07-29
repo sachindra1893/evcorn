@@ -74,3 +74,12 @@ If a production deployment encounters critical failures:
 - `v1.0.0` - Major Release (Phase 1-9 Baseline Architecture).
 - `v1.1.0` - Minor Feature Additions (New calculators, AI features).
 - `v1.0.1` - Patch Fixes (Bug fixes, security updates).
+
+---
+
+## 6. Related documentation
+
+- `docs/RELEASE.md` — Phase 3 release engineering & post-deploy COMPLETE criteria
+- `docs/PRODUCT_EXPERIENCE_ARCHITECTURE.md` — Phase 5 feature standards, lifecycle, feature-flag rollback (**LOCKED**)
+- `docs/ARCHITECTURE_DECISIONS.md` — ADRs binding future feature phases
+- `docs/FEATURE_ACCEPTANCE_CHECKLIST.md` — pre-merge product checklist

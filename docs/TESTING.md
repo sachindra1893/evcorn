@@ -17,6 +17,8 @@
 
 Release handbook: **`docs/RELEASE.md`**.
 
+Feature-level expectations (empty/error/perf/isolation) for future product work: **`docs/TESTING_REQUIREMENTS.md`** and **`docs/FEATURE_ACCEPTANCE_CHECKLIST.md`** (Phase 5, **LOCKED**). Lifecycle: **`docs/PRODUCT_EXPERIENCE_ARCHITECTURE.md`** §8.
+
 ---
 
 ## 2. Backend suites (representative)

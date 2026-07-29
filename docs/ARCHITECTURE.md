@@ -5,6 +5,8 @@
 > **Target Scale:** 5,000+ Vehicles • 5,000+ Articles • 10M Monthly Visitors  
 > **Core Stack:** Angular 18 (SSR/ISR) • Node.js / Express • MongoDB Atlas • Cloudinary CDN • Vercel Edge Network  
 
+Product experience rules for future features (isolation, lifecycle, rollback, deprecation, budgets, acceptance): see **`docs/PRODUCT_EXPERIENCE_ARCHITECTURE.md`** (Phase 5, **LOCKED**). Standing decisions: **`docs/ARCHITECTURE_DECISIONS.md`**.
+
 ---
 
 ## 1. System Philosophy & Monorepo Layout
@@ -171,3 +173,4 @@ backend/
 1. **Dual-Model Compatibility:** API endpoints return BOTH typed nested domain objects (`pricing`, `battery`, `charging`, `performance`, `dimensionsObj`, `media`, `safety`, `seo`) AND legacy flat fallbacks (`price`, `batteryCapacity`, `dimensions`).
 2. **Zero Breaking Changes:** Existing frontend URLs, page behaviors, and Admin workflows must remain 100% functional throughout all architectural refactorings.
 3. **Deprecation Sunset:** Top-level legacy flat fallback fields will be permanently removed in Phase 3 of scale, only after all frontend consumers have migrated to typed nested domain properties.
+4. **Feature deprecation:** Product features retire via docs → flag-off → tests → code removal — see **`docs/PRODUCT_EXPERIENCE_ARCHITECTURE.md`** §10.
