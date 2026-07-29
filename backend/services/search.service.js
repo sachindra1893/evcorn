@@ -1,5 +1,6 @@
 /**
  * Unified Search & Discovery Engine Service
+ * Phase 4: short-TTL cache + light projections for list payloads.
  */
 const vehicleRepository = require('../repositories/vehicle.repository');
 const articleRepository = require('../repositories/article.repository');
@@ -7,6 +8,27 @@ const categoryRepository = require('../repositories/category.repository');
 const { toVehicleListDTO } = require('../dto/vehicle.dto');
 const { toArticleListDTO } = require('../dto/article.dto');
 const { publishedVehicleStatusFilter } = require('../utils/apiQuery');
+const appCache = require('../utils/cache');
+
+const SEARCH_VEHICLE_PROJECTION = [
+  'id', 'name', 'categoryId', 'parentModel', 'variantName',
+  'imageUrl', 'batteryCapacity', 'bodyStyle', 'status',
+  'pricing.exShowroomPriceINR', 'pricing.priceText',
+  'performance.claimedRangeKM', 'performance.rangeText',
+  'battery.capacityKWh',
+  'dimensionsObj.seatingCapacity',
+  'media.mainImage', 'media.cloudinaryMainImage'
+].join(' ');
+
+const SEARCH_ARTICLE_PROJECTION = {
+  paragraphs: 0,
+  blocks: 0,
+  revisions: 0,
+  'audit.archivedAt': 0,
+  media: 0,
+  cloudinaryImage: 0,
+  cloudinaryImages: 0,
+};
 
 class SearchService {
   /**
@@ -18,6 +40,10 @@ class SearchService {
     }
 
     const searchTerm = q.trim().toLowerCase();
+    const cacheKey = appCache.KEYS.SEARCH_AUTOCOMPLETE(searchTerm);
+    const cached = appCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
     const containsRegex = new RegExp(searchTerm, 'i');
     const articleQueryFilter = {
       active: true,
@@ -32,13 +58,18 @@ class SearchService {
         ]
       }, 'id name categoryId parentModel imageUrl', { name: 1 }, 0, 5),
       articleRepository.findAll({ ...articleQueryFilter, title: containsRegex }, 'id title categoryId imageUrl', { createdAt: -1 }, 0, 5),
-      categoryRepository.findAll()
+      // Prefer cached category list when warm — fall back to repository
+      (async () => {
+        const catCached = appCache.get(appCache.KEYS.CATEGORIES());
+        if (catCached !== undefined) return catCached;
+        return categoryRepository.findAll();
+      })()
     ]);
 
     const suggestions = [];
 
     // 1. Brand / Category Matches
-    categories.filter(c => c.name.toLowerCase().includes(searchTerm)).forEach(c => {
+    categories.filter(c => (c.name || '').toLowerCase().includes(searchTerm)).forEach(c => {
       suggestions.push({
         type: 'brand',
         title: c.name,
@@ -70,7 +101,9 @@ class SearchService {
       });
     });
 
-    return suggestions.slice(0, 8);
+    const result = suggestions.slice(0, 8);
+    appCache.set(cacheKey, result, appCache.TTL.SEARCH);
+    return result;
   }
 
   /**
@@ -78,6 +111,11 @@ class SearchService {
    */
   async unifiedSearch(q, filters = {}) {
     const searchTerm = (q || '').trim().toLowerCase();
+    const filterFp = appCache.fingerprintQuery(filters);
+    const cacheKey = appCache.KEYS.SEARCH_UNIFIED(`${searchTerm}|${filterFp}`);
+    const cached = appCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
     const regex = searchTerm ? new RegExp(searchTerm, 'i') : null;
 
     const vehicleAndConditions = [publishedVehicleStatusFilter('Published')];
@@ -112,9 +150,13 @@ class SearchService {
     }
 
     const [rawVehicles, rawArticles, categories] = await Promise.all([
-      vehicleRepository.findAll(vehicleQuery, null, { name: 1 }),
-      articleRepository.findAll(articleQuery, null, { createdAt: -1 }),
-      categoryRepository.findAll({})
+      vehicleRepository.findAll(vehicleQuery, SEARCH_VEHICLE_PROJECTION, { name: 1 }),
+      articleRepository.findAll(articleQuery, SEARCH_ARTICLE_PROJECTION, { createdAt: -1 }),
+      (async () => {
+        const catCached = appCache.get(appCache.KEYS.CATEGORIES());
+        if (catCached !== undefined) return catCached;
+        return categoryRepository.findAll();
+      })()
     ]);
 
     const vehicles = toVehicleListDTO(rawVehicles);
@@ -124,7 +166,13 @@ class SearchService {
     // Zero-Result Experience: Suggest Related Brands & Fallback Content
     let fallbacks = null;
     if (totalResults === 0 && searchTerm) {
-      const fallbackArticles = await articleRepository.findAll({ active: true, status: 'published' }, null, { createdAt: -1 }, 0, 3);
+      const fallbackArticles = await articleRepository.findAll(
+        { active: true, status: 'published' },
+        SEARCH_ARTICLE_PROJECTION,
+        { createdAt: -1 },
+        0,
+        3
+      );
       fallbacks = {
         message: `No direct matches found for "${q}". Explore top EV brands and guides below:`,
         recommendedBrands: categories.slice(0, 4),
@@ -132,13 +180,15 @@ class SearchService {
       };
     }
 
-    return {
+    const result = {
       query: q,
       totalResults,
       vehicles,
       articles,
       fallbacks
     };
+    appCache.set(cacheKey, result, appCache.TTL.SEARCH);
+    return result;
   }
 }
 

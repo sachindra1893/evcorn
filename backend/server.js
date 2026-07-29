@@ -24,6 +24,10 @@ const perf = require('./utils/perf');
 
 const app = express();
 
+// Phase 4: own ETags via conditionalRequestMiddleware (weak SHA-1 of JSON body).
+// Disable Express default ETag to avoid double-hashing / mismatched validators.
+app.set('etag', false);
+
 // 0. Performance Trace Start (must be the very first middleware so every
 // subsequent stage — including Helmet/CORS/compression — is accounted for)
 app.use((req, res, next) => {

@@ -3,6 +3,7 @@
  * Business logic, domain data transformation & repository orchestration for Vehicles.
  * Pillar I: In-process node-cache for read-heavy endpoints.
  * Pillar IV: Extended light=true projection to include imageUrl, bodyStyle, etc.
+ * Phase 4: cache filtered/paginated GET lists via stable query fingerprints.
  */
 const vehicleRepository = require('../repositories/vehicle.repository');
 const { deleteImage } = require('./upload.service');
@@ -24,22 +25,28 @@ const LIGHT_PROJECTION = [
   'media.mainImage', 'media.cloudinaryMainImage'
 ].join(' ');
 
+function invalidateVehicleCaches(slugId) {
+  appCache.flushPrefix('vehicles:');
+  appCache.flushPrefix('search:');
+  appCache.flushPrefix('recommendations:');
+  if (slugId) appCache.del(appCache.KEYS.VEHICLE_SINGLE(slugId));
+}
+
 class VehicleService {
   async getVehicles(queryParams) {
     const isLight = queryParams.light === 'true';
     const { page, limit, sort, projection: customProjection, formatEnvelope } = parseQueryParams(queryParams);
     const filterQuery = buildVehicleFilterQuery(queryParams);
 
-    // ── Cache lookup (skip for admin/paginated/filtered requests) ────────────
-    const isCacheable = !page && !limit && !queryParams.brand && !queryParams.categoryId
-      && !queryParams.search && !queryParams.priceMin && !queryParams.priceMax
-      && !queryParams.rangeMin && !queryParams.rangeMax;
-
-    // Include envelope flag in cache key so envelope/non-envelope responses stay separate
+    // Cache all safe GET list shapes (including filtered/paginated). Admin-only
+    // or arbitrary fields= projections are excluded to avoid cache key explosion
+    // and stale privileged views.
+    const isCacheable = !queryParams.admin && !customProjection;
+    const fp = appCache.fingerprintQuery(queryParams, ['admin']);
     const envelopeSuffix = formatEnvelope ? ':envelope' : '';
     const cacheKey = isLight
-      ? appCache.KEYS.VEHICLES_LIGHT() + envelopeSuffix
-      : appCache.KEYS.VEHICLES_ALL() + envelopeSuffix;
+      ? appCache.KEYS.VEHICLES_LIGHT(fp) + envelopeSuffix
+      : appCache.KEYS.VEHICLES_ALL(fp) + envelopeSuffix;
 
     if (isCacheable) {
       const cached = appCache.get(cacheKey);
@@ -51,14 +58,15 @@ class VehicleService {
     // ── MongoDB Query ─────────────────────────────────────────────────────────
     const projection = customProjection || (isLight ? LIGHT_PROJECTION : null);
     const skip = page && limit ? (page - 1) * limit : 0;
+    const needsCount = Boolean(page && limit);
 
     const [docs, total] = await Promise.all([
       vehicleRepository.findAll(filterQuery, projection, sort || { name: 1 }, skip, limit || 0),
-      vehicleRepository.count(filterQuery)
+      needsCount ? vehicleRepository.count(filterQuery) : Promise.resolve(0)
     ]);
 
     const dtos = toVehicleListDTO(docs);
-    const meta = page && limit ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
+    const meta = needsCount ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
 
     const result = formatResponse(dtos, meta, formatEnvelope);
 
@@ -112,8 +120,7 @@ class VehicleService {
     const doc = await vehicleRepository.upsert(vehicleData);
 
     // ── Invalidate all vehicle cache keys on write ────────────────────────────
-    appCache.flushPrefix('vehicles:');
-    appCache.del(appCache.KEYS.VEHICLE_SINGLE(vehicleData.id));
+    invalidateVehicleCaches(vehicleData.id);
 
     return toVehicleDTO(doc);
   }
@@ -124,9 +131,7 @@ class VehicleService {
       throw new NotFoundError(`Vehicle with id "${slugId}" not found`);
     }
 
-    // ── Invalidate cache ──────────────────────────────────────────────────────
-    appCache.flushPrefix('vehicles:');
-    appCache.del(appCache.KEYS.VEHICLE_SINGLE(slugId));
+    invalidateVehicleCaches(slugId);
 
     // Synchronized Cloudinary Deletion (safe background orchestration)
     try {

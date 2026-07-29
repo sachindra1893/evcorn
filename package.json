@@ -15,6 +15,7 @@
     "test:e2e:ui": "playwright test --ui",
     "smoke": "node scripts/smoke-validate.mjs",
     "perf:check": "node scripts/check-bundle-size.mjs",
+    "perf:load": "node scripts/load-test.mjs",
     "seo:check": "node scripts/seo-validate.mjs",
     "release:report": "node scripts/release-report.mjs",
     "predeploy": "node scripts/pre-deploy.mjs",

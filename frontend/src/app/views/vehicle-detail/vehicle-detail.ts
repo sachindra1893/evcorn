@@ -7,7 +7,7 @@ import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
-import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
+import { getOptimizedImageUrl, getResponsiveSrcSet, handleImageError } from '../../utils/image.utils';
 import { combineLatest, Subscription } from 'rxjs';
 
 interface OverviewData {
@@ -99,10 +99,12 @@ interface OverviewData {
               <div class="hero-visual" style="position: relative;">
                 <div class="gallery-container" style="position: relative; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 20px; background: #FAFAFC; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 12px 30px rgba(0,0,0,0.04);">
                   
-                  <img [src]="getOptimizedUrl(activeImageUrl, 1200, modelName)" 
+                  <img [src]="getOptimizedUrl(activeImageUrl, 1200, modelName)"
+                       [attr.srcset]="getHeroSrcSet()"
+                       sizes="(max-width: 768px) 100vw, 60vw"
                        (error)="onImgError($event, modelName)" 
                        class="hero-image" 
-                       loading="lazy"
+                       fetchpriority="high"
                        decoding="async"
                        [alt]="(brand ? brand.name : '') + ' ' + modelName"
                        style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease-in-out;" />
@@ -756,6 +758,10 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
   getOptimizedUrl(url: string | undefined | null, width?: number, modelName?: string): string {
     return getOptimizedImageUrl(url, width, modelName || this.modelName);
+  }
+
+  getHeroSrcSet(): string {
+    return getResponsiveSrcSet(this.activeImageUrl, [640, 960, 1200], this.modelName);
   }
 
   get activeImageUrl(): string {

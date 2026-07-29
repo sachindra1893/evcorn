@@ -93,6 +93,13 @@ function getSystemMetrics() {
     ? Math.round(metrics.totalResponseTimeMs / metrics.totalRequests)
     : 0;
 
+  let cacheStats = {};
+  try {
+    cacheStats = require('../utils/cache').stats();
+  } catch {
+    cacheStats = {};
+  }
+
   return {
     uptime: `${uptimeSec}s`,
     uptimeSeconds: uptimeSec,
@@ -108,6 +115,7 @@ function getSystemMetrics() {
       heapTotal: `${Math.round(mem.heapTotal / 1024 / 1024)} MB`,
       heapUsed: `${Math.round(mem.heapUsed / 1024 / 1024)} MB`
     },
+    cache: cacheStats,
     nodeVersion: process.version,
     pid: process.pid
   };

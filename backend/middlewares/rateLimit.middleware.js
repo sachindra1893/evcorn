@@ -5,6 +5,9 @@
 const rateLimit = require('express-rate-limit');
 
 const isTest = process.env.NODE_ENV === 'test';
+/** Phase 4 load-test harness — never enable in production deploys. */
+const isLoadTest = process.env.LOAD_TEST === '1' || process.env.DISABLE_API_RATE_LIMIT === '1';
+const skipLimits = () => isTest || isLoadTest;
 
 // Builds a rate-limit `handler` (instead of a static `message`) so the JSON
 // body can include the per-request `requestId`, matching the envelope shape
@@ -23,7 +26,7 @@ function rateLimitHandler(code, message, extra = {}) {
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
-  skip: () => isTest,
+  skip: skipLimits,
   standardHeaders: true,
   legacyHeaders: false,
   handler: rateLimitHandler('TOO_MANY_REQUESTS', 'Too many requests from this IP, please try again after 15 minutes.')
@@ -33,7 +36,7 @@ const apiLimiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  skip: () => isTest,
+  skip: skipLimits,
   standardHeaders: true,
   legacyHeaders: false,
   handler: rateLimitHandler('TOO_MANY_LOGIN_ATTEMPTS', 'Too many failed login attempts. Account temporarily locked for 15 minutes.')
@@ -43,7 +46,7 @@ const authLimiter = rateLimit({
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
-  skip: () => isTest,
+  skip: skipLimits,
   standardHeaders: true,
   legacyHeaders: false,
   handler: rateLimitHandler('TOO_MANY_UPLOADS', 'Image upload rate limit exceeded. Please wait before uploading more media.')

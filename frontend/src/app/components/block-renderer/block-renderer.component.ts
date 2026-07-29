@@ -3,6 +3,7 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ArticleBlock } from '../../models/blocks.model';
+import { getOptimizedImageUrl } from '../../utils/image.utils';
 
 @Component({
   selector: 'app-block-renderer',
@@ -25,7 +26,7 @@ import { ArticleBlock } from '../../models/blocks.model';
 
         <!-- IMAGE -->
         <figure *ngIf="block.type === 'image'" class="block-figure">
-          <img [src]="block.data.url" [alt]="block.data.alt || block.data.caption || 'Article image'" class="block-img" loading="lazy">
+          <img [src]="optimizeUrl(block.data.url, 960)" [alt]="block.data.alt || block.data.caption || 'Article image'" class="block-img" loading="lazy" decoding="async">
           <figcaption *ngIf="block.data.caption" class="block-caption">{{ block.data.caption }}</figcaption>
         </figure>
 
@@ -674,6 +675,10 @@ export class BlockRendererComponent implements OnChanges {
 
   ngOnChanges() {
     this.injectFaqSchema();
+  }
+
+  optimizeUrl(url: string | undefined | null, width?: number): string {
+    return getOptimizedImageUrl(url, width);
   }
 
   // --- Auto Internal Linking ---

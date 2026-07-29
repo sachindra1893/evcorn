@@ -1657,18 +1657,23 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  private _parallaxRaf = 0;
+
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent) {
     if (typeof window === 'undefined') return;
-    const hero = document.querySelector('.hero') as HTMLElement;
-    if (hero) {
-      const normalizedX = (event.clientX / window.innerWidth) - 0.5;
-      const normalizedY = (event.clientY / window.innerHeight) - 0.5;
-      const x = normalizedX * -20;
-      const y = normalizedY * -20;
-      hero.style.setProperty('--mx', `${x}px`);
-      hero.style.setProperty('--my', `${y}px`);
-    }
+    const clientX = event.clientX;
+    const clientY = event.clientY;
+    if (this._parallaxRaf) return;
+    this._parallaxRaf = window.requestAnimationFrame(() => {
+      this._parallaxRaf = 0;
+      const hero = document.querySelector('.hero') as HTMLElement;
+      if (!hero) return;
+      const normalizedX = (clientX / window.innerWidth) - 0.5;
+      const normalizedY = (clientY / window.innerHeight) - 0.5;
+      hero.style.setProperty('--mx', `${normalizedX * -20}px`);
+      hero.style.setProperty('--my', `${normalizedY * -20}px`);
+    });
   }
 
   loadData() {

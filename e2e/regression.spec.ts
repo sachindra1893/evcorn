@@ -13,12 +13,15 @@ test.describe('Permanent regression guards (E2E)', () => {
   test('Vehicle Detail does not infinite-load (race / empty Published)', async ({ page }) => {
     const console = attachConsoleErrorCollector(page);
     await expectHttpOk(page, '/ev/tata-motors/nexon-ev');
-    await waitForSettledContent(page, 'h1, app-vehicle-detail, main, body');
+    // Prefer app-vehicle-detail / h1 — `body` alone matches before data settles.
+    await waitForSettledContent(page, 'app-vehicle-detail h1, app-vehicle-detail');
 
     // After settle: either real vehicle content OR an explicit error/empty state —
-    // never a perpetual spinner.
-    const spinnerVisible = await page.locator('.loading-overlay:visible').isVisible().catch(() => false);
-    expect(spinnerVisible).toBe(false);
+    // never a perpetual spinner. Use count(0) (same pattern as Search guard) to
+    // avoid :visible races while the overlay is detaching.
+    await expect(page.locator('app-vehicle-detail .loading-overlay')).toHaveCount(0, {
+      timeout: 25_000
+    });
 
     const body = await page.locator('body').innerText();
     expect(body).toMatch(/Nexon|Not Found|could not|offline|timeout|retry|Vehicle/i);

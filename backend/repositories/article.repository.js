@@ -4,6 +4,7 @@
  */
 const Article = require('../models/Article');
 const { isLocalFileDb, fileDb } = require('../config/database');
+const { measureQuery } = require('../utils/slowQuery.utils');
 
 class ArticleRepository {
   async findAll(filterQuery, projection, sort, skip = 0, limit = 0) {
@@ -21,10 +22,12 @@ class ArticleRepository {
       return articles;
     }
 
-    let query = Article.find(filterQuery, projection).sort(sort).lean();
-    if (skip > 0) query = query.skip(skip);
-    if (limit > 0) query = query.limit(limit);
-    return await query;
+    return await measureQuery('Article.findAll', async () => {
+      let query = Article.find(filterQuery, projection).sort(sort).lean();
+      if (skip > 0) query = query.skip(skip);
+      if (limit > 0) query = query.limit(limit);
+      return await query;
+    }, { filterQuery });
   }
 
   async count(filterQuery) {
@@ -32,7 +35,9 @@ class ArticleRepository {
       const articles = fileDb.getArticles();
       return articles.length;
     }
-    return await Article.countDocuments(filterQuery);
+    return await measureQuery('Article.count', async () => {
+      return await Article.countDocuments(filterQuery);
+    }, { filterQuery });
   }
 
   async findById(id, projection = null) {
@@ -45,7 +50,9 @@ class ArticleRepository {
     if (!mongoose.isValidObjectId(id)) {
       return null;
     }
-    return await Article.findById(id, projection).lean();
+    return await measureQuery('Article.findById', async () => {
+      return await Article.findById(id, projection).lean();
+    }, { id });
   }
 
   async create(articleData) {

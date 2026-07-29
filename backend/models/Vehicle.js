@@ -159,6 +159,9 @@ VehicleSchema.index({ brandSlug: 1, modelSlug: 1, variantSlug: 1 }, { sparse: tr
 // Publish date sort
 VehicleSchema.index({ status: 1, publishedAt: -1 });
 
+// Browse body-style chips (SUV/Hatchback/Sedan/…) + status
+VehicleSchema.index({ bodyStyle: 1, status: 1 });
+
 // Full-text search across name, parentModel, variantName
 VehicleSchema.index({ name: 'text', parentModel: 'text', variantName: 'text' }, {
   weights: { parentModel: 10, name: 5, variantName: 3 },

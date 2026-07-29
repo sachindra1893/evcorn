@@ -7,6 +7,7 @@
  *   - vehicles   : 300s  (5min) — changes when admin saves a vehicle
  *   - articles   : 180s  (3min) — changes when editorial publishes
  *   - search     : 60s   (1min) — dynamic but safe to cache briefly
+ *   - recommendations : 120s — derived read-only slates
  */
 const NodeCache = require('node-cache');
 
@@ -23,6 +24,7 @@ const TTL = {
   ARTICLES_LIGHT: 180,
   ARTICLE_SINGLE: 600,
   SEARCH: 60,
+  RECOMMENDATIONS: 120,
 };
 
 // ─── Cache Key Namespaces ─────────────────────────────────────────────────────
@@ -35,7 +37,27 @@ const KEYS = {
   ARTICLES_LIGHT: (q = '') => `articles:light:${q}`,
   ARTICLE_SINGLE: (id) => `article:${id}`,
   SEARCH: (q) => `search:${q}`,
+  SEARCH_AUTOCOMPLETE: (q) => `search:ac:${q}`,
+  SEARCH_UNIFIED: (q) => `search:unified:${q}`,
+  RECOMMENDATIONS: (q = '') => `recommendations:${q}`,
 };
+
+/**
+ * Stable fingerprint for cacheable query objects (sorted keys, lowercased values).
+ * Omits empty / undefined / null values and known non-cache identity noise.
+ */
+function fingerprintQuery(query = {}, omitKeys = []) {
+  const omit = new Set(omitKeys);
+  return Object.keys(query)
+    .filter((k) => !omit.has(k))
+    .filter((k) => {
+      const v = query[k];
+      return v !== undefined && v !== null && v !== '';
+    })
+    .sort()
+    .map((k) => `${k}=${String(query[k]).toLowerCase()}`)
+    .join('&');
+}
 
 // ─── Core Helpers ─────────────────────────────────────────────────────────────
 
@@ -82,10 +104,27 @@ function flushAll() {
  */
 function stats() {
   try {
-    return cache.getStats();
+    const s = cache.getStats();
+    return {
+      keys: cache.keys().length,
+      hits: s.hits,
+      misses: s.misses,
+      ksize: s.ksize,
+      vsize: s.vsize
+    };
   } catch {
-    return {};
+    return { keys: 0, hits: 0, misses: 0 };
   }
 }
 
-module.exports = { get, set, del, flushPrefix, flushAll, stats, TTL, KEYS };
+module.exports = {
+  get,
+  set,
+  del,
+  flushPrefix,
+  flushAll,
+  stats,
+  TTL,
+  KEYS,
+  fingerprintQuery
+};

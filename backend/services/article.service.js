@@ -2,6 +2,7 @@
  * Article Service
  * Business logic, domain data transformation & repository orchestration for Articles.
  * Pillar I: In-process node-cache for read-heavy endpoints.
+ * Phase 4: cache filtered/paginated GET lists via stable query fingerprints.
  */
 const articleRepository = require('../repositories/article.repository');
 const { deleteImage } = require('./upload.service');
@@ -41,19 +42,26 @@ const ARTICLE_SINGLE_PROJECTION = {
   cloudinaryImages: 0,
 };
 
+function invalidateArticleCaches(id) {
+  appCache.flushPrefix('articles:');
+  appCache.flushPrefix('search:');
+  appCache.flushPrefix('recommendations:');
+  if (id) appCache.del(appCache.KEYS.ARTICLE_SINGLE(id));
+}
+
 class ArticleService {
   async getArticles(queryParams) {
     const isLight = queryParams.light === 'true';
     const { page, limit, sort, projection: customProjection, formatEnvelope } = parseQueryParams(queryParams);
     const filterQuery = buildArticleFilterQuery(queryParams);
 
-    // ── Cache lookup (skip for admin/paginated/filtered requests) ────────────
-    const isCacheable = !page && !limit && !queryParams.search && !queryParams.category
-      && !queryParams.admin;
-
+    // Cache safe public GET lists including filtered/paginated shapes.
+    const isCacheable = !queryParams.admin && !customProjection;
+    const fp = appCache.fingerprintQuery(queryParams, ['admin']);
+    const envelopeSuffix = formatEnvelope ? ':envelope' : '';
     const cacheKey = isLight
-      ? appCache.KEYS.ARTICLES_LIGHT()
-      : appCache.KEYS.ARTICLES_ALL();
+      ? appCache.KEYS.ARTICLES_LIGHT(fp) + envelopeSuffix
+      : appCache.KEYS.ARTICLES_ALL(fp) + envelopeSuffix;
 
     if (isCacheable) {
       const cached = appCache.get(cacheKey);
@@ -65,14 +73,15 @@ class ArticleService {
     // ── MongoDB Query ─────────────────────────────────────────────────────────
     const projection = customProjection || (isLight ? ARTICLE_LIGHT_PROJECTION : {});
     const skip = page && limit ? (page - 1) * limit : 0;
+    const needsCount = Boolean(page && limit);
 
     const [docs, total] = await Promise.all([
       articleRepository.findAll(filterQuery, projection, sort || { createdAt: -1 }, skip, limit || 0),
-      articleRepository.count(filterQuery)
+      needsCount ? articleRepository.count(filterQuery) : Promise.resolve(0)
     ]);
 
     const dtos = toArticleListDTO(docs);
-    const meta = page && limit ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
+    const meta = needsCount ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
 
     const result = formatResponse(dtos, meta, formatEnvelope);
 
@@ -110,10 +119,7 @@ class ArticleService {
 
   async createArticle(data) {
     const doc = await articleRepository.create(data);
-
-    // ── Invalidate all article cache keys on write ────────────────────────────
-    appCache.flushPrefix('articles:');
-
+    invalidateArticleCaches();
     return toArticleDTO(doc);
   }
 
@@ -122,11 +128,7 @@ class ArticleService {
     if (!updated) {
       throw new NotFoundError(`Article with id "${id}" not found`);
     }
-
-    // ── Invalidate cache ──────────────────────────────────────────────────────
-    appCache.flushPrefix('articles:');
-    appCache.del(appCache.KEYS.ARTICLE_SINGLE(id));
-
+    invalidateArticleCaches(id);
     return toArticleDTO(updated);
   }
 
@@ -135,10 +137,7 @@ class ArticleService {
     if (!deleted) {
       throw new NotFoundError(`Article with id "${id}" not found`);
     }
-
-    // ── Invalidate cache ──────────────────────────────────────────────────────
-    appCache.flushPrefix('articles:');
-    appCache.del(appCache.KEYS.ARTICLE_SINGLE(id));
+    invalidateArticleCaches(id);
 
     try {
       const imgToDelete = deleted.cloudinaryImage?.public_id || deleted.cloudinaryImage?.url || deleted.imageUrl;

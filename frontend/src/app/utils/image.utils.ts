@@ -50,8 +50,8 @@ export function getOptimizedImageUrl(url: string | undefined | null, width?: num
     return url;
   }
 
-  // Already transformed, return as-is
-  if (url.includes('/f_auto,q_auto')) {
+  // Already transformed, return as-is (unless requesting a different width)
+  if (url.includes('/f_auto,q_auto') && !width) {
     return url;
   }
 
@@ -59,14 +59,38 @@ export function getOptimizedImageUrl(url: string | undefined | null, width?: num
     const parts = url.split('/upload/');
     if (parts.length < 2) return url;
 
-    const transformationStr = width && width > 0 
+    let rest = parts[1];
+    // Strip prior f_auto transformation segment when rebuilding width-specific URLs
+    if (/^f_auto,q_auto[^/]*\//.test(rest)) {
+      rest = rest.replace(/^[^/]+\//, '');
+    }
+
+    const transformationStr = width && width > 0
       ? `f_auto,q_auto,w_${width},c_limit`
       : 'f_auto,q_auto';
 
-    return `${parts[0]}/upload/${transformationStr}/${parts[1]}`;
+    return `${parts[0]}/upload/${transformationStr}/${rest}`;
   } catch (err) {
     return url;
   }
+}
+
+/**
+ * Build a responsive srcset for Cloudinary (or single-URL fallback).
+ * Does not change visuals — browsers pick the nearest width.
+ */
+export function getResponsiveSrcSet(
+  url: string | undefined | null,
+  widths: number[] = [400, 800, 1200],
+  modelName?: string
+): string {
+  if (!url || !url.includes('res.cloudinary.com')) {
+    const single = getOptimizedImageUrl(url, widths[widths.length - 1], modelName);
+    return `${single} ${widths[widths.length - 1]}w`;
+  }
+  return widths
+    .map((w) => `${getOptimizedImageUrl(url, w, modelName)} ${w}w`)
+    .join(', ');
 }
 
 /**
