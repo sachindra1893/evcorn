@@ -24,6 +24,12 @@ const perf = require('./utils/perf');
 
 const app = express();
 
+// Render (and similar hosts) sit behind one reverse-proxy hop that sets
+// X-Forwarded-For. Trust that single hop so express-rate-limit can key by
+// client IP (avoids ERR_ERL_UNEXPECTED_X_FORWARDED_FOR). Do not use `true`
+// — that is overly permissive and triggers ERR_ERL_PERMISSIVE_TRUST_PROXY.
+app.set('trust proxy', 1);
+
 // Phase 4: own ETags via conditionalRequestMiddleware (weak SHA-1 of JSON body).
 // Disable Express default ETag to avoid double-hashing / mismatched validators.
 app.set('etag', false);
