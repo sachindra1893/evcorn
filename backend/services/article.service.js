@@ -134,6 +134,25 @@ class ArticleService {
   }
 
   async createArticle(data) {
+    // Defense-in-depth: if a client POST includes an existing article id
+    // (e.g. mis-routed edit), update in place instead of minting a duplicate.
+    const incomingId = data?.id != null && String(data.id).trim()
+      ? String(data.id).trim()
+      : (data?._id != null && String(data._id).trim() ? String(data._id).trim() : null);
+
+    if (incomingId) {
+      const { id: _ignoreId, _id: _ignoreMongoId, ...rest } = data;
+      const existing = await articleRepository.findById(incomingId);
+      if (existing) {
+        const updated = await articleRepository.update(incomingId, rest);
+        if (!updated) {
+          throw new NotFoundError(`Article with id "${incomingId}" not found`);
+        }
+        invalidateArticleCaches(incomingId);
+        return toArticleDTO(updated);
+      }
+    }
+
     const doc = await articleRepository.create(data);
     invalidateArticleCaches();
     return toArticleDTO(doc);

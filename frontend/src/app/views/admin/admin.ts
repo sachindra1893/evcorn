@@ -8,6 +8,11 @@ import { AuthService } from '../../services/auth.service';
 import { BlockEditorComponent } from '../../components/block-editor/block-editor.component';
 import { BlockRendererComponent } from '../../components/block-renderer/block-renderer.component';
 import { ArticleBlock } from '../../models/blocks.model';
+import {
+  assertArticleUpdateTarget,
+  hydrateArticleBlocks,
+  resolveArticleId
+} from './article-edit.util';
 
 @Component({
   selector: 'app-admin',
@@ -32,7 +37,7 @@ import { ArticleBlock } from '../../models/blocks.model';
         <div *ngIf="activeTab === 'articles'" class="dashboard-grid">
           <!-- Article Form -->
           <div class="panel article-panel">
-            <h3>{{ editingArticleId ? 'Edit Article' : 'Write New EV Article' }}</h3>
+            <h3>{{ (articleEditMode || editingArticleId) ? 'Edit Article' : 'Write New EV Article' }}</h3>
             
             <form (submit)="onPublishArticle($event)" class="vertical-form">
               <div class="form-group">
@@ -82,9 +87,9 @@ import { ArticleBlock } from '../../models/blocks.model';
 
               <div class="form-actions" style="margin-top: 25px;">
                 <button type="submit" class="btn primary-btn" [disabled]="saving">
-                  {{ saving ? 'Saving...' : (editingArticleId ? 'Update Article' : 'Publish EV Article') }}
+                  {{ saving ? 'Saving...' : ((articleEditMode || editingArticleId) ? 'Update Article' : 'Publish EV Article') }}
                 </button>
-                <button *ngIf="editingArticleId" type="button" (click)="cancelEditArticle()" class="btn cancel-btn">
+                <button *ngIf="articleEditMode || editingArticleId" type="button" (click)="cancelEditArticle()" class="btn cancel-btn">
                   Cancel Edit
                 </button>
               </div>
@@ -767,6 +772,8 @@ export class AdminComponent implements OnInit {
   private categoriesMap: Record<string, string> = {};
   
   // 1. Article Form Properties
+  /** True after Edit until Cancel/successful save — blocks accidental POST create. */
+  articleEditMode = false;
   editingArticleId: string | null = null;
   articleTitle = '';
   articleImageUrl = '';
@@ -902,6 +909,13 @@ export class AdminComponent implements OnInit {
       return;
     }
 
+    // Edit mode must PUT — never fall through to POST create (prevents duplicates).
+    const updateTarget = assertArticleUpdateTarget(this.articleEditMode, this.editingArticleId);
+    if (this.articleEditMode && !updateTarget.ok) {
+      alert(updateTarget.reason);
+      return;
+    }
+
     // To bypass backend schema restrictions, we serialize all blocks into the paragraphs array.
     const serializedBlocks = JSON.stringify(this.articleBlocks);
     
@@ -929,8 +943,9 @@ export class AdminComponent implements OnInit {
 
     this.saving = true;
 
-    if (this.editingArticleId) {
-      this.dataService.updateArticle(this.editingArticleId, articleData).subscribe({
+    if (updateTarget.ok) {
+      articleData.id = updateTarget.id;
+      this.dataService.updateArticle(updateTarget.id, articleData).subscribe({
         next: () => {
           this.saving = false;
           alert('Article updated successfully!');
@@ -947,6 +962,8 @@ export class AdminComponent implements OnInit {
         next: () => {
           this.saving = false;
           alert('Article published successfully!');
+          this.articleEditMode = false;
+          this.editingArticleId = null;
           this.resetArticleForm();
           this.loadArticles();
         },
@@ -959,27 +976,38 @@ export class AdminComponent implements OnInit {
   }
 
   startEditArticle(art: Article) {
-    this.editingArticleId = art.id || null;
+    const id = resolveArticleId(art);
+    if (!id) {
+      alert('Cannot edit this article: missing ID. Refresh the page and try again.');
+      return;
+    }
+
+    this.articleEditMode = true;
+    this.editingArticleId = id;
     this.articleTitle = art.title;
     this.articleImageUrl = art.imageUrl || '';
-    
-    if (art.blocks && art.blocks.length > 0) {
-      this.articleBlocks = JSON.parse(JSON.stringify(art.blocks)); // deep copy
-    } else if (art.paragraphs && art.paragraphs.length > 0) {
-      // Migrate old paragraphs to blocks on the fly
-      this.articleBlocks = art.paragraphs.map(p => ({
-        type: 'paragraph',
-        id: Math.random().toString(36).substring(2, 9),
-        data: { text: p }
-      } as ArticleBlock));
-    } else {
-      this.articleBlocks = [];
-    }
-    
+    this.articleBlocks = hydrateArticleBlocks(art);
     this.cdr.detectChanges();
+
+    // Canonical detail fetch — list payloads can omit body; always re-bind stable id.
+    this.dataService.getArticleById(id).subscribe({
+      next: (full) => {
+        if (!full || this.editingArticleId !== id) return;
+        this.editingArticleId = resolveArticleId(full) || id;
+        this.articleEditMode = true;
+        this.articleTitle = full.title;
+        this.articleImageUrl = full.imageUrl || '';
+        this.articleBlocks = hydrateArticleBlocks(full);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Keep list-hydrated form; edit id already locked so save still PUTs.
+      }
+    });
   }
 
   cancelEditArticle() {
+    this.articleEditMode = false;
     this.editingArticleId = null;
     this.resetArticleForm();
   }
@@ -1213,9 +1241,31 @@ export class AdminComponent implements OnInit {
 
   onFormBrandChange() {
     const matched = this.categories.find(c => c.name.toLowerCase() === this.vehBrandName.trim().toLowerCase());
-    this.vehCategoryId = matched ? matched.id : '';
-    this.editingVehicleId = null;
-    this.resetVehicleFormExceptBrand();
+    const nextCategoryId = matched ? matched.id : '';
+
+    // Preserve edit id when brand is unchanged (ngModelChange fires on hydrate).
+    // Only clear edit mode when the brand actually switches — otherwise save would
+    // mint a new vehicle via POST upsert without the original id.
+    if (this.editingVehicleId) {
+      const editing = this.vehicles.find(v => v.id === this.editingVehicleId);
+      const currentBrand = editing
+        ? (this.categories.find(c => c.id === editing.categoryId)?.name || '')
+        : '';
+      const brandUnchanged =
+        this.vehBrandName.trim().toLowerCase() === currentBrand.trim().toLowerCase() ||
+        (nextCategoryId && editing && nextCategoryId === editing.categoryId);
+
+      if (brandUnchanged) {
+        this.vehCategoryId = nextCategoryId || this.vehCategoryId;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      this.editingVehicleId = null;
+      this.resetVehicleFormExceptBrand();
+    }
+
+    this.vehCategoryId = nextCategoryId;
     this.cdr.detectChanges();
   }
 
