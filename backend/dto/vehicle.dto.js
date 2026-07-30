@@ -66,12 +66,82 @@ function toVehicleDTO(doc) {
   };
 }
 
+/**
+ * Card / picker / index projection — omits empty nested defaults that bloated
+ * full toVehicleDTO list payloads (~3×) at multi-thousand catalog scale.
+ * Keeps the flat + nested fields Browse/Home/Search/Compare pickers read.
+ */
+function toVehicleLightDTO(doc) {
+  if (!doc) return null;
+  const obj = typeof doc.toObject === 'function' ? doc.toObject() : { ...doc };
+  delete obj._id;
+  delete obj.__v;
+
+  const validVal = (val, fallback) => (val && val !== 'N/A' ? val : fallback);
+  const priceText = validVal(obj.pricing?.priceText, obj.price || 'N/A');
+  const rangeText = validVal(obj.performance?.rangeText, obj.range || 'N/A');
+  const batteryText = validVal(obj.battery?.capacityText, obj.batteryCapacity || 'N/A');
+  const imageUrl = obj.imageUrl || obj.media?.mainImage || '';
+
+  const light = {
+    id: obj.id,
+    name: obj.name,
+    categoryId: obj.categoryId,
+    brandSlug: obj.brandSlug || obj.categoryId,
+    parentModel: obj.parentModel || '',
+    variantName: obj.variantName || '',
+    price: priceText,
+    batteryCapacity: batteryText,
+    range: rangeText,
+    imageUrl,
+    status: obj.status || 'Published',
+    bodyStyle: obj.bodyStyle || null
+  };
+
+  if (obj.pricing) {
+    light.pricing = {
+      exShowroomPriceINR: obj.pricing.exShowroomPriceINR,
+      priceText: obj.pricing.priceText || priceText
+    };
+  }
+  if (obj.performance) {
+    light.performance = {
+      claimedRangeKM: obj.performance.claimedRangeKM,
+      rangeText: obj.performance.rangeText || rangeText
+    };
+  }
+  if (obj.battery) {
+    light.battery = {
+      capacityKWh: obj.battery.capacityKWh,
+      capacityText: obj.battery.capacityText || batteryText
+    };
+  }
+  if (obj.dimensionsObj?.seatingCapacity != null) {
+    light.dimensionsObj = { seatingCapacity: obj.dimensionsObj.seatingCapacity };
+  }
+  if (obj.media?.mainImage || obj.media?.cloudinaryMainImage) {
+    light.media = {};
+    if (obj.media.mainImage) light.media.mainImage = obj.media.mainImage;
+    if (obj.media.cloudinaryMainImage) light.media.cloudinaryMainImage = obj.media.cloudinaryMainImage;
+  }
+  if (obj.cloudinaryMainImage) light.cloudinaryMainImage = obj.cloudinaryMainImage;
+
+  return light;
+}
+
 function toVehicleListDTO(docs) {
   if (!Array.isArray(docs)) return [];
   return docs.map(toVehicleDTO);
 }
 
+function toVehicleLightListDTO(docs) {
+  if (!Array.isArray(docs)) return [];
+  return docs.map(toVehicleLightDTO);
+}
+
 module.exports = {
   toVehicleDTO,
-  toVehicleListDTO
+  toVehicleLightDTO,
+  toVehicleListDTO,
+  toVehicleLightListDTO
 };

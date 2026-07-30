@@ -1,22 +1,23 @@
 /**
  * Vehicle Repository (Instrumented with Slow Query Monitoring)
+ * Phase 5.3: File-DB path uses shared query matcher (filters/projection/pagination).
  */
 const Vehicle = require('../models/Vehicle');
 const { isLocalFileDb, fileDb } = require('../config/database');
 const { measureQuery } = require('../utils/slowQuery.utils');
+const { queryDocuments, countDocuments } = require('../utils/fileDbQuery');
 
 class VehicleRepository {
   async findAll(filterQuery, projection, sort, skip = 0, limit = 0) {
     if (isLocalFileDb()) {
-      let vehicles = fileDb.getVehicles();
-      if (filterQuery.categoryId) {
-        vehicles = vehicles.filter(v => v.categoryId === filterQuery.categoryId);
-      }
-      vehicles.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      if (limit > 0) {
-        vehicles = vehicles.slice(skip, skip + limit);
-      }
-      return vehicles;
+      return queryDocuments(
+        fileDb.getVehicles(),
+        filterQuery || {},
+        projection,
+        sort || { name: 1 },
+        skip,
+        limit
+      );
     }
 
     return await measureQuery('Vehicle.findAll', async () => {
@@ -29,8 +30,7 @@ class VehicleRepository {
 
   async count(filterQuery) {
     if (isLocalFileDb()) {
-      const vehicles = fileDb.getVehicles();
-      return vehicles.length;
+      return countDocuments(fileDb.getVehicles(), filterQuery || {});
     }
 
     return await measureQuery('Vehicle.count', async () => {
@@ -51,7 +51,7 @@ class VehicleRepository {
 
   async upsert(vehicleData) {
     if (isLocalFileDb()) {
-      let vehicles = fileDb.getVehicles();
+      let vehicles = fileDb.getVehicles().slice();
       const index = vehicles.findIndex(v => v.id === vehicleData.id);
       if (index !== -1) {
         vehicles[index] = { ...vehicles[index], ...vehicleData };
@@ -73,7 +73,7 @@ class VehicleRepository {
 
   async delete(slugId) {
     if (isLocalFileDb()) {
-      let vehicles = fileDb.getVehicles();
+      let vehicles = fileDb.getVehicles().slice();
       const index = vehicles.findIndex(v => v.id === slugId);
       if (index === -1) return null;
       const deleted = vehicles[index];

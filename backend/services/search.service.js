@@ -5,8 +5,8 @@
 const vehicleRepository = require('../repositories/vehicle.repository');
 const articleRepository = require('../repositories/article.repository');
 const categoryRepository = require('../repositories/category.repository');
-const { toVehicleListDTO } = require('../dto/vehicle.dto');
-const { toArticleListDTO } = require('../dto/article.dto');
+const { toVehicleLightListDTO } = require('../dto/vehicle.dto');
+const { toArticleLightListDTO } = require('../dto/article.dto');
 const { publishedVehicleStatusFilter } = require('../utils/apiQuery');
 const appCache = require('../utils/cache');
 
@@ -149,9 +149,15 @@ class SearchService {
       ];
     }
 
+    // Hard cap result sets — empty/broad queries must not serialize the full
+    // catalog (proven O(n) payload blow-up at 2k–10k vehicles). Autocomplete
+    // already caps at 5+5; unified search keeps a generous but bounded page.
+    const SEARCH_VEHICLE_LIMIT = 50;
+    const SEARCH_ARTICLE_LIMIT = 30;
+
     const [rawVehicles, rawArticles, categories] = await Promise.all([
-      vehicleRepository.findAll(vehicleQuery, SEARCH_VEHICLE_PROJECTION, { name: 1 }),
-      articleRepository.findAll(articleQuery, SEARCH_ARTICLE_PROJECTION, { createdAt: -1 }),
+      vehicleRepository.findAll(vehicleQuery, SEARCH_VEHICLE_PROJECTION, { name: 1 }, 0, SEARCH_VEHICLE_LIMIT),
+      articleRepository.findAll(articleQuery, SEARCH_ARTICLE_PROJECTION, { createdAt: -1 }, 0, SEARCH_ARTICLE_LIMIT),
       (async () => {
         const catCached = appCache.get(appCache.KEYS.CATEGORIES());
         if (catCached !== undefined) return catCached;
@@ -159,8 +165,8 @@ class SearchService {
       })()
     ]);
 
-    const vehicles = toVehicleListDTO(rawVehicles);
-    const articles = toArticleListDTO(rawArticles);
+    const vehicles = toVehicleLightListDTO(rawVehicles);
+    const articles = toArticleLightListDTO(rawArticles);
     const totalResults = vehicles.length + articles.length;
 
     // Zero-Result Experience: Suggest Related Brands & Fallback Content
@@ -176,7 +182,7 @@ class SearchService {
       fallbacks = {
         message: `No direct matches found for "${q}". Explore top EV brands and guides below:`,
         recommendedBrands: categories.slice(0, 4),
-        suggestedArticles: toArticleListDTO(fallbackArticles)
+        suggestedArticles: toArticleLightListDTO(fallbackArticles)
       };
     }
 

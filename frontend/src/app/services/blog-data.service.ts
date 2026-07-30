@@ -202,6 +202,7 @@ export class BlogDataService {
   // previously required a 20s guess-and-wait timer in vehicle-detail.ts.
   private readonly categoriesSettled$ = new BehaviorSubject<boolean>(false);
   private readonly allVehiclesSettled$ = new BehaviorSubject<boolean>(false);
+  private readonly vehiclesLightSettled$ = new BehaviorSubject<boolean>(false);
 
   constructor(private http: HttpClient) {}
 
@@ -453,6 +454,15 @@ export class BlogDataService {
     return this.toCachedAsyncState(this.getVehicles(), this.allVehiclesSettled$);
   }
 
+  /**
+   * AsyncState-aware light catalog (picker / browse index). Prefer this over
+   * getVehiclesState() when full nested specs are not needed — Phase 5.3
+   * Compare uses light for pickers and getVehicleById for selected slots.
+   */
+  getVehiclesLightState(): Observable<AsyncState<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel' | 'variantName' | 'imageUrl' | 'bodyStyle'>[]>> {
+    return this.toCachedAsyncState(this.getVehiclesLight() as Observable<any[]>, this.vehiclesLightSettled$);
+  }
+
   private toCachedAsyncState<T>(
     cache$: Observable<T[]>,
     settled$: Observable<boolean>
@@ -486,8 +496,10 @@ export class BlogDataService {
         next: (data) => {
           this.saveCache('vehiclesLight', data);
           subject.next(data);
+          this.vehiclesLightSettled$.next(true);
         },
         error: (err) => {
+          this.vehiclesLightSettled$.next(true);
           if (cached.length === 0) subject.error(err);
         }
       });
@@ -677,6 +689,7 @@ export class BlogDataService {
     this.allVehiclesCache$ = null;
     this.vehiclesLightCache$ = null;
     this.allVehiclesSettled$.next(false);
+    this.vehiclesLightSettled$.next(false);
     try {
       localStorage.removeItem('allVehicles');
       localStorage.removeItem('vehiclesLight');
@@ -691,6 +704,7 @@ export class BlogDataService {
     this.articlesLightCache$ = null;
     this.articleByIdCache.clear();
     this.allVehiclesSettled$.next(false);
+    this.vehiclesLightSettled$.next(false);
     this.categoriesSettled$.next(false);
     try {
       ['allVehicles', 'vehiclesLight', 'categories', 'articles', 'articlesLight'].forEach(k =>

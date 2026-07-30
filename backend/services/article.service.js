@@ -7,7 +7,7 @@
 const articleRepository = require('../repositories/article.repository');
 const { deleteImage } = require('./upload.service');
 const { parseQueryParams, buildArticleFilterQuery, formatResponse } = require('../utils/apiQuery');
-const { toArticleDTO, toArticleListDTO } = require('../dto/article.dto');
+const { toArticleDTO, toArticleListDTO, toArticleLightListDTO } = require('../dto/article.dto');
 const { NotFoundError } = require('../errors/AppError');
 const appCache = require('../utils/cache');
 const perf = require('../utils/perf');
@@ -80,7 +80,7 @@ class ArticleService {
       needsCount ? articleRepository.count(filterQuery) : Promise.resolve(0)
     ]);
 
-    const dtos = toArticleListDTO(docs);
+    const dtos = isLight ? toArticleLightListDTO(docs) : toArticleListDTO(docs);
     const meta = needsCount ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
 
     const result = formatResponse(dtos, meta, formatEnvelope);

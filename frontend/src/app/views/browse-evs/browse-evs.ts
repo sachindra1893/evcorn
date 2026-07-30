@@ -638,36 +638,9 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
     handleImageError(event, modelName);
   }
 
-  loadTopRangeEvs() {
-    this.blogData.getVehicles().subscribe({
-      next: (vehicles) => {
-        // Parse range to a number
-        const parsed = vehicles.map(v => {
-          let rangeNum = 0;
-          if (v.range) {
-            const match = v.range.match(/\d+(\.\d+)?/);
-            if (match) rangeNum = parseFloat(match[0]);
-          }
-          return { ...v, rangeNum };
-        });
-
-        // Dedupe by parentModel so a model only appears once
-        const dedupedMap = new Map<string, any>();
-        
-        // Sort highest range first
-        parsed.sort((a, b) => b.rangeNum - a.rangeNum).forEach(v => {
-          const pModel = v.parentModel || v.name;
-          if (!dedupedMap.has(pModel)) {
-            dedupedMap.set(pModel, v);
-          }
-        });
-
-        // Take the top 5
-        this.topRangeEvs = Array.from(dedupedMap.values()).slice(0, 5);
-        this.cdr.detectChanges();
-      }
-    });
-  }
+  // Top-range strip is derived inside loadVehiclesIndex() from the light
+  // catalog (no second full getVehicles() download). Dead full-catalog helper
+  // removed in Phase 5.3 final review.
 
   get displayedBrands() {
     if (this.showAllBrands) return this.categories;

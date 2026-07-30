@@ -1,8 +1,8 @@
 import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { take, catchError, filter } from 'rxjs/operators';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { BlogDataService, CarSpec, Category } from '../../services/blog-data.service';
@@ -512,7 +512,10 @@ export class CompareComponent implements OnInit, OnDestroy {
 
   private routeSub?: Subscription;
   private loadSub?: Subscription;
+  private detailSub?: Subscription;
   private trackedCompareKey = '';
+  /** Dedupes by-id detail fetches when light AsyncState re-emits success. */
+  private lastDetailFetchKey = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -576,11 +579,14 @@ export class CompareComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.loadSub?.unsubscribe();
+    this.detailSub?.unsubscribe();
   }
 
   retryLoad(): void {
+    // Only clear vehicle caches — categories/articles are unrelated and
+    // clearing them forced duplicate redundant GETs on retry (Phase 5.3).
     this.blogData.clearVehicleCache();
-    this.blogData.clearAllCaches();
+    this.lastDetailFetchKey = '';
     this.loadCatalog();
   }
 
@@ -649,9 +655,26 @@ export class CompareComponent implements OnInit, OnDestroy {
   onVariantChange(slot: number, event: Event): void {
     const id = (event.target as HTMLSelectElement).value || null;
     this.selectedIds[slot] = id;
-    this.selectedVehicles[slot] = id ? this.catalog.find((c) => c.id === id) || null : null;
     this.removedNotices[slot] = null;
-    this.afterSelectionChange();
+    if (!id) {
+      this.selectedVehicles[slot] = null;
+      this.afterSelectionChange();
+      return;
+    }
+    // Picker catalog is light — fetch full specs for the compare matrix only.
+    this.detailSub?.unsubscribe();
+    this.detailSub = this.blogData.getVehicleById(id).pipe(take(1)).subscribe({
+      next: (full) => {
+        this.selectedVehicles[slot] = full;
+        this.afterSelectionChange();
+      },
+      error: () => {
+        this.selectedVehicles[slot] = null;
+        this.selectedIds[slot] = null;
+        this.removedNotices[slot] = 'This vehicle is no longer available. Choose another EV.';
+        this.afterSelectionChange();
+      }
+    });
   }
 
   clearSlot(slot: number): void {
@@ -688,7 +711,13 @@ export class CompareComponent implements OnInit, OnDestroy {
     this.loadState = { status: 'loading' };
     this.cdr.detectChanges();
 
-    this.blogData.getCategories().pipe(take(1)).subscribe({
+    this.blogData.getCategories().pipe(
+      // BehaviorSubject seeds with [] before HTTP resolves — take(1) alone
+      // left Compare with zero brand options on cold deep links (tray flows
+      // worked only because Browse had already warmed the cache).
+      filter((cats) => Array.isArray(cats) && cats.length > 0),
+      take(1)
+    ).subscribe({
       next: (cats) => {
         this.categories = cats || [];
         // Remount pickers so Brand options reflect preselected categoryId.
@@ -704,10 +733,12 @@ export class CompareComponent implements OnInit, OnDestroy {
     });
 
     this.loadSub?.unsubscribe();
-    this.loadSub = this.blogData.getVehiclesState().subscribe((state) => {
-      this.loadState = state;
+    // Phase 5.3: light catalog for brand/model/variant pickers (bounded payload
+    // at 2k–10k variants). Full nested specs load only for selected slots.
+    this.loadSub = this.blogData.getVehiclesLightState().subscribe((state) => {
+      this.loadState = state as CompareLoadState;
       if (state.status === 'success') {
-        this.catalog = state.data;
+        this.catalog = state.data as CarSpec[];
         const pending =
           clampCompareIds(this.selectedIds).length > 0
             ? clampCompareIds(this.selectedIds)
@@ -722,10 +753,19 @@ export class CompareComponent implements OnInit, OnDestroy {
   private applyIdSelection(ids: string[]): void {
     const clamped = clampCompareIds(ids);
     const nextIds: Array<string | null> = [null, null];
-    const nextVehicles: Array<CarSpec | null> = [null, null];
     const nextBrands: Array<string | null> = [null, null];
     const nextModels: Array<string | null> = [null, null];
     const notices: Array<string | null> = [null, null];
+    const resolveIds: Array<string | undefined> = [];
+
+    // Catalog not ready — keep pending ids; do not wipe picker hydration mid-load.
+    if (this.catalog.length === 0 && clamped.length > 0) {
+      clamped.forEach((id, index) => {
+        if (index < this.maxSlots) nextIds[index] = id;
+      });
+      this.selectedIds = nextIds;
+      return;
+    }
 
     clamped.forEach((id, index) => {
       if (index >= this.maxSlots) return;
@@ -733,31 +773,89 @@ export class CompareComponent implements OnInit, OnDestroy {
       nextIds[index] = id;
       if (found) {
         const hydrated = hydrateCompareSlot(found as unknown as Record<string, unknown>);
-        nextVehicles[index] = found;
         nextBrands[index] = hydrated.brandId;
         nextModels[index] = hydrated.modelName;
         nextIds[index] = hydrated.variantId || id;
+        resolveIds[index] = nextIds[index] as string;
       } else if (this.catalog.length > 0) {
-        // Catalog loaded but vehicle gone / unpublished.
         notices[index] = 'This vehicle is no longer available. Choose another EV.';
         nextIds[index] = null;
       } else {
-        // Catalog not ready yet — keep id for later resolve.
         nextIds[index] = id;
       }
     });
 
     this.selectedIds = nextIds;
-    this.selectedVehicles = nextVehicles;
     this.brandIds = nextBrands;
     this.modelNames = nextModels;
     this.removedNotices = notices;
     this.pickerSyncKey += 1;
-    this.rebuildSections();
-    this.syncTrayFromSelection();
-    this.maybeTrackCompare();
-    this.updateSEOMetadata();
     this.cdr.detectChanges();
+
+    const fetchIds = resolveIds.filter(Boolean) as string[];
+    if (fetchIds.length === 0) {
+      this.selectedVehicles = [null, null];
+      this.lastDetailFetchKey = '';
+      this.rebuildSections();
+      this.syncTrayFromSelection();
+      this.maybeTrackCompare();
+      this.updateSEOMetadata();
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const detailKey = [0, 1].map((slot) => resolveIds[slot] || '').join('|');
+    // Skip when the same pair is already in-flight or loaded (light AsyncState
+    // often emits success twice: localStorage seed then network).
+    if (detailKey && detailKey === this.lastDetailFetchKey) {
+      this.rebuildSections();
+      this.syncTrayFromSelection();
+      this.maybeTrackCompare();
+      this.updateSEOMetadata();
+      this.cdr.detectChanges();
+      return;
+    }
+    this.lastDetailFetchKey = detailKey;
+
+    this.detailSub?.unsubscribe();
+    this.detailSub = forkJoin(
+      [0, 1].map((slot) => {
+        const id = resolveIds[slot];
+        if (!id) return of(null);
+        return this.blogData.getVehicleById(id).pipe(
+          take(1),
+          catchError(() => {
+            notices[slot] = 'This vehicle is no longer available. Choose another EV.';
+            nextIds[slot] = null;
+            nextBrands[slot] = null;
+            nextModels[slot] = null;
+            return of(null);
+          })
+        );
+      })
+    ).subscribe((fulls) => {
+      this.selectedIds = nextIds;
+      this.selectedVehicles = fulls as Array<CarSpec | null>;
+      this.removedNotices = notices;
+      // Re-hydrate pickers from full docs (authoritative categoryId/parentModel)
+      // and remount native <select> so [selected] sticks after async resolve.
+      fulls.forEach((full, slot) => {
+        if (!full) return;
+        const hydrated = hydrateCompareSlot(full as unknown as Record<string, unknown>);
+        nextBrands[slot] = hydrated.brandId;
+        nextModels[slot] = hydrated.modelName;
+        nextIds[slot] = hydrated.variantId || nextIds[slot];
+      });
+      this.brandIds = nextBrands;
+      this.modelNames = nextModels;
+      this.selectedIds = nextIds;
+      this.pickerSyncKey += 1;
+      this.rebuildSections();
+      this.syncTrayFromSelection();
+      this.maybeTrackCompare();
+      this.updateSEOMetadata();
+      this.cdr.detectChanges();
+    });
   }
 
   private afterSelectionChange(): void {

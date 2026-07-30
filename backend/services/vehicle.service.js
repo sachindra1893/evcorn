@@ -8,7 +8,7 @@
 const vehicleRepository = require('../repositories/vehicle.repository');
 const { deleteImage } = require('./upload.service');
 const { parseQueryParams, buildVehicleFilterQuery, formatResponse } = require('../utils/apiQuery');
-const { toVehicleDTO, toVehicleListDTO } = require('../dto/vehicle.dto');
+const { toVehicleDTO, toVehicleListDTO, toVehicleLightListDTO } = require('../dto/vehicle.dto');
 const { NotFoundError } = require('../errors/AppError');
 const appCache = require('../utils/cache');
 
@@ -65,7 +65,7 @@ class VehicleService {
       needsCount ? vehicleRepository.count(filterQuery) : Promise.resolve(0)
     ]);
 
-    const dtos = toVehicleListDTO(docs);
+    const dtos = isLight ? toVehicleLightListDTO(docs) : toVehicleListDTO(docs);
     const meta = needsCount ? { page, limit, total, pages: Math.ceil(total / limit) } : null;
 
     const result = formatResponse(dtos, meta, formatEnvelope);

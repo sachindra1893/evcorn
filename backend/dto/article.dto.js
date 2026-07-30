@@ -47,12 +47,43 @@ function toArticleDTO(doc) {
   };
 }
 
+/**
+ * Feed / card list DTO — never embeds body (paragraphs/blocks) even if the
+ * repository forgot to project them out (File-DB safety). Same card fields
+ * the FE already reads.
+ */
+function toArticleLightDTO(doc) {
+  if (!doc) return null;
+  const full = toArticleDTO(doc);
+  return {
+    id: full.id,
+    slug: full.slug,
+    title: full.title,
+    description: full.description,
+    categoryId: full.categoryId,
+    status: full.status,
+    active: full.active,
+    publishAt: full.publishAt,
+    imageUrl: full.imageUrl,
+    author: full.author,
+    createdAt: full.createdAt,
+    updatedAt: full.updatedAt
+  };
+}
+
 function toArticleListDTO(docs) {
   if (!Array.isArray(docs)) return [];
   return docs.map(toArticleDTO);
 }
 
+function toArticleLightListDTO(docs) {
+  if (!Array.isArray(docs)) return [];
+  return docs.map(toArticleLightDTO);
+}
+
 module.exports = {
   toArticleDTO,
-  toArticleListDTO
+  toArticleLightDTO,
+  toArticleListDTO,
+  toArticleLightListDTO
 };

@@ -1,25 +1,24 @@
 /**
  * Article Repository
  * Handles ONLY raw database queries for Articles. Zero business logic.
+ * Phase 5.3: File-DB path uses shared query matcher (filters/projection/pagination).
  */
 const Article = require('../models/Article');
 const { isLocalFileDb, fileDb } = require('../config/database');
 const { measureQuery } = require('../utils/slowQuery.utils');
+const { queryDocuments, countDocuments, projectDocument } = require('../utils/fileDbQuery');
 
 class ArticleRepository {
   async findAll(filterQuery, projection, sort, skip = 0, limit = 0) {
     if (isLocalFileDb()) {
-      let articles = fileDb.getArticles();
-      if (filterQuery.categoryId) {
-        articles = articles.filter(a => a.categoryId === filterQuery.categoryId);
-      }
-      if (filterQuery.active !== undefined) {
-        articles = articles.filter(a => a.active === filterQuery.active);
-      }
-      if (limit > 0) {
-        articles = articles.slice(skip, skip + limit);
-      }
-      return articles;
+      return queryDocuments(
+        fileDb.getArticles(),
+        filterQuery || {},
+        projection,
+        sort || { createdAt: -1 },
+        skip,
+        limit
+      );
     }
 
     return await measureQuery('Article.findAll', async () => {
@@ -32,8 +31,7 @@ class ArticleRepository {
 
   async count(filterQuery) {
     if (isLocalFileDb()) {
-      const articles = fileDb.getArticles();
-      return articles.length;
+      return countDocuments(fileDb.getArticles(), filterQuery || {});
     }
     return await measureQuery('Article.count', async () => {
       return await Article.countDocuments(filterQuery);
@@ -43,7 +41,9 @@ class ArticleRepository {
   async findById(id, projection = null) {
     if (isLocalFileDb()) {
       const articles = fileDb.getArticles();
-      return articles.find(a => a.id === id) || null;
+      const doc = articles.find(a => a.id === id) || null;
+      if (!doc || !projection) return doc;
+      return projectDocument(doc, projection);
     }
 
     const mongoose = require('mongoose');
@@ -57,7 +57,7 @@ class ArticleRepository {
 
   async create(articleData) {
     if (isLocalFileDb()) {
-      const articles = fileDb.getArticles();
+      const articles = fileDb.getArticles().slice();
       const newArticle = {
         ...articleData,
         id: 'local-art-' + Date.now(),
@@ -75,7 +75,7 @@ class ArticleRepository {
 
   async update(id, articleData) {
     if (isLocalFileDb()) {
-      const articles = fileDb.getArticles();
+      const articles = fileDb.getArticles().slice();
       const index = articles.findIndex(a => a.id === id);
       if (index === -1) return null;
       articles[index] = { ...articles[index], ...articleData };
@@ -88,7 +88,7 @@ class ArticleRepository {
 
   async delete(id) {
     if (isLocalFileDb()) {
-      let articles = fileDb.getArticles();
+      let articles = fileDb.getArticles().slice();
       const index = articles.findIndex(a => a.id === id);
       if (index === -1) return null;
       const deleted = articles[index];
