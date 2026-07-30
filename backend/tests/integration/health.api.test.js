@@ -8,6 +8,9 @@ describe('Health & Observability API Integration Tests', () => {
     expect(res.body.status).toBe('UP');
     expect(res.body.metrics).toBeDefined();
     expect(res.body.metrics.totalRequests).toBeGreaterThanOrEqual(1);
+    expect(res.body.dependencies).toBeDefined();
+    expect(res.body.dependencies.database.status).toMatch(/UP|DOWN/);
+    expect(res.body.dependencies.cloudinary.status).toMatch(/CONFIGURED|NOT_CONFIGURED/);
     expect(res.headers['x-request-id']).toBeDefined();
   });
 
@@ -15,12 +18,15 @@ describe('Health & Observability API Integration Tests', () => {
     const res = await request(app).get('/api/health/live');
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe('UP');
+    expect(String(res.headers['cache-control'] || '')).toMatch(/no-store/i);
   });
 
   it('GET /api/health/ready should return HTTP 200 readiness probe', async () => {
     const res = await request(app).get('/api/health/ready');
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe('READY');
+    expect(res.body.dependencies).toBeDefined();
+    expect(String(res.headers['cache-control'] || '')).toMatch(/no-store/i);
   });
 
   it('GET /api/metrics should return aggregated telemetry', async () => {
@@ -28,5 +34,6 @@ describe('Health & Observability API Integration Tests', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.memory).toBeDefined();
+    expect(String(res.headers['cache-control'] || '')).toMatch(/no-store/i);
   });
 });

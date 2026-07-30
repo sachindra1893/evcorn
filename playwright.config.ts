@@ -45,8 +45,9 @@ export default defineConfig({
           command: 'node server.js',
           cwd: path.join(__dirname, 'backend'),
           url: 'http://127.0.0.1:3000/api/health/live',
-          // Always start a dedicated E2E backend so CORS/file-DB env is correct.
-          reuseExistingServer: false,
+          // Local: reuse an already-running File-DB backend (same pattern as FE serve).
+          // CI: always start a dedicated process so gates are hermetic.
+          reuseExistingServer: !isCI,
           timeout: 120_000,
           env: {
             ...process.env,

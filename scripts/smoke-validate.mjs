@@ -44,9 +44,11 @@ async function run() {
       const ok = allow.includes(res.status);
       const requestId = res.headers.get('x-request-id');
       const serverTiming = res.headers.get('server-timing');
+      const cacheControl = res.headers.get('cache-control') || '';
       let bodyOk = true;
+      let json = null;
       try {
-        const json = await res.json();
+        json = await res.json();
         if (check.name === 'vehicles_published' && Array.isArray(json) && json.length === 0) {
           // Empty Published list is the Phase 1 P0 regression — fail smoke.
           bodyOk = false;
@@ -54,11 +56,22 @@ async function run() {
         if (check.name === 'vehicles_published' && json?.data && Array.isArray(json.data) && json.data.length === 0) {
           bodyOk = false;
         }
+        if (check.name === 'health' && !json?.dependencies?.database) {
+          bodyOk = false;
+        }
       } catch {
         // non-JSON ok for some probes
       }
 
-      const pass = ok && bodyOk;
+      let headerOk = true;
+      if (
+        (check.name === 'health_live' || check.name === 'health_ready') &&
+        !/no-store/i.test(cacheControl)
+      ) {
+        headerOk = false;
+      }
+
+      const pass = ok && bodyOk && headerOk;
       if (!pass) failed++;
       results.push({
         name: check.name,
@@ -67,6 +80,7 @@ async function run() {
         ms,
         requestId,
         serverTiming: serverTiming || null,
+        cacheControl: cacheControl || null,
         pass
       });
       console.log(`${pass ? 'PASS' : 'FAIL'} ${check.name} ${res.status} ${ms}ms`);

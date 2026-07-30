@@ -41,9 +41,9 @@ Before pushing any release to production (see also **`docs/RELEASE.md`**):
 - [ ] **Angular Build:** Production bundle compiles (`npm run build`) and bundle-size gate passes.
 - [ ] **SEO / Smoke:** Static SEO + API smoke (Published vehicles non-empty) pass.
 - [ ] **Static Sitemap:** Sitemap auto-generates without errors (`public/sitemap.xml`).
-- [ ] **Environment Validation:** All required secrets (`MONGO_URI`, `JWT_SECRET`, `CLOUDINARY_*`) present in production settings.
-- [ ] **Post-deploy:** `npm run validate:production` (or **Production Post-Deploy Validate** workflow) PASS before marking COMPLETE.
-- [ ] **Health Endpoint Probes (LIVE):** `/api/health`, `/api/health/live`, and `/api/health/ready` healthy after deploy.
+- [ ] **Environment Validation:** Production secrets present; backend `validateEnv()` fail-fast contract satisfied (`MONGO_URI` or `ALLOW_FILE_DB_IN_PRODUCTION`, non-default `ADMIN_PASSWORD`, explicit `JWT_SECRET`, `CLOUDINARY_*`). See **`docs/PHASE_6.md`**.
+- [ ] **Post-deploy:** `npm run validate:production` (or **Production Post-Deploy Validate** workflow) PASS before marking COMPLETE — includes robots/favicon/manifest/sitemap + health probe `no-store`.
+- [ ] **Health Endpoint Probes (LIVE):** `/api/health` (with `dependencies`), `/api/health/live`, and `/api/health/ready` healthy after deploy.
 
 ---
 

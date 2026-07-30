@@ -1,0 +1,16 @@
+{
+  "name": "EVCorn",
+  "short_name": "EVCorn",
+  "description": "Electric vehicles in India — compare EVs, articles, and charging insights.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

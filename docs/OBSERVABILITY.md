@@ -53,10 +53,15 @@ All MongoDB repository interactions are wrapped using `measureQuery(operationNam
 ## 6. Process Monitoring & Graceful Shutdown
 
 - **Process Signals (`SIGTERM`, `SIGINT`):** Gracefully stops the HTTP server, waits for pending requests to finish, cleanly closes the MongoDB Mongoose connection (`mongoose.connection.close()`), and exits with code `0`.
-- **Exception Guards:** `uncaughtException` and `unhandledRejection` handlers log error context with stack traces before shutting down cleanly.
+- **Exception Guards:** `uncaughtException` logs and triggers graceful shutdown. `unhandledRejection` is logged with structured context (does not force process exit — avoids cascading restarts from a single rejected promise).
 
 ---
 
 ## 7. Startup Configuration Audit
 
-- `validateEnv()` in `backend/config/env.js` validates `PORT` numbers and emits security warnings if `ADMIN_PASSWORD` is using default credentials in production mode.
+- `validateEnv()` in `backend/config/env.js` validates `PORT` and, in **production**, **fails fast** if:
+  - `ADMIN_PASSWORD` is missing or still the default `admin`
+  - `JWT_SECRET` is missing or still the built-in insecure default
+  - `MONGO_URI` is missing unless `ALLOW_FILE_DB_IN_PRODUCTION=true`
+- Incomplete Cloudinary credentials emit a **warning** (uploads degrade) but do not block boot.
+- See [`PHASE_6.md`](./PHASE_6.md) for the ops runbook.

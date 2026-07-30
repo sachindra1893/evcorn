@@ -53,6 +53,12 @@ function checkDocument(name, html) {
   const hasLd = /application\/ld\+json/i.test(html);
   if (!hasLd) issues.push('missing JSON-LD structured data');
 
+  if (name === 'index.html') {
+    if (!/rel=["']manifest["']/i.test(html)) {
+      issues.push('missing web app manifest link');
+    }
+  }
+
   const h1 = (html.match(/<h1[\s>]/gi) || []).length;
   // Prerendered shells may omit H1 until hydration — warn only for index.
   const warnings = [];
@@ -83,6 +89,38 @@ for (const candidate of ['evs/index.html', 'articles/index.html', 'compare/index
 }
 
 const results = targets.map((t) => checkDocument(t, readHtml(t)));
+
+const manifestPath = path.join(DIST, 'site.webmanifest');
+const manifestResult = { name: 'site.webmanifest', pass: false, issues: [] };
+if (!fs.existsSync(manifestPath)) {
+  manifestResult.issues.push('manifest file missing from dist');
+} else {
+  try {
+    const raw = fs.readFileSync(manifestPath, 'utf8');
+    // Reject accidental HTML/SPA shells copied into dist as the manifest.
+    if (/<!doctype\s+html/i.test(raw) || /<html[\s>]/i.test(raw)) {
+      manifestResult.issues.push('manifest looks like HTML/SPA fallback');
+    } else {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.name !== 'string' || !parsed.name.trim()) {
+        manifestResult.issues.push('missing name');
+      }
+      if (typeof parsed?.short_name !== 'string' || !parsed.short_name.trim()) {
+        manifestResult.issues.push('missing short_name');
+      }
+      if (!Array.isArray(parsed?.icons) || parsed.icons.length === 0) {
+        manifestResult.issues.push('missing icons[]');
+      } else if (!parsed.icons.every((i) => i && typeof i.src === 'string' && i.src)) {
+        manifestResult.issues.push('icons[] entries require src');
+      }
+    }
+  } catch (err) {
+    manifestResult.issues.push(`invalid JSON: ${err.message || err}`);
+  }
+}
+manifestResult.pass = manifestResult.issues.length === 0;
+results.push(manifestResult);
+
 const pass = results.every((r) => r.pass);
 const report = {
   generatedAt: new Date().toISOString(),

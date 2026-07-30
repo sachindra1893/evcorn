@@ -126,9 +126,20 @@ app.use((req, res, next) => {
     return next();
   }
 
-  // Health check — short cache
+  // Liveness / readiness / metrics — never CDN-cache (probe accuracy)
+  if (
+    path === '/api/health/live' ||
+    path === '/api/health/ready' ||
+    path === '/api/metrics' ||
+    path.startsWith('/api/metrics/')
+  ) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    return next();
+  }
+
+  // Aggregate health — short browser cache only (no shared CDN cache)
   if (path.startsWith('/api/health')) {
-    res.set('Cache-Control', 'public, max-age=30, s-maxage=60');
+    res.set('Cache-Control', 'public, max-age=15, s-maxage=0, must-revalidate');
     return next();
   }
 
