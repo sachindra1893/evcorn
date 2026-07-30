@@ -65,3 +65,28 @@ export function assertArticleUpdateTarget(
   }
   return { ok: true, id: editingArticleId };
 }
+
+/**
+ * Replace (or prepend) an article in the admin list so Manage Published Articles
+ * reflects the saved title/body without waiting on a full refetch.
+ */
+export function upsertArticleInList<T extends { id?: string; _id?: unknown; title?: string }>(
+  articles: T[],
+  updated: T
+): T[] {
+  const id = resolveArticleId(updated);
+  if (!id) {
+    return articles.slice();
+  }
+
+  const next = articles.slice();
+  const idx = next.findIndex((a) => resolveArticleId(a) === id);
+  const merged = { ...((idx >= 0 ? next[idx] : {}) as T), ...updated, id } as T;
+
+  if (idx >= 0) {
+    next[idx] = merged;
+  } else {
+    next.unshift(merged);
+  }
+  return next;
+}

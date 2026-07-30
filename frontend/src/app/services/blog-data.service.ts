@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, combineLatest, of } from 'rxjs';
+import { Observable, BehaviorSubject, ReplaySubject, combineLatest, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { ArticleBlock } from '../models/blocks.model';
@@ -327,10 +327,17 @@ export class BlogDataService {
   private articleByIdCache = new Map<string, Observable<Article>>();
 
   // 2. Articles API Calls
+  // Seed from localStorage only when present. After clearArticleCache(), do not
+  // emit [] / stale rows before HTTP — that left Manage Published Articles on
+  // the old title until a full page reload.
   getArticles(): Observable<Article[]> {
     if (!this.articlesCache$) {
-      const cached = this.loadCache('articles') || [];
-      const subject = new BehaviorSubject<Article[]>(cached);
+      const cached = this.loadCache('articles');
+      const subject = new ReplaySubject<Article[]>(1);
+
+      if (Array.isArray(cached)) {
+        subject.next(cached);
+      }
 
       this.http.get<Article[]>(`${this.apiUrl}/articles`).subscribe({
         next: (data) => {
@@ -338,7 +345,7 @@ export class BlogDataService {
           subject.next(data);
         },
         error: (err) => {
-          if (cached.length === 0) subject.error(err);
+          if (!Array.isArray(cached)) subject.error(err);
         }
       });
 
@@ -350,8 +357,12 @@ export class BlogDataService {
   // Lightweight list — overview cards only (no heavy body content) for articles list page
   getArticlesLight(): Observable<Partial<Article>[]> {
     if (!this.articlesLightCache$) {
-      const cached = this.loadCache('articlesLight') || [];
-      const subject = new BehaviorSubject<any[]>(cached);
+      const cached = this.loadCache('articlesLight');
+      const subject = new ReplaySubject<Partial<Article>[]>(1);
+
+      if (Array.isArray(cached)) {
+        subject.next(cached);
+      }
 
       this.http.get<Partial<Article>[]>(`${this.apiUrl}/articles?light=true`).subscribe({
         next: (data) => {
@@ -359,7 +370,7 @@ export class BlogDataService {
           subject.next(data);
         },
         error: (err) => {
-          if (cached.length === 0) subject.error(err);
+          if (!Array.isArray(cached)) subject.error(err);
         }
       });
 
@@ -393,23 +404,38 @@ export class BlogDataService {
     return this.articleByIdCache.get(id)!;
   }
 
-  addArticle(articleData: Article): Observable<Article> {
+  /** Drop in-memory + localStorage article lists (and optional single-article entry). */
+  clearArticleCache(id?: string): void {
     this.articlesCache$ = null;
     this.articlesLightCache$ = null;
+    if (id) {
+      this.articleByIdCache.delete(id);
+    } else {
+      this.articleByIdCache.clear();
+    }
+    try {
+      localStorage.removeItem('articles');
+      localStorage.removeItem('articlesLight');
+      if (id) {
+        localStorage.removeItem(`article_${id}`);
+      }
+    } catch {
+      // private mode / quota — ignore
+    }
+  }
+
+  addArticle(articleData: Article): Observable<Article> {
+    this.clearArticleCache();
     return this.http.post<Article>(`${this.apiUrl}/articles`, articleData, { headers: this.getHeaders() });
   }
 
   updateArticle(id: string, articleData: Article): Observable<Article> {
-    this.articlesCache$ = null;
-    this.articlesLightCache$ = null;
-    this.articleByIdCache.delete(id);
+    this.clearArticleCache(id);
     return this.http.put<Article>(`${this.apiUrl}/articles/${id}`, articleData, { headers: this.getHeaders() });
   }
 
   deleteArticle(id: string): Observable<any> {
-    this.articlesCache$ = null;
-    this.articlesLightCache$ = null;
-    this.articleByIdCache.delete(id);
+    this.clearArticleCache(id);
     return this.http.delete(`${this.apiUrl}/articles/${id}`, { headers: this.getHeaders() });
   }
 
@@ -704,14 +730,12 @@ export class BlogDataService {
     this.allVehiclesCache$ = null;
     this.vehiclesLightCache$ = null;
     this.categoriesCache$ = null;
-    this.articlesCache$ = null;
-    this.articlesLightCache$ = null;
-    this.articleByIdCache.clear();
     this.allVehiclesSettled$.next(false);
     this.vehiclesLightSettled$.next(false);
     this.categoriesSettled$.next(false);
+    this.clearArticleCache();
     try {
-      ['allVehicles', 'vehiclesLight', 'categories', 'articles', 'articlesLight'].forEach(k =>
+      ['allVehicles', 'vehiclesLight', 'categories'].forEach(k =>
         localStorage.removeItem(k)
       );
     } catch {}

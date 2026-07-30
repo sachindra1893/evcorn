@@ -11,7 +11,8 @@ import { ArticleBlock } from '../../models/blocks.model';
 import {
   assertArticleUpdateTarget,
   hydrateArticleBlocks,
-  resolveArticleId
+  resolveArticleId,
+  upsertArticleInList
 } from './article-edit.util';
 
 @Component({
@@ -128,7 +129,7 @@ import {
                     </tr>
                   </thead>
                   <tbody>
-                    @for (art of articles; track art.id) {
+                    @for (art of articles; track trackArticleId(art)) {
                       <tr>
                         <td class="article-title">{{ art.title }}</td>
                         <td>
@@ -136,7 +137,7 @@ import {
                         </td>
                         <td class="table-actions">
                           <button (click)="startEditArticle(art)" class="btn edit-btn">Edit</button>
-                          <button (click)="onDeleteArticle(art.id!, art.title)" class="btn delete-btn">Delete</button>
+                          <button (click)="onDeleteArticle(trackArticleId(art), art.title)" class="btn delete-btn">Delete</button>
                         </td>
                       </tr>
                     }
@@ -886,6 +887,11 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  /** Stable @for track + delete target (supports id / _id). */
+  trackArticleId(art: Article): string {
+    return resolveArticleId(art) || '';
+  }
+
   loadVehicles() {
     this.dataService.getVehicles().subscribe(data => {
       this.vehicles = data;
@@ -946,10 +952,18 @@ export class AdminComponent implements OnInit {
     if (updateTarget.ok) {
       articleData.id = updateTarget.id;
       this.dataService.updateArticle(updateTarget.id, articleData).subscribe({
-        next: () => {
+        next: (updated) => {
           this.saving = false;
+          // Immediate list sync from PUT payload (don't wait on cache/refetch).
+          this.articles = upsertArticleInList(this.articles, {
+            ...articleData,
+            ...(updated || {}),
+            id: updateTarget.id
+          });
+          this.cdr.detectChanges();
           alert('Article updated successfully!');
           this.cancelEditArticle();
+          // Source-of-truth refresh after clearArticleCache inside updateArticle.
           this.loadArticles();
         },
         error: (err) => {
@@ -959,12 +973,16 @@ export class AdminComponent implements OnInit {
       });
     } else {
       this.dataService.addArticle(articleData).subscribe({
-        next: () => {
+        next: (created) => {
           this.saving = false;
           alert('Article published successfully!');
           this.articleEditMode = false;
           this.editingArticleId = null;
           this.resetArticleForm();
+          if (created) {
+            this.articles = upsertArticleInList(this.articles, created);
+            this.cdr.detectChanges();
+          }
           this.loadArticles();
         },
         error: (err) => {

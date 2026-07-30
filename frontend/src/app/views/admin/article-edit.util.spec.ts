@@ -1,4 +1,4 @@
-import { assertArticleUpdateTarget, hydrateArticleBlocks, resolveArticleId } from './article-edit.util';
+import { assertArticleUpdateTarget, hydrateArticleBlocks, resolveArticleId, upsertArticleInList } from './article-edit.util';
 import { ArticleBlock } from '../../models/blocks.model';
 
 describe('article-edit.util', () => {
@@ -58,6 +58,34 @@ describe('article-edit.util', () => {
 
     it('signals not-editing so caller can POST create', () => {
       expect(assertArticleUpdateTarget(false, null)).toEqual({ ok: false, reason: 'not-editing' });
+    });
+  });
+
+  describe('upsertArticleInList', () => {
+    it('replaces the matching article so list title updates after PUT', () => {
+      const list = [
+        { id: 'a1', title: 'Old Title', description: 'keep-me' },
+        { id: 'a2', title: 'Other' }
+      ];
+      const next = upsertArticleInList(list, { id: 'a1', title: 'New Title' });
+      expect(next[0]).toEqual({ id: 'a1', title: 'New Title', description: 'keep-me' });
+      expect(next[1].title).toBe('Other');
+      expect(next).not.toBe(list);
+    });
+
+    it('matches by _id and prepends unknown ids', () => {
+      const byMongo = upsertArticleInList(
+        [{ _id: 'm1', title: 'Before' }],
+        { id: 'm1', title: 'After' }
+      );
+      expect(byMongo).toEqual([{ _id: 'm1', id: 'm1', title: 'After' }]);
+
+      const prepended = upsertArticleInList([{ id: 'x', title: 'Existing' }], {
+        id: 'new',
+        title: 'Fresh'
+      });
+      expect(prepended[0]).toEqual({ id: 'new', title: 'Fresh' });
+      expect(prepended).toHaveLength(2);
     });
   });
 });
