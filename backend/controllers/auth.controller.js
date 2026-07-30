@@ -1,10 +1,20 @@
 /**
- * Auth Controller (Secured with JWT Token Support & Audit Trail Logging)
+ * Auth Controller (JWT issuance + audit trail)
+ * Login compares ADMIN_PASSWORD with timing-safe equality; API auth is JWT-only.
  */
+const crypto = require('crypto');
 const config = require('../config/env');
 const { generateToken } = require('../utils/auth.utils');
 const logger = require('../utils/logger');
 const { UnauthorizedError } = require('../errors/AppError');
+
+function passwordsMatch(provided, expected) {
+  if (typeof provided !== 'string' || typeof expected !== 'string') return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
 
 class AuthController {
   async login(req, res, next) {
@@ -12,7 +22,7 @@ class AuthController {
       const { password } = req.body;
       const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-      if (password === config.ADMIN_PASSWORD) {
+      if (passwordsMatch(password, config.ADMIN_PASSWORD)) {
         const token = generateToken({ role: 'admin', ip: clientIp });
         logger.audit('ADMIN_LOGIN_SUCCESS', { ip: clientIp, userAgent: req.headers['user-agent'] });
         return res.json({

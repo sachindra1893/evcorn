@@ -86,7 +86,8 @@ function requestLoggerMiddleware(req, res, next) {
   next();
 }
 
-function getSystemMetrics() {
+function getSystemMetrics(options = {}) {
+  const publicView = options.public !== false;
   const mem = process.memoryUsage();
   const uptimeSec = Math.floor(process.uptime());
   const avgResponseTimeMs = metrics.totalRequests > 0
@@ -100,7 +101,7 @@ function getSystemMetrics() {
     cacheStats = {};
   }
 
-  return {
+  const base = {
     uptime: `${uptimeSec}s`,
     uptimeSeconds: uptimeSec,
     totalRequests: metrics.totalRequests,
@@ -115,10 +116,21 @@ function getSystemMetrics() {
       heapTotal: `${Math.round(mem.heapTotal / 1024 / 1024)} MB`,
       heapUsed: `${Math.round(mem.heapUsed / 1024 / 1024)} MB`
     },
-    cache: cacheStats,
-    nodeVersion: process.version,
-    pid: process.pid
+    cache: {
+      keys: cacheStats.keys,
+      hits: cacheStats.hits,
+      misses: cacheStats.misses
+    }
   };
+
+  // Phase 7: never expose process identity (pid / Node version) on public probes.
+  if (!publicView) {
+    base.nodeVersion = process.version;
+    base.pid = process.pid;
+    base.cache = cacheStats;
+  }
+
+  return base;
 }
 
 module.exports = {

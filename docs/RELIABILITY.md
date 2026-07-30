@@ -29,7 +29,7 @@ Database schema evolution is managed via `backend/migrations/`:
 Controlled platform maintenance triggered via environment variable:
 - **Toggle:** Set `MAINTENANCE_MODE=true` in Render environment settings.
 - **Public Response:** Public traffic receives HTTP `503 Service Unavailable` with `SERVICE_MAINTENANCE` JSON payload.
-- **Admin & Health Bypass:** `/api/health`, `/api/health/*`, `/api/auth/login`, and requests carrying valid `Bearer` admin tokens or `x-admin-password` headers bypass maintenance mode for operational fixes.
+- **Admin & Health Bypass:** `/api/health`, `/api/health/*`, `/api/auth/login`, and requests carrying a valid `Bearer` admin JWT bypass maintenance mode for operational fixes.
 
 ---
 

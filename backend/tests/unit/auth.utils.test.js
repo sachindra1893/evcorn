@@ -18,4 +18,9 @@ describe('Auth Utilities (Unit Tests)', () => {
     const decoded = verifyToken('invalid.token.structure');
     expect(decoded).toBeNull();
   });
+
+  it('should return null for alg=none forged tokens', () => {
+    const forged = require('jsonwebtoken').sign({ role: 'admin' }, '', { algorithm: 'none' });
+    expect(verifyToken(forged)).toBeNull();
+  });
 });

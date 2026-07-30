@@ -1,17 +1,14 @@
 /**
- * Admin Password & JWT Verification Middleware
- * Supports both legacy header (x-admin-password) AND Bearer JWT token.
+ * Admin JWT verification middleware.
+ * Bearer JWT (HS256, role=admin) is the only accepted credential.
  */
-const config = require('../config/env');
 const { verifyToken } = require('../utils/auth.utils');
 const logger = require('../utils/logger');
 const { UnauthorizedError } = require('../errors/AppError');
 
 function checkAdminAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const legacyPassword = req.headers['x-admin-password'];
 
-  // 1. Check Bearer Token
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
@@ -21,13 +18,6 @@ function checkAdminAuth(req, res, next) {
     }
   }
 
-  // 2. Check Legacy Admin Password Header (Backward Compatibility)
-  if (legacyPassword === config.ADMIN_PASSWORD) {
-    req.user = { role: 'admin', legacy: true };
-    return next();
-  }
-
-  // Auth Failure
   logger.audit('UNAUTHORIZED_ACCESS_ATTEMPT', {
     url: req.originalUrl,
     method: req.method,

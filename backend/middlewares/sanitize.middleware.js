@@ -1,6 +1,6 @@
 /**
  * MongoDB Operator Injection Sanitization Middleware
- * Deeply sanitizes keys starting with '$' or containing '.' in query and body.
+ * Deeply strips keys starting with '$' or containing '.' (operator / path injection).
  */
 function sanitizeObject(obj) {
   if (!obj || typeof obj !== 'object') return obj;
@@ -11,8 +11,8 @@ function sanitizeObject(obj) {
 
   const clean = {};
   for (const key of Object.keys(obj)) {
-    // Strip keys starting with $ (MongoDB operator injection vectors)
-    if (key.startsWith('$')) {
+    // Strip MongoDB operator / path-injection keys
+    if (key.startsWith('$') || key.includes('.')) {
       continue;
     }
     clean[key] = sanitizeObject(obj[key]);

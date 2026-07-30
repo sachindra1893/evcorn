@@ -80,9 +80,9 @@ app.use(compression({
 }));
 app.use((req, res, next) => { perf.mark('compression_setup'); next(); });
 
-// 5. Request Body Parsing & Limits
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+// 5. Request Body Parsing & Limits (Phase 7: tighter JSON DoS surface; uploads use multer)
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ limit: '1mb', extended: true }));
 app.use((req, res, next) => { perf.mark('body_parsers'); next(); });
 
 // 6. MongoDB Operator Injection Sanitization Guard
@@ -106,8 +106,8 @@ app.use((req, res, next) => {
     return next();
   }
 
-  // Admin routes — private
-  if (path.startsWith('/api/admin')) {
+  // Admin / authenticated analytics — never cache (authz responses)
+  if (path.startsWith('/api/admin') || path.startsWith('/api/analytics')) {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     return next();
   }

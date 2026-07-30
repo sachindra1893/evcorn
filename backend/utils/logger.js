@@ -8,7 +8,7 @@
  */
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-const SENSITIVE_KEYS = /^(password|secret|token|authorization|cookie|api[_-]?key)$/i;
+const SENSITIVE_KEYS = /^(password|passwd|secret|token|authorization|cookie|api[_-]?key|api[_-]?secret|jwt|mongo(_?uri)?|database_url|cloudinary|private[_-]?key)$/i;
 
 function normalizeMeta(meta = {}) {
   const out = { ...meta };

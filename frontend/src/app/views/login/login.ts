@@ -144,13 +144,15 @@ export class LoginComponent implements OnInit {
 
     if (!this.password) return;
 
-    const success = this.authService.login(this.password);
-    if (success) {
-      this.password = '';
-      this.router.navigate(['/admin']);
-    } else {
-      this.errorMessage = 'Incorrect password! Please try again.';
-      this.password = '';
-    }
+    const password = this.password;
+    this.password = '';
+
+    this.authService.login(password).subscribe((success) => {
+      if (success) {
+        this.router.navigate(['/admin']);
+      } else {
+        this.errorMessage = 'Incorrect password! Please try again.';
+      }
+    });
   }
 }

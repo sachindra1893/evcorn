@@ -7,6 +7,7 @@ import { ArticleBlock } from '../models/blocks.model';
 import { getApiBaseUrl } from '../core/http/api-base-url';
 import { AsyncState, isEmptyValue } from '../core/async-state/async-state';
 import { classifyHttpError } from '../core/http/app-http-error';
+import { AuthService } from './auth.service';
 
 export interface Category {
   id: string; // e.g. 'tesla'
@@ -204,7 +205,10 @@ export class BlogDataService {
   private readonly allVehiclesSettled$ = new BehaviorSubject<boolean>(false);
   private readonly vehiclesLightSettled$ = new BehaviorSubject<boolean>(false);
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   /**
    * Retry-on-transient-failure and the "backend waking up" signal are now
@@ -221,7 +225,8 @@ export class BlogDataService {
     formData.append('file', file);
     return this.http.post<{ url: string; public_id: string; width: number; height: number; format: string; original_filename: string }>(
       `${this.apiUrl}/upload`,
-      formData
+      formData,
+      { headers: this.getHeaders() }
     );
   }
 
@@ -231,15 +236,14 @@ export class BlogDataService {
   deleteImage(urlOrPublicId: string): Observable<{ success: boolean; result?: string }> {
     return this.http.post<{ success: boolean; result?: string }>(
       `${this.apiUrl}/upload/delete`,
-      { public_id: urlOrPublicId }
+      { public_id: urlOrPublicId },
+      { headers: this.getHeaders() }
     );
   }
 
-  // Helper to construct authorization headers for Admin actions
+  /** Admin mutations use Bearer JWT from AuthService — never a hardcoded password. */
   private getHeaders(): HttpHeaders {
-    return new HttpHeaders({
-      'x-admin-password': 'admin' // Matches ADMIN_PASSWORD in .env
-    });
+    return this.authService.getAuthHeaders();
   }
 
   // ─── TTL-aware localStorage Cache (Pillar V) ──────────────────────────────

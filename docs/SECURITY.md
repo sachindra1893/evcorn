@@ -1,26 +1,24 @@
 # EVCorn Enterprise Security, Authentication & Hardening Standard
 
-> **Document Status:** Active Security Policy (Phase 4 Complete)  
-> **Version:** 1.0.0  
+> **Document Status:** Active Security Policy (Phase 7 Complete — pending promote)  
+> **Version:** 1.1.0  
 
 ---
 
 ## 1. Authentication & JWT Token Flow
 
-EVCorn implements a **Dual-Mode Admin Authentication System** designed for security and seamless backward compatibility:
+EVCorn uses **JWT-only admin authentication** on protected APIs:
 
-1. **JWT Bearer Authentication (Recommended):**
-   - Admin logs in via `POST /api/auth/login`.
-   - On success, server issues a signed JSON Web Token (JWT) with 24-hour expiration (`JWT_EXPIRES_IN=24h`).
-   - Admin requests include `Authorization: Bearer <jwt_token>`.
-2. **Legacy Password Verification (Backward Compatible):**
-   - Direct requests with `x-admin-password: <password>` header remain verified for existing admin panel components.
-
----
+1. **JWT Bearer Authentication (required):**
+   - Admin logs in via `POST /api/auth/login` (password compared with timing-safe equality against `ADMIN_PASSWORD` env secret).
+   - On success, server issues a signed HS256 JSON Web Token (JWT) with expiration (`JWT_EXPIRES_IN`, default `24h`).
+   - Admin requests include `Authorization: Bearer <jwt_token>` only.
+   - Frontend stores the token in `sessionStorage` (`evcorn_admin_token`) — **never** embeds the admin password in the client bundle.
+   - Legacy `x-admin-password` header auth has been **removed** (Phase 7 final review).
 
 ### ⚠️ Technical Debt Item: Password Storage & Verification
-- **Current State:** The admin authentication system currently verifies incoming login attempts directly against the `ADMIN_PASSWORD` secret defined in environment variables (`process.env.ADMIN_PASSWORD`).
-- **Future Roadmap:** A future authentication phase will replace direct environment secret comparison with database-backed User accounts using bcrypt/Argon2 password hashing, salt rounds, and refresh token rotation.
+- **Current State:** Login compares against `ADMIN_PASSWORD` env secret (single shared secret; timing-safe compare).
+- **Future Roadmap:** Database-backed users with bcrypt/Argon2 and refresh token rotation.
 
 ---
 
@@ -36,6 +34,10 @@ EVCorn implements a **Dual-Mode Admin Authentication System** designed for secur
 | `POST /api/articles` | POST | **Admin Auth Required** | Standard |
 | `POST /api/upload` | POST | **Admin Auth Required** | `uploadLimiter` (30 req / 15m) |
 | `POST /api/auth/login` | POST | **Public** | `authLimiter` (10 req / 15m) |
+| `GET /api/analytics/overview` | GET | **Admin Auth Required** | Standard |
+| `GET /api/analytics/top-content` | GET | **Admin Auth Required** | Standard |
+| `GET /api/analytics/search-queries` | GET | **Admin Auth Required** | Standard |
+| `POST /api/analytics/event` | POST | **Public** | `apiLimiter` |
 
 ---
 
@@ -59,7 +61,17 @@ EVCorn implements a **Dual-Mode Admin Authentication System** designed for secur
 - **Media Upload Limiter:** 30 requests per 15-minute window.
 
 ### 🧹 MongoDB Operator Injection Sanitizer (`sanitize.middleware.js`)
-- Recursively strips any keys starting with `$` or containing invalid injection operators in `req.body`, `req.query`, and `req.params`.
+- Recursively strips any keys starting with `$` or containing `.` in `req.body`, `req.query`, and `req.params`.
+
+### Phase 7 additions
+- Article public filters never honor client `admin` / draft-status escalation probes.
+- Upload magic-byte verification after MIME whitelist.
+- Public metrics omit process identity (`pid`, Node version).
+- JSON body limit 1MB; upload multipart remains 10MB.
+- CORS denials do not become HTTP 500.
+- JWT verify restricted to `HS256`; JWT is the only admin API auth path.
+- Analytics GETs require admin JWT and are `Cache-Control: no-store`.
+- Login password compare uses timing-safe equality.
 
 ---
 

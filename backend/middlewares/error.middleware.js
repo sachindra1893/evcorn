@@ -9,8 +9,16 @@ const errorHandler = (err, req, res, next) => {
     return next(err);
   }
 
-  const statusCode = err.statusCode || 500;
-  const errorCode = err.errorCode || 'INTERNAL_SERVER_ERROR';
+  const statusCode = err.statusCode || err.status || 500;
+  let errorCode = err.errorCode || 'INTERNAL_SERVER_ERROR';
+  let clientMessage = err.message;
+
+  // Express body-parser / raw-body oversized payload → clean 413 (Phase 7)
+  if (statusCode === 413 || err.type === 'entity.too.large') {
+    errorCode = 'PAYLOAD_TOO_LARGE';
+    clientMessage = 'Request payload exceeds the allowed size limit.';
+  }
+
   const reqId = req.id || req.headers['x-request-id'] || 'N/A';
 
   // Log non-operational (unexpected) errors or 500s as system errors.
@@ -41,7 +49,7 @@ const errorHandler = (err, req, res, next) => {
       code: errorCode,
       message: (statusCode >= 500 && config.NODE_ENV === 'production') 
         ? 'An internal server error occurred. Please try again later.' 
-        : err.message
+        : clientMessage
     }
   };
 

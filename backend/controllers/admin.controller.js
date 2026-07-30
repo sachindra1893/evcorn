@@ -79,6 +79,9 @@ class AdminController {
       if (!Array.isArray(ids) || ids.length === 0) {
         throw new BadRequestError('Bulk operation requires a non-empty array of target ids.');
       }
+      if (ids.length > 100) {
+        throw new BadRequestError('Bulk operation is limited to 100 ids per request.');
+      }
 
       let updatedCount = 0;
 

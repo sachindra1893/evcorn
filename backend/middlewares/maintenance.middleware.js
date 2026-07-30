@@ -1,9 +1,8 @@
 /**
  * Maintenance Mode Middleware
  * Gated maintenance response triggered when MAINTENANCE_MODE=true.
- * Bypasses health probes and authenticated admin requests.
+ * Bypasses health probes and authenticated admin requests (JWT only).
  */
-const config = require('../config/env');
 const { verifyToken } = require('../utils/auth.utils');
 
 function maintenanceMiddleware(req, res, next) {
@@ -23,9 +22,8 @@ function maintenanceMiddleware(req, res, next) {
     return next();
   }
 
-  // 3. Bypass Authenticated Admin Requests
+  // 3. Bypass Authenticated Admin Requests (JWT Bearer only)
   const authHeader = req.headers['authorization'];
-  const legacyPassword = req.headers['x-admin-password'];
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
@@ -33,10 +31,6 @@ function maintenanceMiddleware(req, res, next) {
     if (decoded && decoded.role === 'admin') {
       return next();
     }
-  }
-
-  if (legacyPassword === config.ADMIN_PASSWORD) {
-    return next();
   }
 
   // Block Public Traffic with HTTP 503

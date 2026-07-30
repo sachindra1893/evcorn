@@ -1,5 +1,8 @@
 /**
  * Enterprise Strict CORS Policy Configuration
+ *
+ * Rejected origins use `callback(null, false)` — not `callback(new Error(...))` —
+ * so Express does not turn policy denials into 500 INTERNAL_SERVER_ERROR responses.
  */
 const cors = require('cors');
 const config = require('./env');
@@ -21,13 +24,13 @@ const corsOptions = {
       callback(null, true);
     } else {
       logger.warn(`CORS Access Blocked for Origin: ${origin}`);
-      callback(new Error(`CORS origin policy blocked request from ${origin}`));
+      callback(null, false);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   // Phase 2: allow inbound correlation ID; expose response ID + Server-Timing
   // so the browser can read them on cross-origin API calls.
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-password', 'x-request-id', 'X-Request-Id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'X-Request-Id'],
   exposedHeaders: ['x-request-id', 'X-Request-Id', 'Server-Timing'],
   credentials: true,
   maxAge: 86400 // 24 hours preflight cache

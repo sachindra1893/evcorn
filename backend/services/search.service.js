@@ -7,7 +7,7 @@ const articleRepository = require('../repositories/article.repository');
 const categoryRepository = require('../repositories/category.repository');
 const { toVehicleLightListDTO } = require('../dto/vehicle.dto');
 const { toArticleLightListDTO } = require('../dto/article.dto');
-const { publishedVehicleStatusFilter } = require('../utils/apiQuery');
+const { publishedVehicleStatusFilter, escapeRegex } = require('../utils/apiQuery');
 const appCache = require('../utils/cache');
 
 const SEARCH_VEHICLE_PROJECTION = [
@@ -44,7 +44,7 @@ class SearchService {
     const cached = appCache.get(cacheKey);
     if (cached !== undefined) return cached;
 
-    const containsRegex = new RegExp(searchTerm, 'i');
+    const containsRegex = new RegExp(escapeRegex(searchTerm), 'i');
     const articleQueryFilter = {
       active: true,
       $or: [{ status: 'published' }, { status: { $exists: false } }]
@@ -116,7 +116,7 @@ class SearchService {
     const cached = appCache.get(cacheKey);
     if (cached !== undefined) return cached;
 
-    const regex = searchTerm ? new RegExp(searchTerm, 'i') : null;
+    const regex = searchTerm ? new RegExp(escapeRegex(searchTerm), 'i') : null;
 
     const vehicleAndConditions = [publishedVehicleStatusFilter('Published')];
     const vehicleQuery = {};

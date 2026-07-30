@@ -111,19 +111,31 @@ describe('API Query Utilities (Unit Tests)', () => {
       expect(publishAtClause.$or[0].publishAt.$lte).toBeInstanceOf(Date);
     });
 
-    it('should not apply default status/publishAt/active filtering for admin requests', () => {
+    it('should ignore client admin=true without elevated option (Phase 7)', () => {
       const filter = buildArticleFilterQuery({ admin: 'true' });
+      expect(filter.active).toBe(true);
+      expect(Array.isArray(filter.$and)).toBe(true);
+      expect(filter.$and.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should allow elevated listing to skip public status/publishAt filters', () => {
+      const filter = buildArticleFilterQuery({ admin: 'true' }, { elevated: true });
       expect(filter.active).toBeUndefined();
       expect(filter.$and).toBeUndefined();
       expect(filter.$or).toBeUndefined();
     });
 
-    it('should skip the publishAt tolerance branch when an explicit status is requested', () => {
+    it('should ignore draft status probes on public listings (Phase 7)', () => {
       const filter = buildArticleFilterQuery({ status: 'draft' });
-      expect(filter.status).toBe('draft');
+      expect(filter.status).toBeUndefined();
       expect(filter.active).toBe(true);
+      expect(Array.isArray(filter.$and)).toBe(true);
+    });
+
+    it('should honor status when elevated is true', () => {
+      const filter = buildArticleFilterQuery({ status: 'draft' }, { elevated: true });
+      expect(filter.status).toBe('draft');
       expect(filter.$and).toBeUndefined();
-      expect(filter.$or).toBeUndefined();
     });
 
     it('should combine the default tolerant filter with a search regex via $and', () => {
@@ -134,8 +146,17 @@ describe('API Query Utilities (Unit Tests)', () => {
       expect(searchClause.$or.some(o => o.title instanceof RegExp)).toBe(true);
     });
 
-    it('should combine an explicit status with a search regex via top-level $or (no $and needed)', () => {
-      const filter = buildArticleFilterQuery({ status: 'published', search: 'nexon' });
+    it('should escape regex metacharacters in search (ReDoS guard)', () => {
+      const filter = buildArticleFilterQuery({ search: 'a+b(c)' });
+      const searchClause = filter.$and.find(c => c.$or.some(o => 'title' in o));
+      expect(searchClause.$or[0].title.source).toBe('a\\+b\\(c\\)');
+    });
+
+    it('should combine elevated status with a search regex via top-level $or', () => {
+      const filter = buildArticleFilterQuery(
+        { status: 'published', search: 'nexon' },
+        { elevated: true }
+      );
       expect(filter.status).toBe('published');
       expect(filter.$and).toBeUndefined();
       expect(Array.isArray(filter.$or)).toBe(true);

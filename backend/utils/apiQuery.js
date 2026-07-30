@@ -17,6 +17,15 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
 /**
+ * Escape user input before embedding in RegExp (ReDoS / meta-character safety).
+ * @param {string} value
+ * @returns {string}
+ */
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Parse & Validate Query Parameters Safely
  */
 function parseQueryParams(query) {
@@ -110,7 +119,8 @@ function buildVehicleFilterQuery(query) {
 
   // Model filter
   if (query.model || query.parentModel) {
-    mongoQuery.parentModel = new RegExp(`^${query.model || query.parentModel}$`, 'i');
+    const modelRaw = String(query.model || query.parentModel);
+    mongoQuery.parentModel = new RegExp(`^${escapeRegex(modelRaw)}$`, 'i');
   }
 
   // Status filter
@@ -152,7 +162,7 @@ function buildVehicleFilterQuery(query) {
 
   // Search Keyword Filter
   if (query.search && typeof query.search === 'string') {
-    const searchRegex = new RegExp(query.search.trim(), 'i');
+    const searchRegex = new RegExp(escapeRegex(query.search.trim()), 'i');
     andConditions.push({
       $or: [
         { name: searchRegex },
@@ -183,8 +193,13 @@ function buildVehicleFilterQuery(query) {
  * articles invisible to every listing endpoint. Both conditions below treat a
  * missing field as "eligible" via an explicit `$exists: false` fallback, mirroring
  * the tolerance the `status` check already had.
+ *
+ * Phase 7: `query.admin` / arbitrary `status` are NOT trusted from the client.
+ * Elevated listing (drafts / inactive) requires `options.elevated === true`,
+ * which must only be set after admin authentication.
  */
-function buildArticleFilterQuery(query) {
+function buildArticleFilterQuery(query, options = {}) {
+  const elevated = options.elevated === true;
   const mongoQuery = {};
   const andConditions = [];
 
@@ -192,16 +207,16 @@ function buildArticleFilterQuery(query) {
     mongoQuery.categoryId = (query.category || query.categoryId).toLowerCase();
   }
 
-  if (query.active !== undefined) {
-    mongoQuery.active = query.active === 'true';
-  } else if (!query.admin) {
+  if (elevated) {
+    if (query.active !== undefined) {
+      mongoQuery.active = query.active === 'true' || query.active === true;
+    }
+    if (query.status) {
+      mongoQuery.status = query.status;
+    }
+  } else {
+    // Public listing: always published + active; ignore admin/status escalation probes.
     mongoQuery.active = true;
-  }
-
-  // Editorial Workflow Status Filtering
-  if (query.status) {
-    mongoQuery.status = query.status;
-  } else if (!query.admin) {
     andConditions.push({
       $or: [{ status: 'published' }, { status: { $exists: false } }]
     });
@@ -211,7 +226,7 @@ function buildArticleFilterQuery(query) {
   }
 
   if (query.search && typeof query.search === 'string') {
-    const searchRegex = new RegExp(query.search.trim(), 'i');
+    const searchRegex = new RegExp(escapeRegex(query.search.trim()), 'i');
     andConditions.push({
       $or: [{ title: searchRegex }, { description: searchRegex }]
     });
@@ -250,6 +265,7 @@ module.exports = {
   buildVehicleFilterQuery,
   buildArticleFilterQuery,
   publishedVehicleStatusFilter,
+  escapeRegex,
   formatResponse,
   ALLOWED_SORT_FIELDS,
   MAX_LIMIT

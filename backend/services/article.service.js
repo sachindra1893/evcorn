@@ -49,6 +49,16 @@ function invalidateArticleCaches(id) {
   if (id) appCache.del(appCache.KEYS.ARTICLE_SINGLE(id));
 }
 
+/** Public visibility: active + published (or legacy missing status) + publishAt due. */
+function isPubliclyVisibleArticle(doc) {
+  if (!doc) return false;
+  if (doc.active === false) return false;
+  const status = doc.status;
+  if (status && status !== 'published') return false;
+  if (doc.publishAt && new Date(doc.publishAt) > new Date()) return false;
+  return true;
+}
+
 class ArticleService {
   async getArticles(queryParams) {
     const isLight = queryParams.light === 'true';
@@ -56,7 +66,8 @@ class ArticleService {
     const filterQuery = buildArticleFilterQuery(queryParams);
 
     // Cache safe public GET lists including filtered/paginated shapes.
-    const isCacheable = !queryParams.admin && !customProjection;
+    // Phase 7: query.admin is ignored — never elevates filters from the client.
+    const isCacheable = !customProjection;
     const fp = appCache.fingerprintQuery(queryParams, ['admin']);
     const envelopeSuffix = formatEnvelope ? ':envelope' : '';
     const cacheKey = isLight
@@ -107,6 +118,11 @@ class ArticleService {
     const doc = await articleRepository.findById(id, ARTICLE_SINGLE_PROJECTION);
     perf.mark('mongo_query');
     if (!doc) {
+      throw new NotFoundError(`Article with id "${id}" not found`);
+    }
+
+    // Phase 7: public detail must not disclose drafts / inactive / future-dated articles.
+    if (!isPubliclyVisibleArticle(doc)) {
       throw new NotFoundError(`Article with id "${id}" not found`);
     }
 
