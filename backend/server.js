@@ -1,6 +1,12 @@
 /**
  * EVCorn Backend Server Application Bootstrap
  * Layered Architecture + Security + Performance + Observability (Phase 7)
+ *
+ * CRITICAL ORDER (Render / express-rate-limit):
+ * 1. `express()` then `app.set('trust proxy', 1)` BEFORE requiring routes or
+ *    rate-limit middleware (those modules create limiters that read
+ *    `req.app.get('trust proxy')` on the first proxied request).
+ * 2. Only then `require` rate limiters / routers and `app.use` them.
  */
 const express = require('express');
 const helmet = require('helmet');
@@ -15,20 +21,24 @@ const requestIdMiddleware = require('./middlewares/requestId.middleware');
 const { requestLoggerMiddleware } = require('./middlewares/requestLogger.middleware');
 const conditionalRequestMiddleware = require('./middlewares/etag.middleware');
 const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
-const apiRouter = require('./routes/index');
 const errorHandler = require('./middlewares/error.middleware');
 const { sanitizeInput } = require('./middlewares/sanitize.middleware');
-const { apiLimiter } = require('./middlewares/rateLimit.middleware');
 const Article = require('./models/Article');
 const perf = require('./utils/perf');
 
 const app = express();
 
-// Render (and similar hosts) sit behind one reverse-proxy hop that sets
-// X-Forwarded-For. Trust that single hop so express-rate-limit can key by
-// client IP (avoids ERR_ERL_UNEXPECTED_X_FORWARDED_FOR). Do not use `true`
-// — that is overly permissive and triggers ERR_ERL_PERMISSIVE_TRUST_PROXY.
+// Render sits behind one reverse-proxy hop that sets X-Forwarded-For.
+// Must be set on THIS app before any rate-limit middleware is required or
+// mounted — express-rate-limit v8 checks `req.app.get('trust proxy')` and
+// logs ERR_ERL_UNEXPECTED_X_FORWARDED_FOR when it is still false (default).
+// Do not use `true` (triggers ERR_ERL_PERMISSIVE_TRUST_PROXY).
 app.set('trust proxy', 1);
+
+// Rate-limit + API router: required only AFTER trust proxy is configured so
+// auth/upload limiters created at module load attach to a correctly configured app.
+const apiRouter = require('./routes/index');
+const { apiLimiter } = require('./middlewares/rateLimit.middleware');
 
 // Phase 4: own ETags via conditionalRequestMiddleware (weak SHA-1 of JSON body).
 // Disable Express default ETag to avoid double-hashing / mismatched validators.
@@ -288,7 +298,9 @@ process.on('unhandledRejection', (reason) => {
 connectDatabase().then(() => {
   if (process.env.NODE_ENV !== 'test') {
     server = app.listen(config.PORT, () => {
-      logger.info(`Enterprise Server running on port ${config.PORT} [Environment: ${config.NODE_ENV}]`);
+      logger.info(`Enterprise Server running on port ${config.PORT} [Environment: ${config.NODE_ENV}]`, {
+        trustProxy: app.get('trust proxy')
+      });
     });
   }
 });

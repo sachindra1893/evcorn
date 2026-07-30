@@ -4,6 +4,18 @@ const { getFeatureFlags, isFeatureEnabled } = require('../../config/featureFlags
 const { withRetry } = require('../../utils/retry.utils');
 
 describe('Reliability, Maintenance & Resilience Tests', () => {
+  it('Express trust proxy is enabled for Render X-Forwarded-For / rate-limit', async () => {
+    // express-rate-limit ERR_ERL_UNEXPECTED_X_FORWARDED_FOR fires when this is false
+    expect(app.get('trust proxy')).toBe(1);
+
+    // Proxied request still succeeds (rate limit itself is skipped under NODE_ENV=test)
+    const res = await request(app)
+      .get('/api/health/live')
+      .set('X-Forwarded-For', '203.0.113.50');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.status).toBe('UP');
+  });
+
   it('Feature Flags should export expected default flags', () => {
     const flags = getFeatureFlags();
     expect(flags.ENABLE_ADVANCED_SEARCH).toBe(true);
