@@ -71,13 +71,13 @@ npx playwright test e2e/seo.spec.ts
 
 ---
 
-## 6. Phase 7.2 (AEO) recommendations
+## 6. Phase 7.2 (AEO)
 
-1. Entity-rich answer blocks / speakable schema for AI Overviews  
-2. Citation-ready fact tables on vehicle pages  
-3. Author/E-E-A-T enrichment on articles  
-4. Optional slug-canonical article URLs when slug routing ships  
-5. hreflang when Hindi/regional guides launch  
+**Shipped (M1–M4):** FE pure AEO engine at `frontend/src/app/aeo/` derives `AeoPageModel` from existing Vehicle/Article DTOs (no CMS/DB duplicate). Cache key `entityId|updatedAt` with LRU bound. Vehicle + article detail render answer chrome (spacing/hierarchy, mobile, a11y, rebuild guards); Related* DTO inputs come from RecommendationService at the wire layer; vehicle FAQs feed `SchemaService.buildFAQ`; article FAQPage stays with block-renderer. Playwright: `e2e/aeo.spec.ts`. Phase 7.1 meta/JSON-LD ownership unchanged.
+
+See `artifacts/PHASE_7_2_AEO_ARCHITECTURE.md`, `PHASE_7_2_FINAL_AUDIT.md`.
+
+**Deferred:** ops feature-flag registry, SSR/prerender for AI crawlers, compare-page AEO chrome (architecture non-goal for v1).
 
 ---
 

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Category, CarSpec, BlogDataService } from '../../services/blog-data.service';
@@ -565,6 +565,9 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
   private compareSub?: Subscription;
 
   popularBrandNames = ['Tata Motors', 'Mahindra', 'MG', 'Hyundai', 'BYD', 'Kia'];
+  /** Deep-link from AEO / shared URLs: `/evs?category={brandId|brandNameSlug}`. */
+  private pendingCategoryQuery: string | null = null;
+  private routeSub?: Subscription;
 
   constructor(
     private seoService: SeoService,
@@ -572,7 +575,8 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
     private blogData: BlogDataService,
     private compareState: CompareStateService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
@@ -599,6 +603,14 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
 
+    this.routeSub = this.route.queryParamMap.subscribe((params) => {
+      const raw = (params.get('category') || params.get('brand') || '').trim();
+      this.pendingCategoryQuery = raw || null;
+      if (this.categories.length) {
+        this.applyCategoryQuery();
+      }
+    });
+
     // Instantly preload lightweight vehicles index for 0ms brand/category filtering
     this.loadVehiclesIndex();
 
@@ -607,6 +619,7 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.compareSub?.unsubscribe();
+    this.routeSub?.unsubscribe();
   }
 
   isInCompare(carId: string | undefined): boolean {
@@ -627,6 +640,7 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
       next: (cats) => {
         this.categories = cats;
         this.loading = false;
+        this.applyCategoryQuery();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -636,6 +650,28 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  /** Honor `/evs?category=` from AEO Explore links (brand id or slugified name). */
+  private applyCategoryQuery(): void {
+    const q = this.pendingCategoryQuery;
+    if (!q || !this.categories.length) return;
+    const match = this.categories.find(
+      (c) =>
+        c.id === q ||
+        this.slugify(c.id) === q ||
+        this.slugify(c.name) === q
+    );
+    if (!match?.id) return;
+    if (this.selectedBrandId !== match.id) {
+      this.selectedBrandId = match.id;
+      this.selectedCategory = null;
+      this.showAllBrands = true;
+      if (!this.vehiclesLoaded) {
+        this.loadVehiclesIndex();
+      }
+    }
+    this.pendingCategoryQuery = null;
   }
 
   retryLoad() {

@@ -1,7 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CarSpec, Category, BlogDataService } from '../../services/blog-data.service';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
@@ -9,6 +8,16 @@ import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { getOptimizedImageUrl, getResponsiveSrcSet, handleImageError } from '../../utils/image.utils';
 import { combineLatest, Subscription } from 'rxjs';
+import {
+  AEO_ANSWER_BLOCKS_ENABLED,
+  AeoPageModel,
+  buildVehicleAeo,
+  buildVehicleOverviewFacts,
+  buildVehicleSeoDescription,
+  emptyAeoPageModel,
+  formatLastUpdatedLabel,
+  hasAeoChrome
+} from '../../aeo';
 
 interface OverviewData {
   priceRange: string;
@@ -58,7 +67,7 @@ interface OverviewData {
             {label: modelName, url: ''}
           ]"></app-breadcrumb>
           
-          <div class="hero-section animate-fade">
+          <div id="aeo-overview" class="hero-section animate-fade">
             <div class="hero-top-row">
               <div class="hero-text">
                 <span class="brand-tag">{{ brand.name }}</span>
@@ -132,7 +141,7 @@ interface OverviewData {
               </div>
             </div>
 
-            <div class="hero-bottom-row">
+            <div id="aeo-variants" class="hero-bottom-row">
               <div class="variant-selector-container animate-fade" style="animation-delay: 0.1s;">
                 <div class="variant-options">
                   @for (variant of siblingVariants; track variant.id) {
@@ -155,9 +164,122 @@ interface OverviewData {
               </div>
             </div>
           </div>
+
+          @if (aeoEnabled && aeo && hasAeoChrome(aeo)) {
+            <section class="aeo-answer-section animate-fade" aria-label="Quick answer" style="animation-delay: 0.15s;">
+              @if (aeo.quickAnswer) {
+                <p class="aeo-quick-answer">{{ aeo.quickAnswer }}</p>
+              }
+              @if (aeoLastUpdatedLabel) {
+                <p class="aeo-updated">Updated {{ aeoLastUpdatedLabel }}</p>
+              }
+              @if (aeo.toc.length > 0) {
+                <nav class="aeo-toc aeo-block" aria-labelledby="aeo-toc-heading">
+                  <h2 id="aeo-toc-heading" class="aeo-section-title">On this page</h2>
+                  <ul>
+                    @for (item of aeo.toc; track item.id) {
+                      <li>
+                        <a [href]="'#' + item.id" (click)="onAeoTocClick($event, item.id)">{{ item.text }}</a>
+                      </li>
+                    }
+                  </ul>
+                </nav>
+              }
+              @if (aeo.buyingRecommendation) {
+                <p class="aeo-buying aeo-block">{{ aeo.buyingRecommendation }}</p>
+              }
+              @if (aeo.keyTakeaways.length > 0) {
+                <div class="aeo-takeaways aeo-block">
+                  <h2 class="aeo-section-title">Key takeaways</h2>
+                  <ul>
+                    @for (item of aeo.keyTakeaways; track item) {
+                      <li>{{ item }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+              @if (aeo.specSummary.length > 0) {
+                <div class="aeo-spec-summary aeo-block">
+                  <h2 class="aeo-section-title">Spec summary</h2>
+                  <dl class="aeo-spec-list">
+                    @for (row of aeo.specSummary; track row.label) {
+                      <div class="aeo-spec-row">
+                        <dt>{{ row.label }}</dt>
+                        <dd>{{ row.value }}</dd>
+                      </div>
+                    }
+                  </dl>
+                </div>
+              }
+              @if (aeo.ctas.compare || aeo.ctas.viewSpecs) {
+                <div class="aeo-ctas aeo-block" role="group" aria-label="Answer actions">
+                  @if (aeo.ctas.compare) {
+                    <a class="aeo-cta-link" [routerLink]="['/compare']" [queryParams]="compareQueryParams">{{ aeo.ctas.compare.label }}</a>
+                  }
+                  @if (aeo.ctas.viewSpecs) {
+                    <a class="aeo-cta-link secondary" href="#aeo-specs" (click)="onAeoTocClick($event, 'aeo-specs')">{{ aeo.ctas.viewSpecs.label }}</a>
+                  }
+                </div>
+              }
+              @if (aeo.relatedVehicles.length > 0) {
+                <div class="aeo-related aeo-block">
+                  <h2 class="aeo-section-title">Related EVs</h2>
+                  <ul>
+                    @for (item of aeo.relatedVehicles; track item.id) {
+                      <li><a [routerLink]="item.href.split('?')[0]" [queryParams]="linkQueryParams(item.href)">{{ item.name }}</a></li>
+                    }
+                  </ul>
+                </div>
+              }
+              @if (aeo.relatedComparisons.length > 0) {
+                <div class="aeo-related aeo-block">
+                  <h2 class="aeo-section-title">Related comparisons</h2>
+                  <ul>
+                    @for (item of aeo.relatedComparisons; track item.href) {
+                      <li><a [routerLink]="['/compare']" [queryParams]="comparisonQuery(item.href)">{{ item.label }}</a></li>
+                    }
+                  </ul>
+                </div>
+              }
+              @if (aeo.relatedArticles.length > 0) {
+                <div class="aeo-related aeo-block">
+                  <h2 class="aeo-section-title">Related articles</h2>
+                  <ul>
+                    @for (item of aeo.relatedArticles; track item.id) {
+                      <li><a [routerLink]="['/articles', item.id]">{{ item.title }}</a></li>
+                    }
+                  </ul>
+                </div>
+              }
+              @if (aeo.faqs.length > 0) {
+                <section class="aeo-faqs aeo-block" aria-labelledby="aeo-faqs-heading">
+                  <h2 id="aeo-faqs-heading" class="aeo-section-title">FAQs</h2>
+                  @for (item of aeo.faqs; track item.question) {
+                    <div class="aeo-faq-item">
+                      <h3>{{ item.question }}</h3>
+                      <p>{{ item.answer }}</p>
+                    </div>
+                  }
+                </section>
+              }
+              @if (aeo.trust?.citationNote) {
+                <p class="aeo-trust aeo-block">{{ aeo.trust!.citationNote }}</p>
+              }
+              @if (aeo.internalLinks.length > 0) {
+                <nav class="aeo-internal aeo-block" aria-labelledby="aeo-explore-heading">
+                  <h2 id="aeo-explore-heading" class="aeo-section-title">Explore</h2>
+                  <ul>
+                    @for (item of aeo.internalLinks; track item.href) {
+                      <li><a [routerLink]="item.href.split('?')[0]" [queryParams]="linkQueryParams(item.href)">{{ item.label }}</a></li>
+                    }
+                  </ul>
+                </nav>
+              }
+            </section>
+          }
           
           @if (selectedVariant) {
-            <div class="specs-grid animate-fade" style="animation-delay: 0.2s;">
+            <div id="aeo-specs" class="specs-grid animate-fade" style="animation-delay: 0.2s;">
               
               <!-- Master Specs Sections (Matching Admin 6-Section Layout) -->
               <div class="spec-section">
@@ -333,7 +455,200 @@ interface OverviewData {
       max-width: 1000px;
       margin: 0 auto;
     }
-    
+
+    /* Phase 7.2 — answer chrome (aligned with hero glass + brand accent) */
+    .aeo-answer-section {
+      margin: 0 0 24px 0;
+      padding: 20px 24px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
+      overflow-wrap: anywhere;
+    }
+    .aeo-block {
+      margin: 16px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .aeo-answer-section > .aeo-block:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+    .aeo-quick-answer {
+      margin: 0 0 8px 0;
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: #0F172A;
+      font-weight: 500;
+    }
+    .aeo-updated {
+      margin: 0 0 4px 0;
+      font-size: 0.8rem;
+      color: #64748B;
+    }
+    .aeo-section-title {
+      margin: 0 0 10px 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: -0.01em;
+    }
+    .aeo-takeaways ul,
+    .aeo-toc ul,
+    .aeo-related ul,
+    .aeo-internal ul {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .aeo-takeaways li,
+    .aeo-toc li,
+    .aeo-related li,
+    .aeo-internal li {
+      margin-bottom: 6px;
+    }
+    .aeo-toc a,
+    .aeo-related a,
+    .aeo-internal a {
+      color: #0284C7;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .aeo-toc a:hover,
+    .aeo-related a:hover,
+    .aeo-internal a:hover {
+      text-decoration: underline;
+      color: #0369A1;
+    }
+    .aeo-answer-section a:focus-visible,
+    .aeo-cta-link:focus-visible {
+      outline: 2px solid #0284C7;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    .aeo-spec-list {
+      margin: 0;
+      display: grid;
+      gap: 8px 16px;
+    }
+    @media (min-width: 640px) {
+      .aeo-spec-list {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .aeo-spec-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+      font-size: 0.9rem;
+      min-width: 0;
+    }
+    .aeo-spec-row dt {
+      margin: 0;
+      color: #64748B;
+      font-weight: 500;
+      flex: 0 1 auto;
+    }
+    .aeo-spec-row dd {
+      margin: 0;
+      color: #0F172A;
+      font-weight: 600;
+      text-align: right;
+      min-width: 0;
+    }
+    .aeo-buying {
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: #334155;
+    }
+    .aeo-ctas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .aeo-cta-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: #0284C7;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-sizing: border-box;
+    }
+    .aeo-cta-link.secondary {
+      background: transparent;
+      color: #0284C7;
+      border: 1px solid rgba(2, 132, 199, 0.35);
+    }
+    .aeo-cta-link:hover {
+      filter: brightness(0.96);
+    }
+    .aeo-faq-item { margin: 0 0 12px; }
+    .aeo-faq-item:last-child { margin-bottom: 0; }
+    .aeo-faq-item h3 {
+      margin: 0 0 4px;
+      font-size: 0.95rem;
+      color: #0F172A;
+      font-weight: 650;
+    }
+    .aeo-faq-item p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #475569;
+      line-height: 1.5;
+    }
+    .aeo-trust {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #64748B;
+      line-height: 1.45;
+    }
+    @media (max-width: 640px) {
+      .aeo-answer-section {
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+      .aeo-quick-answer {
+        font-size: 1rem;
+      }
+      .aeo-spec-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+      .aeo-spec-row dd {
+        text-align: left;
+      }
+      .aeo-cta-link {
+        flex: 1 1 calc(50% - 10px);
+      }
+      .aeo-toc ul,
+      .aeo-related ul,
+      .aeo-internal ul,
+      .aeo-takeaways ul {
+        padding-left: 1rem;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .aeo-answer-section.animate-fade {
+        animation: none;
+        opacity: 1;
+      }
+    }
+
     /* Hero Section */
     .hero-section {
       display: flex;
@@ -807,15 +1122,30 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   selectedVariantId: string | null = null;
   selectedVariant: CarSpec | null = null;
 
+  /** Phase 7.2 — derived answer chrome; never blocks Phase 7.1 SEO. */
+  readonly aeoEnabled = AEO_ANSWER_BLOCKS_ENABLED;
+  readonly hasAeoChrome = hasAeoChrome;
+  aeo: AeoPageModel | null = null;
+  aeoLastUpdatedLabel: string | undefined;
+  private relatedVehiclesForAeo: any[] = [];
+  private relatedArticlesForAeo: any[] = [];
+  private relatedSub: Subscription | null = null;
+  private categoriesForAeo: Category[] = [];
+  /** Last AEO cache stamp — skip redundant rebuilds when inputs unchanged. */
+  private lastAeoStamp = '';
+
+  get compareQueryParams(): { ids?: string } {
+    const id = this.selectedVariantId || this.aeo?.ctas.compare?.href?.split('ids=')[1];
+    return id ? { ids: decodeURIComponent(id) } : {};
+  }
+
   constructor(
     private route: ActivatedRoute,
     private compareState: CompareStateService,
     private seoService: SeoService,
     private schemaService: SchemaService,
-    private http: HttpClient,
     private cdr: ChangeDetectorRef,
-    private blogData: BlogDataService,
-    private router: Router
+    private blogData: BlogDataService
   ) {}
 
   ngOnInit() {
@@ -840,6 +1170,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.sub.unsubscribe();
     this.dataSub?.unsubscribe();
+    this.relatedSub?.unsubscribe();
   }
 
   private handleError(kind: 'notFound' | 'network') {
@@ -907,8 +1238,16 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
         const categoriesData = categories.status === 'success' ? categories.data : [];
         const vehiclesData = allVehicles.status === 'success' ? allVehicles.data : [];
+        this.categoriesForAeo = categoriesData;
 
-        this.brand = categoriesData.find(c => this.slugify(c.name) === brandSlug) || null;
+        // Accept name slug (canonical sitemap), category id, or stored brandSlug.
+        this.brand =
+          categoriesData.find(
+            (c) =>
+              this.slugify(c.name) === brandSlug ||
+              c.id === brandSlug ||
+              this.slugify(c.id) === brandSlug
+          ) || null;
         if (!this.brand) {
           this.handleError('notFound');
           return;
@@ -951,7 +1290,12 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
             this.selectedVariant = this.siblingVariants[0];
             
             this.calculateOverview(validSpecs);
+            this.relatedVehiclesForAeo = [];
+            this.relatedArticlesForAeo = [];
+            this.lastAeoStamp = '';
+            this.refreshAeo();
             this.updateSEO();
+            this.loadRelatedForAeo();
             
             this.error = false;
             this.loading = false;
@@ -959,72 +1303,85 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  private calculateOverview(variants: CarSpec[]) {
-    // Sort by extracted price
-    const sortedByPrice = [...variants].sort((a, b) => {
-      const pA = parseFloat(a.price.replace(/[^0-9.]/g, '')) || 0;
-      const pB = parseFloat(b.price.replace(/[^0-9.]/g, '')) || 0;
-      return pA - pB;
-    });
-    
-    // 1. Price Range
-    if (sortedByPrice.length > 1 && sortedByPrice[0].price !== sortedByPrice[sortedByPrice.length-1].price) {
-      this.overview.priceRange = `₹${sortedByPrice[0].price.replace('₹', '').trim()} – ₹${sortedByPrice[sortedByPrice.length-1].price.replace('₹', '').trim()}`;
-    } else if (sortedByPrice.length > 0) {
-      this.overview.priceRange = `₹${sortedByPrice[0].price.replace('₹', '').trim()}`;
-    } else {
-      this.overview.priceRange = 'TBA';
-    }
-
-    // 2. Battery Options
-    const batteries = new Set<number>();
-    variants.forEach(v => {
-      if (v.batteryCapacity && v.batteryCapacity !== 'N/A' && v.batteryCapacity !== '-') {
-        const num = parseFloat(v.batteryCapacity.replace(/[^0-9.]/g, ''));
-        if (!isNaN(num)) batteries.add(num);
-      }
-    });
-    const sortedBats = Array.from(batteries).sort((a, b) => a - b);
-    this.overview.batteryOptions = sortedBats.length > 0 ? sortedBats.map(b => `${b} kWh`).join(' • ') : 'N/A';
-
-    // 3. Claimed Range
-    let minRange = Infinity;
-    let maxRange = 0;
-    variants.forEach(v => {
-      if (v.range && v.range !== 'N/A' && v.range !== '-') {
-        const numStr = v.range.replace(/[^0-9.]/g, '');
-        const num = parseFloat(numStr);
-        if (!isNaN(num)) {
-          if (num < minRange) minRange = num;
-          if (num > maxRange) maxRange = num;
+  /** Wire-layer RecommendationService fetch — generators stay pure. */
+  private loadRelatedForAeo(): void {
+    if (!this.aeoEnabled || !this.selectedVariant?.id || !this.brand) return;
+    this.relatedSub?.unsubscribe();
+    this.relatedSub = this.blogData
+      .getRecommendations({
+        vehicleId: this.selectedVariant.id,
+        categoryId: this.brand.id
+      })
+      .subscribe({
+        next: (data) => {
+          this.relatedVehiclesForAeo = this.enrichRelatedVehiclesForAeo(
+            data.recommendedVehicles || []
+          );
+          this.relatedArticlesForAeo = data.recommendedArticles || [];
+          this.refreshAeo();
+          // FAQ schema does not depend on related slate — skip SEO re-write.
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // Related failure → omit sections; keep local AEO facts.
         }
-      }
-    });
-    
-    if (minRange !== Infinity && minRange !== maxRange) {
-      this.overview.claimedRange = `${minRange}–${maxRange} km`;
-    } else if (minRange !== Infinity) {
-      this.overview.claimedRange = `${minRange} km`;
-    } else {
-      this.overview.claimedRange = 'N/A';
-    }
+      });
+  }
 
-    // 4. Charging (Only DC Fast Charging for Overview)
-    const dcChargings = new Set<number>();
-    variants.forEach(v => {
-      if (v.dcCharging && v.dcCharging !== 'N/A' && v.dcCharging !== '-') {
-        const num = parseFloat(v.dcCharging.replace(/[^0-9.]/g, ''));
-        if (!isNaN(num)) dcChargings.add(num);
-      }
+  /**
+   * Map RecommendationService DTOs → AEO inputs with canonical brandName/slugs
+   * so /ev/{brand}/{model} matches sitemap + vehicle-detail routing.
+   */
+  private enrichRelatedVehiclesForAeo(raw: any[]): any[] {
+    return (raw || []).map((v) => {
+      const cat = this.categoriesForAeo.find((c) => c.id === v.categoryId);
+      const brandName = cat?.name || v.brand || '';
+      const brandSlug = brandName
+        ? this.slugify(brandName)
+        : this.slugify(v.brandSlug || v.categoryId || '');
+      const modelSlug = this.slugify(v.modelSlug || v.parentModel || v.name || '');
+      return { ...v, brandName, brandSlug, modelSlug };
     });
-    const sortedDc = Array.from(dcChargings).sort((a, b) => a - b);
-    if (sortedDc.length > 1) {
-      this.overview.charging = `${sortedDc[0]} – ${sortedDc[sortedDc.length - 1]} kW DC`;
-    } else if (sortedDc.length === 1) {
-      this.overview.charging = `${sortedDc[0]} kW DC`;
-    } else {
-      const rawDcVariant = variants.find(v => v.dcCharging && v.dcCharging !== 'N/A' && v.dcCharging !== '-');
-      this.overview.charging = (rawDcVariant && rawDcVariant.dcCharging) ? rawDcVariant.dcCharging : 'N/A';
+  }
+
+  private calculateOverview(variants: CarSpec[]) {
+    // Shared pure helper — same facts feed Phase 7.1 SEO + AEO Quick Answer.
+    this.overview = buildVehicleOverviewFacts(variants);
+  }
+
+  /** AEO failure must never break the vehicle page or SEO. */
+  private refreshAeo(): void {
+    if (!this.aeoEnabled || !this.brand || !this.selectedVariant) {
+      this.aeo = null;
+      this.aeoLastUpdatedLabel = undefined;
+      this.lastAeoStamp = '';
+      return;
+    }
+    // Skip rebuild when variant + related slate fingerprint unchanged (related overlay still needed on first related load).
+    const relatedStamp = `${this.relatedVehiclesForAeo.length}:${this.relatedArticlesForAeo.length}:${
+      this.relatedVehiclesForAeo[0]?.id || ''
+    }:${this.relatedArticlesForAeo[0]?.id || ''}`;
+    const stamp = `${this.selectedVariant.id}|${this.selectedVariant.updatedAt || ''}|${relatedStamp}`;
+    if (stamp === this.lastAeoStamp && this.aeo) return;
+
+    try {
+      this.aeo = buildVehicleAeo({
+        brandName: this.brand.name,
+        modelName: this.modelName,
+        brandSlug: this.currentBrandSlug || '',
+        modelSlug: this.currentModelSlug || '',
+        variants: this.siblingVariants,
+        selectedVariant: this.selectedVariant,
+        seoMetaDescription: this.selectedVariant.seo?.metaDescription,
+        relatedVehicles: this.relatedVehiclesForAeo,
+        relatedArticles: this.relatedArticlesForAeo
+      });
+      this.aeoLastUpdatedLabel = formatLastUpdatedLabel(this.aeo.lastUpdated);
+      this.lastAeoStamp = stamp;
+    } catch {
+      this.aeo = emptyAeoPageModel();
+      this.aeoLastUpdatedLabel = undefined;
+      this.lastAeoStamp = '';
     }
   }
 
@@ -1033,10 +1390,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
     const path = `/ev/${this.currentBrandSlug}/${this.currentModelSlug}`;
     const title = `${this.brand.name} ${this.modelName} EV: Price, Range & Battery Options`;
-    const desc =
-      `Discover the ${this.brand.name} ${this.modelName} electric vehicle in India. ` +
-      `Price from ${this.overview.priceRange}, batteries ${this.overview.batteryOptions}, ` +
-      `range up to ${this.overview.claimedRange}, DC charging ${this.overview.charging}.`;
+    const desc = buildVehicleSeoDescription(this.brand.name, this.modelName, this.overview);
     const image = this.activeImageUrl
       ? this.getOptimizedUrl(this.activeImageUrl, 1200, this.modelName)
       : undefined;
@@ -1063,7 +1417,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       bodyStyle: this.siblingVariants[0]?.bodyStyle
     });
 
-    this.schemaService.setSchema([
+    const schemas: any[] = [
       this.schemaService.buildBreadcrumbs([
         { name: 'Home', url: '/' },
         { name: 'Browse EVs', url: '/evs' },
@@ -1072,12 +1426,56 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       ]),
       this.schemaService.buildWebPage(title, desc, path),
       vehicleSchema
-    ]);
+    ];
+
+    // Phase 7.1 FAQ schema path — AEO feeds items; SchemaService owns JSON-LD.
+    if (this.aeo?.faqs?.length) {
+      schemas.push(this.schemaService.buildFAQ(this.aeo.faqs));
+    }
+
+    this.schemaService.setSchema(schemas);
   }
 
   selectVariant(id: string) {
     this.selectedVariantId = id;
     this.selectedVariant = this.siblingVariants.find(v => v.id === id) || null;
+    this.refreshAeo();
+    this.updateSEO();
+  }
+
+  scrollToAeoSection(id: string) {
+    if (typeof document === 'undefined') return;
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  onAeoTocClick(event: Event, id: string) {
+    event.preventDefault();
+    this.scrollToAeoSection(id);
+  }
+
+  comparisonQuery(href: string): { ids?: string } {
+    try {
+      const q = href.includes('?') ? href.split('?')[1] : '';
+      const ids = new URLSearchParams(q).get('ids');
+      return ids ? { ids } : {};
+    } catch {
+      return {};
+    }
+  }
+
+  linkQueryParams(href: string): Record<string, string> {
+    try {
+      if (!href.includes('?')) return {};
+      const params = new URLSearchParams(href.split('?')[1]);
+      const out: Record<string, string> = {};
+      params.forEach((value, key) => {
+        out[key] = value;
+      });
+      return out;
+    } catch {
+      return {};
+    }
   }
 
   addToCompare() {

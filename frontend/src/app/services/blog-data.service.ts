@@ -192,6 +192,10 @@ export interface CarSpec {
   media?: Media;
   safety?: Safety;
   seo?: SEO;
+  status?: string;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 @Injectable({
@@ -695,6 +699,29 @@ export class BlogDataService {
     }
     
     return v;
+  }
+
+  /**
+   * Scoped recommendations from backend RecommendationService.
+   * Cap/scope enforced server-side — never a full-catalog client scan.
+   */
+  getRecommendations(params: {
+    vehicleId?: string;
+    articleId?: string;
+    categoryId?: string;
+  }): Observable<{ recommendedVehicles: any[]; recommendedArticles: any[] }> {
+    const query: string[] = [];
+    if (params.vehicleId) query.push(`vehicleId=${encodeURIComponent(params.vehicleId)}`);
+    if (params.articleId) query.push(`articleId=${encodeURIComponent(params.articleId)}`);
+    if (params.categoryId) query.push(`categoryId=${encodeURIComponent(params.categoryId)}`);
+    const qs = query.length ? `?${query.join('&')}` : '';
+    return this.http.get<{ success?: boolean; data?: any }>(`${this.apiUrl}/search/recommendations${qs}`).pipe(
+      map((res) => ({
+        recommendedVehicles: res?.data?.recommendedVehicles || [],
+        recommendedArticles: res?.data?.recommendedArticles || []
+      })),
+      catchError(() => of({ recommendedVehicles: [], recommendedArticles: [] }))
+    );
   }
 
   // On-demand single car detail — fetches full specs for one car directly from backend

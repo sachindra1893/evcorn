@@ -10,6 +10,15 @@ import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { CommonModule } from '@angular/common';
 import { classifyHttpError } from '../../core/http/app-http-error';
 import { NetworkStatusService } from '../../core/network/network-status.service';
+import {
+  AEO_ANSWER_BLOCKS_ENABLED,
+  AeoPageModel,
+  buildArticleAeo,
+  collectRelatedArticleIds,
+  emptyAeoPageModel,
+  formatLastUpdatedLabel,
+  hasArticleAnswerChrome
+} from '../../aeo';
 
 type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
 
@@ -49,7 +58,15 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
               
               <!-- Under title Share Bar -->
               <div class="article-meta-row">
-                <span class="post-date">Published by EVCorn • ⏳ {{ getReadingTime(article) }} min read</span>
+                <span class="post-date">
+                  {{ aeoTrustAuthor(article) }}
+                  @if (aeoReadingMinutes(article); as mins) {
+                    • ⏳ {{ mins }} min read
+                  }
+                  @if (aeoLastUpdatedLabel) {
+                    • Updated {{ aeoLastUpdatedLabel }}
+                  }
+                </span>
                 <button (click)="shareArticle(article)" class="share-btn" title="Share this article">
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
                     <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7L15.9 7.33c.53.48 1.22.78 1.98.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.52 9.34 6.84 9.05 6 9.05c-1.66 0-3 1.34-3 3s1.34 3 3 3c.84 0 1.52-.29 2.04-.76l7.97 4.65c-.03.22-.05.45-.05.67 0 1.6 1.3 2.9 2.9 2.9s2.9-1.3 2.9-2.9-1.3-2.9-2.9-2.9z"/>
@@ -57,17 +74,50 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                   <span>Share</span>
                 </button>
               </div>
+
+              @if (aeoEnabled && aeoById[article.id!] && isPrimaryArticle(article) && hasArticleAnswerChrome(aeoById[article.id!])) {
+                <section class="aeo-article-chrome" aria-label="Article answer summary">
+                  @if (aeoById[article.id!].quickAnswer) {
+                    <p class="aeo-quick-answer">{{ aeoById[article.id!].quickAnswer }}</p>
+                  }
+                  @if (aeoById[article.id!].keyTakeaways.length > 0) {
+                    <div class="aeo-takeaways aeo-block">
+                      <h2 class="aeo-section-title">Key takeaways</h2>
+                      <ul>
+                        @for (item of aeoById[article.id!].keyTakeaways; track item) {
+                          <li>{{ item }}</li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                  @if (aeoById[article.id!].ctas.viewSpecs) {
+                    <div class="aeo-ctas aeo-block" role="group" aria-label="Answer actions">
+                      <a class="aeo-cta-link" [routerLink]="aeoById[article.id!].ctas.viewSpecs!.href.split('#')[0]">{{ aeoById[article.id!].ctas.viewSpecs!.label }}</a>
+                    </div>
+                  }
+                  @if (aeoById[article.id!].trust?.citationNote) {
+                    <p class="aeo-trust aeo-block">{{ aeoById[article.id!].trust!.citationNote }}</p>
+                  }
+                </section>
+              }
               
-              <!-- Table of Contents -->
-              <div *ngIf="getTOC(article).length > 0" class="toc-container">
-                <h4 class="toc-title">Table of Contents</h4>
-                <ul class="toc-list">
-                  <li *ngFor="let item of getTOC(article)" [ngClass]="{'toc-h2': item.level === 2, 'toc-h3': item.level === 3}">
-                    <a (click)="scrollToId(item.id)">{{ item.text }}</a>
-                  </li>
-                </ul>
-              </div>
+              <!-- Table of Contents (AEO when enabled; else legacy block headings) -->
+              @if (getArticleToc(article); as tocItems) {
+                @if (tocItems.length > 0) {
+                  <nav class="toc-container" aria-labelledby="article-toc-heading">
+                    <h2 id="article-toc-heading" class="toc-title">Table of Contents</h2>
+                    <ul class="toc-list">
+                      @for (item of tocItems; track item.id) {
+                        <li [class.toc-h2]="item.level === 2" [class.toc-h3]="item.level === 3">
+                          <a [href]="'#' + item.id" (click)="onTocClick($event, item.id)">{{ item.text }}</a>
+                        </li>
+                      }
+                    </ul>
+                  </nav>
+                }
+              }
               
+              <!-- FAQ / pros-cons HTML stay in block-renderer — AEO does not duplicate them -->
               <app-block-renderer *ngIf="article.blocks && article.blocks.length > 0" [blocks]="article.blocks" [vehicles]="vehicles"></app-block-renderer>
               
               <!-- Backward compatibility for old articles without blocks -->
@@ -93,9 +143,9 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                 </div>
               }
 
-              <!-- Automated Related Cars -->
-              <div *ngIf="getRelatedCars(article).length > 0" class="related-cars-section">
-                <h3>Cars Mentioned in this Article</h3>
+              <!-- Automated Related Cars (in-article mentions) — skip when AEO related EVs present -->
+              <div *ngIf="!(aeoEnabled && aeoById[article.id!]?.relatedVehicles?.length) && getRelatedCars(article).length > 0" class="related-cars-section">
+                <h2 class="related-section-title">Cars Mentioned in this Article</h2>
                 <div class="related-grid">
                   <a *ngFor="let car of getRelatedCars(article)"
                      [routerLink]="car.brandSlug && car.modelSlug ? ['/ev', car.brandSlug, car.modelSlug] : ['/compare']"
@@ -105,23 +155,50 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                       <img [src]="getOptimizedUrl(car.imageUrl, 200)" [alt]="car.brand + ' ' + car.model" loading="lazy" decoding="async" width="60" height="40" />
                     </div>
                     <div class="related-card-content">
-                      <h4>{{ car.brand }} {{ car.model }}</h4>
+                      <h3>{{ car.brand }} {{ car.model }}</h3>
                       <p class="car-spec-mini" *ngIf="car.range">Range: {{ car.range }} km</p>
                     </div>
                   </a>
                 </div>
               </div>
 
-              <!-- Automatic Related Articles -->
-              <div *ngIf="getRelatedArticles(article).length > 0" class="related-articles-section">
-                <h3>Keep Reading</h3>
+              <!-- AEO related EVs (RecommendationService wire) — one related-vehicle UI -->
+              <div *ngIf="aeoEnabled && aeoById[article.id!]?.relatedVehicles?.length" class="related-cars-section">
+                <h2 class="related-section-title">Related EVs</h2>
+                <div class="related-grid">
+                  <a *ngFor="let rel of aeoById[article.id!].relatedVehicles"
+                     [routerLink]="rel.href.split('?')[0]"
+                     [queryParams]="aeoLinkQueryParams(rel.href)"
+                     class="related-card"
+                     (click)="scrollToTop()">
+                    <div class="related-card-content">
+                      <h3>{{ rel.name }}</h3>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+              <!-- AEO related articles (RecommendationService / relationships) when available -->
+              <div *ngIf="aeoEnabled && aeoById[article.id!]?.relatedArticles?.length" class="related-articles-section">
+                <h2 class="related-section-title">Keep Reading</h2>
+                <div class="related-grid">
+                  <a *ngFor="let rel of aeoById[article.id!].relatedArticles" [routerLink]="['/articles', rel.id]" class="related-card" (click)="scrollToTop()">
+                    <div class="related-card-content">
+                      <h3>{{ rel.title }}</h3>
+                    </div>
+                  </a>
+                </div>
+              </div>
+              <!-- Fallback related articles when AEO related slate empty -->
+              <div *ngIf="!(aeoEnabled && aeoById[article.id!]?.relatedArticles?.length) && getRelatedArticles(article).length > 0" class="related-articles-section">
+                <h2 class="related-section-title">Keep Reading</h2>
                 <div class="related-grid">
                   <a *ngFor="let rel of getRelatedArticles(article)" [routerLink]="['/articles', rel.id]" class="related-card" (click)="scrollToTop()">
                     <div class="related-img-wrapper" *ngIf="rel.imageUrl">
                       <img [src]="getOptimizedUrl(rel.imageUrl, 300)" [alt]="rel.title" loading="lazy" decoding="async" width="80" height="50" />
                     </div>
                     <div class="related-card-content">
-                      <h4>{{ rel.title }}</h4>
+                      <h3>{{ rel.title }}</h3>
                     </div>
                   </a>
                 </div>
@@ -310,15 +387,17 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
     .toc-container {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 20px;
       margin-bottom: 30px;
+      overflow-wrap: anywhere;
     }
     .toc-title {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       margin-top: 0;
       margin-bottom: 12px;
       color: #0f172a;
+      font-weight: 700;
     }
     .toc-list {
       list-style-type: none;
@@ -334,36 +413,46 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
       text-decoration: none;
       cursor: pointer;
       transition: color 0.2s;
+      display: inline-block;
+      padding: 2px 0;
+      min-height: 28px;
     }
     .toc-list li a:hover {
       color: #0369a1;
       text-decoration: underline;
+    }
+    .toc-list li a:focus-visible {
+      outline: 2px solid #0284C7;
+      outline-offset: 2px;
+      border-radius: 4px;
     }
     .toc-h2 {
       font-weight: 600;
       font-size: 1.05rem;
     }
     .toc-h3 {
-      padding-left: 20px;
+      padding-left: 16px;
       font-size: 0.95rem;
       color: #475569;
     }
     
-    /* Related Articles */
-    .related-articles-section {
+    /* Related Articles / EVs */
+    .related-articles-section,
+    .related-cars-section {
       margin-top: 50px;
       padding-top: 40px;
       border-top: 2px solid #f1f5f9;
     }
-    .related-articles-section h3 {
-      font-size: 1.5rem;
-      margin-bottom: 20px;
+    .related-section-title {
+      font-size: 1.35rem;
+      margin: 0 0 20px;
       color: #0f172a;
+      font-weight: 700;
     }
     .related-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+      gap: 16px;
     }
     .related-card {
       text-decoration: none;
@@ -375,10 +464,15 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
       transition: transform 0.2s, box-shadow 0.2s;
       display: flex;
       flex-direction: column;
+      min-height: 44px;
     }
     .related-card:hover {
       transform: translateY(-3px);
       box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+    .related-card:focus-visible {
+      outline: 2px solid #0284C7;
+      outline-offset: 2px;
     }
     .related-img-wrapper {
       height: 120px;
@@ -393,27 +487,19 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
       padding: 15px;
       flex-grow: 1;
     }
-    .related-card-content h4 {
+    .related-card-content h3 {
       margin: 0;
       font-size: 1rem;
       line-height: 1.4;
       color: #1e293b;
+      font-weight: 650;
+      overflow-wrap: anywhere;
     }
     .car-spec-mini {
       font-size: 0.85rem;
       color: #64748b;
       margin-top: 5px;
       margin-bottom: 0;
-    }
-    .related-cars-section {
-      margin-top: 50px;
-      padding-top: 40px;
-      border-top: 2px solid #f1f5f9;
-    }
-    .related-cars-section h3 {
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-      color: #0f172a;
     }
 
     .comments-trigger-container {
@@ -526,6 +612,110 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
         margin-bottom: 18px;
       }
     }
+
+    .aeo-article-chrome {
+      margin: 0 0 22px;
+      padding: 18px 20px;
+      background: rgba(248, 250, 252, 0.95);
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      border-radius: 12px;
+      overflow-wrap: anywhere;
+    }
+    .aeo-article-chrome .aeo-block {
+      margin: 14px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .aeo-article-chrome > .aeo-block:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+    .aeo-quick-answer {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: #0F172A;
+      font-weight: 500;
+    }
+    .aeo-section-title {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: -0.01em;
+    }
+    .aeo-takeaways ul {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .aeo-takeaways li { margin-bottom: 6px; }
+    .aeo-ctas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .aeo-cta-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: #0284C7;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-sizing: border-box;
+    }
+    .aeo-cta-link:hover {
+      filter: brightness(0.96);
+    }
+    .aeo-article-chrome a:focus-visible,
+    .aeo-cta-link:focus-visible {
+      outline: 2px solid #0284C7;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    .aeo-trust {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #64748B;
+      line-height: 1.45;
+    }
+    @media (max-width: 640px) {
+      .aeo-article-chrome {
+        padding: 14px 16px;
+        border-radius: 10px;
+      }
+      .aeo-quick-answer {
+        font-size: 1rem;
+      }
+      .toc-container {
+        padding: 16px;
+        margin-bottom: 22px;
+      }
+      .toc-h3 {
+        padding-left: 12px;
+      }
+      .related-section-title {
+        font-size: 1.2rem;
+      }
+      .aeo-cta-link {
+        width: 100%;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .related-card {
+        transition: none;
+      }
+      .related-card:hover {
+        transform: none;
+      }
+    }
   `]
 })
 export class ArticleDetailComponent implements OnInit, OnDestroy {
@@ -548,6 +738,16 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   loadingNext = false;
   private currentArticleId: string | null = null;
 
+  readonly aeoEnabled = AEO_ANSWER_BLOCKS_ENABLED;
+  readonly hasArticleAnswerChrome = hasArticleAnswerChrome;
+  aeoById: { [id: string]: AeoPageModel } = {};
+  aeoLastUpdatedLabel: string | undefined;
+  private relatedVehiclesForAeo: any[] = [];
+  private relatedArticlesForAeo: any[] = [];
+  private relatedSub: Subscription | null = null;
+  private categoriesForAeo: { id: string; name: string }[] = [];
+  private lastArticleAeoStamp: { [id: string]: string } = {};
+
   constructor(
     private route: ActivatedRoute,
     private dataService: BlogDataService,
@@ -562,6 +762,16 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.sub.add(
+      this.dataService.getCategories().subscribe({
+        next: (cats) => {
+          this.categoriesForAeo = (cats || []).map((c) => ({ id: c.id, name: c.name }));
+        },
+        error: () => {
+          this.categoriesForAeo = [];
+        }
+      })
+    );
     this.sub.add(
       this.route.paramMap.subscribe(params => {
         const id = params.get('id');
@@ -611,6 +821,11 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
           this.loadedArticles = [article];
           this.errorMessage = '';
           this.state = 'loaded';
+          this.relatedVehiclesForAeo = [];
+          this.relatedArticlesForAeo = [];
+          if (article.id) delete this.lastArticleAeoStamp[article.id];
+          this.refreshArticleAeo(article);
+          this.loadRelatedForAeo(article);
           this.updateSEOMetadata(article);
           this.cdr.detectChanges();
         },
@@ -643,7 +858,128 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.sub.unsubscribe();
+    this.relatedSub?.unsubscribe();
     this.schemaService.setSchema([]);
+  }
+
+  isPrimaryArticle(article: Article): boolean {
+    return !!article.id && article.id === this.currentArticleId;
+  }
+
+  aeoTrustAuthor(article: Article): string {
+    const model = article.id ? this.aeoById[article.id] : undefined;
+    if (model?.trust?.authorLabel) return model.trust.authorLabel;
+    if (typeof article.author === 'string' && article.author.trim()) return article.author;
+    if (article.author && typeof article.author === 'object' && article.author.name) {
+      return article.author.name;
+    }
+    return 'Published by EVCorn';
+  }
+
+  aeoReadingMinutes(article: Article): number {
+    const model = article.id ? this.aeoById[article.id] : undefined;
+    if (model?.readingTimeMinutes) return model.readingTimeMinutes;
+    return this.getReadingTime(article);
+  }
+
+  getArticleToc(article: Article): { id: string; text: string; level: number }[] {
+    const model = article.id ? this.aeoById[article.id] : undefined;
+    if (this.aeoEnabled && model?.toc?.length) return model.toc;
+    return this.getTOC(article);
+  }
+
+  /** AEO failure must never break article SEO / block rendering. */
+  private refreshArticleAeo(article: Article): void {
+    if (!this.aeoEnabled || !article.id) return;
+    try {
+      const relatedIds = collectRelatedArticleIds(
+        article.relationships?.relatedArticles,
+        article.blocks as any
+      );
+      const fromRelationships = relatedIds.length
+        ? this.articlesQueue
+            .filter((a) => a.id && relatedIds.includes(a.id))
+            .map((a) => ({ id: a.id, title: a.title, imageUrl: a.imageUrl, description: a.description }))
+        : [];
+      const relatedArticles =
+        fromRelationships.length > 0 ? fromRelationships : this.relatedArticlesForAeo;
+
+      const relatedStamp = `${this.relatedVehiclesForAeo.length}:${relatedArticles.length}:${
+        this.relatedVehiclesForAeo[0]?.id || ''
+      }:${relatedArticles[0]?.id || ''}`;
+      const stamp = `${article.id}|${article.updatedAt || article.createdAt || ''}|${relatedStamp}`;
+      if (stamp === this.lastArticleAeoStamp[article.id] && this.aeoById[article.id]) return;
+
+      const model = buildArticleAeo({
+        id: article.id,
+        title: article.title,
+        description: article.description,
+        paragraphs: article.paragraphs,
+        blocks: article.blocks as any,
+        seoMetaDescription: article.seo?.metaDescription,
+        updatedAt: article.updatedAt,
+        createdAt: article.createdAt,
+        author: article.author,
+        relatedVehicles: this.relatedVehiclesForAeo,
+        relatedArticles
+      });
+      this.aeoById[article.id] = model;
+      this.lastArticleAeoStamp[article.id] = stamp;
+      if (article.id === this.currentArticleId) {
+        this.aeoLastUpdatedLabel = formatLastUpdatedLabel(model.lastUpdated);
+      }
+    } catch {
+      this.aeoById[article.id] = emptyAeoPageModel();
+      delete this.lastArticleAeoStamp[article.id];
+      if (article.id === this.currentArticleId) this.aeoLastUpdatedLabel = undefined;
+    }
+  }
+
+  private loadRelatedForAeo(article: Article): void {
+    if (!this.aeoEnabled || !article.id) return;
+    this.relatedSub?.unsubscribe();
+    this.relatedSub = this.dataService
+      .getRecommendations({
+        articleId: article.id,
+        categoryId: article.categoryId
+      })
+      .subscribe({
+        next: (data) => {
+          this.relatedVehiclesForAeo = this.enrichRelatedVehiclesForAeo(
+            data.recommendedVehicles || []
+          );
+          this.relatedArticlesForAeo = data.recommendedArticles || [];
+          this.refreshArticleAeo(article);
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // Related failure → omit AEO related; keep answer chrome.
+        }
+      });
+  }
+
+  private enrichRelatedVehiclesForAeo(raw: any[]): any[] {
+    return (raw || []).map((v) => {
+      const cat = this.categoriesForAeo.find((c) => c.id === v.categoryId);
+      const brandName = cat?.name || v.brand || '';
+      const brandSlug = brandName
+        ? this.slugifyAeo(brandName)
+        : this.slugifyAeo(v.brandSlug || v.categoryId || '');
+      const modelSlug = this.slugifyAeo(v.modelSlug || v.parentModel || v.name || '');
+      return { ...v, brandName, brandSlug, modelSlug };
+    });
+  }
+
+  private slugifyAeo(text: string): string {
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
   }
 
   shareArticle(article: Article) {
@@ -709,6 +1045,25 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  onTocClick(event: Event, id: string) {
+    event.preventDefault();
+    this.scrollToId(id);
+  }
+
+  aeoLinkQueryParams(href: string): Record<string, string> {
+    try {
+      if (!href.includes('?')) return {};
+      const params = new URLSearchParams(href.split('?')[1]);
+      const out: Record<string, string> = {};
+      params.forEach((value, key) => {
+        out[key] = value;
+      });
+      return out;
+    } catch {
+      return {};
     }
   }
 
