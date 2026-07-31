@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router, NavigationEnd } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
 import { filter } from 'rxjs/operators';
+import { getApiBaseUrl } from '../core/http/api-base-url';
 
 export interface AnalyticsEventPayload {
   eventName: string;
@@ -17,8 +18,6 @@ export interface AnalyticsEventPayload {
   providedIn: 'root'
 })
 export class AnalyticsService {
-  private readonly apiUrl = '/api/analytics/event';
-
   constructor(
     private http: HttpClient,
     private router: Router,
@@ -45,8 +44,8 @@ export class AnalyticsService {
       timestamp: new Date().toISOString()
     };
 
-    // Dispatch event to backend analytics pipeline asynchronously
-    this.http.post(this.apiUrl, payload).subscribe({
+    // Must hit Render API host — relative /api/* on Vercel returns 405 for POST.
+    this.http.post(`${getApiBaseUrl()}/analytics/event`, payload).subscribe({
       error: () => {} // Silent fail to never impact user experience
     });
   }
