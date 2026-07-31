@@ -106,7 +106,9 @@ interface OverviewData {
                        class="hero-image" 
                        fetchpriority="high"
                        decoding="async"
-                       [alt]="(brand ? brand.name : '') + ' ' + modelName"
+                       width="1200"
+                       height="675"
+                       [alt]="(brand ? brand.name : '') + ' ' + modelName + ' electric vehicle'"
                        style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease-in-out;" />
 
                   @if (galleryImages.length > 1) {
@@ -1028,21 +1030,49 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
   updateSEO() {
     if (!this.brand) return;
-    
-    const title = `${this.brand.name} ${this.modelName} EV: Price, Range & Battery Options | EVCorn`;
-    const desc = `Discover the ${this.brand.name} ${this.modelName} electric vehicle. Starting at ${this.overview.priceRange} with battery options of ${this.overview.batteryOptions} and up to ${this.overview.claimedRange} range.`;
-    
-    this.seoService.updateSeo({title, description: desc});
-    
-    const productSchema = this.schemaService.buildProduct({
+
+    const path = `/ev/${this.currentBrandSlug}/${this.currentModelSlug}`;
+    const title = `${this.brand.name} ${this.modelName} EV: Price, Range & Battery Options`;
+    const desc =
+      `Discover the ${this.brand.name} ${this.modelName} electric vehicle in India. ` +
+      `Price from ${this.overview.priceRange}, batteries ${this.overview.batteryOptions}, ` +
+      `range up to ${this.overview.claimedRange}, DC charging ${this.overview.charging}.`;
+    const image = this.activeImageUrl
+      ? this.getOptimizedUrl(this.activeImageUrl, 1200, this.modelName)
+      : undefined;
+
+    this.seoService.updateSeo({
+      title,
+      description: desc,
+      image,
+      imageAlt: `${this.brand.name} ${this.modelName} electric vehicle`,
+      url: path,
+      type: 'product'
+    });
+
+    const vehicleSchema = this.schemaService.buildVehicle({
       name: `${this.brand.name} ${this.modelName}`,
       brand: this.brand.name,
       description: desc,
+      image,
       price: this.overview.priceRange,
       batteryCapacity: this.overview.batteryOptions,
-      range: this.overview.claimedRange
+      range: this.overview.claimedRange,
+      chargingTime: this.overview.charging,
+      path,
+      bodyStyle: this.siblingVariants[0]?.bodyStyle
     });
-    this.schemaService.setSchema([productSchema]);
+
+    this.schemaService.setSchema([
+      this.schemaService.buildBreadcrumbs([
+        { name: 'Home', url: '/' },
+        { name: 'Browse EVs', url: '/evs' },
+        { name: this.brand.name, url: '/evs' },
+        { name: this.modelName, url: path }
+      ]),
+      this.schemaService.buildWebPage(title, desc, path),
+      vehicleSchema
+    ]);
   }
 
   selectVariant(id: string) {

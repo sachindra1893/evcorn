@@ -24,6 +24,9 @@ const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
 const errorHandler = require('./middlewares/error.middleware');
 const { sanitizeInput } = require('./middlewares/sanitize.middleware');
 const Article = require('./models/Article');
+const Vehicle = require('./models/Vehicle');
+const Category = require('./models/Category');
+const { buildSitemapXml } = require('./utils/sitemap');
 const perf = require('./utils/perf');
 
 const app = express();
@@ -177,59 +180,28 @@ if (config.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname, 'public')));
 }
 
-// Dynamic XML Sitemap Endpoint
+// Dynamic XML Sitemap Endpoint (public pages + articles + unique vehicle models)
 app.get('/api/sitemap.xml', async (req, res, next) => {
   try {
     let articles = [];
+    let vehicles = [];
+    let categories = [];
+
     if (isLocalFileDb()) {
-      articles = fileDb.getArticles().filter(a => a.active);
+      articles = fileDb.getArticles().filter((a) => a.active !== false);
+      vehicles = fileDb.getVehicles();
+      categories = fileDb.getCategories();
     } else {
-      articles = await Article.find({ active: true }).lean();
+      [articles, vehicles, categories] = await Promise.all([
+        Article.find({ active: true }).select('id slug active createdAt updatedAt publishAt').lean(),
+        Vehicle.find({}).select('id name categoryId brandSlug modelSlug parentModel status updatedAt publishedAt createdAt').lean(),
+        Category.find({}).select('id name').lean()
+      ]);
     }
 
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://evcorn.com/</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/compare</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/articles</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/about</loc>
-    <lastmod>2026-07-12</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>`;
-
-    for (const art of articles) {
-      const artId = art._id ? art._id.toString() : (art.id || '');
-      const dateStr = art.createdAt 
-        ? new Date(art.createdAt).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0];
-      xml += `
-  <url>
-    <loc>https://evcorn.com/articles/${artId}</loc>
-    <lastmod>${dateStr}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>`;
-    }
-
-    xml += '\n</urlset>';
+    const xml = buildSitemapXml({ articles, vehicles, categories });
     res.header('Content-Type', 'application/xml');
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
     res.status(200).send(xml);
   } catch (error) {
     next(error);

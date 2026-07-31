@@ -906,7 +906,7 @@ export class CompareComponent implements OnInit, OnDestroy {
     const active = this.selectedVehicles.filter(Boolean) as CarSpec[];
     const schemas: any[] = [
       this.schemaService.buildBreadcrumbs([
-        { name: 'Home', url: '' },
+        { name: 'Home', url: '/' },
         { name: 'Compare', url: '/compare' }
       ])
     ];
@@ -919,7 +919,8 @@ export class CompareComponent implements OnInit, OnDestroy {
       this.seoService.updateSeo({
         title: titleText,
         description: descText,
-        url: `https://evcorn.com/compare?${buildCompareQueryString(ids)}`
+        url: `/compare?${buildCompareQueryString(ids)}`,
+        keepQuery: true
       });
       for (const car of active) {
         schemas.push(
@@ -938,12 +939,13 @@ export class CompareComponent implements OnInit, OnDestroy {
         title: 'Compare Electric Vehicles (EVs) - Specs, Price, Range',
         description:
           'Compare electric cars in India side-by-side. Compare battery capacity, claimed range, charging speed, dimensions, and prices to choose the right EV.',
-        url: 'https://evcorn.com/compare'
+        url: '/compare'
       });
       schemas.push(
         this.schemaService.buildCollectionPage(
           'Compare Electric Vehicles',
-          'Compare electric car specifications side-by-side.'
+          'Compare electric car specifications side-by-side.',
+          '/compare'
         )
       );
     }

@@ -1,9 +1,13 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /admin/
 Disallow: /login
+Disallow: /api/
 Disallow: /api/auth
 Disallow: /api/upload
 
-# Dynamic Sitemap Reference
+# Crawl-delay is ignored by Google; kept for polite secondary bots.
+Crawl-delay: 1
+
 Sitemap: https://evcorn.com/sitemap.xml

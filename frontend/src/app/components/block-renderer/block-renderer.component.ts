@@ -26,7 +26,7 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
 
         <!-- IMAGE -->
         <figure *ngIf="block.type === 'image'" class="block-figure">
-          <img [src]="optimizeUrl(block.data.url, 960)" [alt]="block.data.alt || block.data.caption || 'Article image'" class="block-img" loading="lazy" decoding="async">
+          <img [src]="optimizeUrl(block.data.url, 960)" [alt]="block.data.alt || block.data.caption || 'Article image'" class="block-img" loading="lazy" decoding="async" width="960" height="540">
           <figcaption *ngIf="block.data.caption" class="block-caption">{{ block.data.caption }}</figcaption>
         </figure>
 
@@ -50,7 +50,7 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
         <div *ngIf="block.type === 'comparison'" class="block-comparison-grid">
           <div *ngFor="let card of block.data.items" class="comparison-card">
             <div *ngIf="card.highlight" class="card-highlight">{{ card.highlight }}</div>
-            <img *ngIf="card.image" [src]="card.image" class="card-img" [alt]="card.title" loading="lazy">
+            <img *ngIf="card.image" [src]="card.image" class="card-img" [alt]="card.title" loading="lazy" decoding="async" width="320" height="200">
             <h3 class="card-title">{{ card.title }}</h3>
             <ul class="card-specs">
               <li *ngFor="let spec of card.specs">
@@ -154,7 +154,7 @@ import { getOptimizedImageUrl } from '../../utils/image.utils';
         <!-- GALLERY -->
         <div *ngIf="block.type === 'gallery'" class="block-gallery" [ngStyle]="{'grid-template-columns': 'repeat(' + block.data.columns + ', 1fr)'}">
           <figure *ngFor="let img of block.data.images" class="gallery-item">
-            <img [src]="img.url" [alt]="img.alt || img.caption || 'Gallery Image'" class="gallery-img" loading="lazy">
+            <img [src]="img.url" [alt]="img.alt || img.caption || 'Gallery Image'" class="gallery-img" loading="lazy" decoding="async" width="800" height="500">
             <figcaption *ngIf="img.caption" class="gallery-caption">{{ img.caption }}</figcaption>
           </figure>
         </div>
@@ -691,8 +691,24 @@ export class BlockRendererComponent implements OnChanges {
       if (!v.model) continue;
       const modelRegex = new RegExp(`\\b(${v.brand ? v.brand + ' ' : ''}${v.model})\\b`, 'gi');
       if (!addedModels.has(v.model) && modelRegex.test(linkedText)) {
-        // Replace with an anchor tag to the compare page
-        linkedText = linkedText.replace(modelRegex, `<a href="/compare?model=${encodeURIComponent(v.model)}" style="color: #0088CC; text-decoration: underline; font-weight: 500;">$1</a>`);
+        const brandSlug = (v.brandSlug || v.brand || '')
+          .toLowerCase()
+          .trim()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/[\s_-]+/g, '-');
+        const modelSlug = (v.modelSlug || v.model || '')
+          .toLowerCase()
+          .trim()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/[\s_-]+/g, '-');
+        const href =
+          brandSlug && modelSlug
+            ? `/ev/${brandSlug}/${modelSlug}`
+            : `/compare?model=${encodeURIComponent(v.model)}`;
+        linkedText = linkedText.replace(
+          modelRegex,
+          `<a href="${href}" style="color: #0088CC; text-decoration: underline; font-weight: 500;">$1</a>`
+        );
         addedModels.add(v.model);
       }
     }

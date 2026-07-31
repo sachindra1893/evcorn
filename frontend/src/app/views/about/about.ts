@@ -391,18 +391,22 @@ export class AboutComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    const description =
+      'Learn about EVCorn, our mission to democratize electric mobility in India, and how we empower EV buyers with transparent specs, savings calculators, and unbiased data.';
+
     this.seoService.updateSeo({
-      title: 'About Us | EVCorn',
-      description: 'Learn about EVCorn, our mission to democratize electric mobility in India, and how we empower EV buyers with transparent specs, savings calculators, and unbiased data.',
-      url: 'https://evcorn.com/about'
+      title: 'About Us',
+      description,
+      url: '/about'
     });
 
     this.schemaService.setSchema([
       this.schemaService.buildBreadcrumbs([
-        { name: 'Home', url: '' },
+        { name: 'Home', url: '/' },
         { name: 'About Us', url: '/about' }
       ]),
-      this.schemaService.buildWebPage('About Us', 'Learn about EVCorn, our mission to democratize electric mobility in India, and how we empower EV buyers with transparent specs and unbiased data.')
+      this.schemaService.buildWebPage('About Us', description, '/about'),
+      this.schemaService.buildOrganization()
     ]);
   }
 }

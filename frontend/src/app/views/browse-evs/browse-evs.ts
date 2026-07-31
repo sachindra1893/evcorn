@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Category, CarSpec, BlogDataService } from '../../services/blog-data.service';
 import { SeoService } from '../../services/seo.service';
+import { SchemaService } from '../../services/schema.service';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { CompareTrayComponent } from '../../components/compare-tray/compare-tray';
@@ -108,7 +109,10 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
                              (error)="onImgError($event, car.parentModel || car.name)"
                              loading="lazy"
                              decoding="async"
-                             class="model-thumb" alt="Vehicle Image">
+                             width="600"
+                             height="360"
+                             class="model-thumb"
+                             [alt]="getBrandName(car.categoryId) + ' ' + (car.parentModel || car.name) + ' electric vehicle'">
                       </div>
                       <div class="model-info-row">
                         <div class="model-info">
@@ -154,7 +158,10 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
                              (error)="onImgError($event, car.parentModel || car.name)"
                              loading="lazy"
                              decoding="async"
-                             class="model-thumb" alt="Vehicle Image">
+                             width="600"
+                             height="360"
+                             class="model-thumb"
+                             [alt]="getBrandName(car.categoryId) + ' ' + (car.parentModel || car.name) + ' electric vehicle'">
                       </div>
                       <div class="model-info-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
                         <div class="model-info" style="width: 100%;">
@@ -561,6 +568,7 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
 
   constructor(
     private seoService: SeoService,
+    private schemaService: SchemaService,
     private blogData: BlogDataService,
     private compareState: CompareStateService,
     private cdr: ChangeDetectorRef,
@@ -568,11 +576,23 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    const title = 'Browse Electric Vehicles in India';
+    const description =
+      'Discover and compare electric cars available in India. Browse EV models by brand including Tata, MG, Mahindra, BYD, Hyundai, and Kia with prices, range, and battery specs.';
+
     this.seoService.updateSeo({
-      title: 'Browse Electric Vehicles in India | EVCorn',
-      description: 'Discover and compare all electric cars available in India. Browse by brand including Tata, MG, Mahindra, BYD, and Hyundai.',
-      url: 'https://evcorn.com/evs'
+      title,
+      description,
+      url: '/evs'
     });
+
+    this.schemaService.setSchema([
+      this.schemaService.buildBreadcrumbs([
+        { name: 'Home', url: '/' },
+        { name: 'Browse EVs', url: '/evs' }
+      ]),
+      this.schemaService.buildCollectionPage(title, description, '/evs')
+    ]);
 
     this.compareSub = this.compareState.selectedVehicles$.subscribe((ids) => {
       this.compareIds = ids;

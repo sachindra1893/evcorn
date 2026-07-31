@@ -121,6 +121,7 @@ export interface VehicleModel {
 
 export interface Article {
   id?: string;
+  slug?: string;
   title: string;
   description?: string;
   categoryId?: string;
@@ -129,6 +130,14 @@ export interface Article {
   blocks?: ArticleBlock[]; // NEW dynamic blocks array
   active: boolean;
   createdAt?: string;
+  updatedAt?: string;
+  author?: { name?: string; role?: string } | string;
+  seo?: SEO;
+  relationships?: {
+    relatedArticles?: string[];
+    relatedVehicles?: string[];
+    relatedBrands?: string[];
+  };
 }
 
 export interface CarSpec {

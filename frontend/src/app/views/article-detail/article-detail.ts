@@ -39,7 +39,7 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
           <div class="article-container">
             @if (article.imageUrl) {
               <div class="banner-container">
-                <img [src]="getOptimizedUrl(article.imageUrl, 1200)" class="banner-image" alt="{{article.title}}" fetchpriority="high" decoding="async">
+                <img [src]="getOptimizedUrl(article.imageUrl, 1200)" class="banner-image" alt="{{article.title}}" fetchpriority="high" decoding="async" width="1200" height="630">
               </div>
             }
             <div class="article-content">
@@ -97,7 +97,10 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
               <div *ngIf="getRelatedCars(article).length > 0" class="related-cars-section">
                 <h3>Cars Mentioned in this Article</h3>
                 <div class="related-grid">
-                  <a *ngFor="let car of getRelatedCars(article)" [routerLink]="['/compare']" [queryParams]="{ model: car.model }" class="related-card">
+                  <a *ngFor="let car of getRelatedCars(article)"
+                     [routerLink]="car.brandSlug && car.modelSlug ? ['/ev', car.brandSlug, car.modelSlug] : ['/compare']"
+                     [queryParams]="car.brandSlug && car.modelSlug ? null : { model: car.model }"
+                     class="related-card">
                     <div class="related-img-wrapper" *ngIf="car.imageUrl">
                       <img [src]="getOptimizedUrl(car.imageUrl, 200)" [alt]="car.brand + ' ' + car.model" loading="lazy" decoding="async" width="60" height="40" />
                     </div>
@@ -750,7 +753,21 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
       // Look for explicit matches
       if (fullText.includes(` ${modelStr} `) || (brandStr && fullText.includes(`${brandStr} ${modelStr}`))) {
         if (!addedModels.has(v.model)) {
-          matches.push(v);
+          const brandSlug =
+            v.brandSlug ||
+            (v.brand || '')
+              .toLowerCase()
+              .trim()
+              .replace(/[^\w\s-]/g, '')
+              .replace(/[\s_-]+/g, '-');
+          const modelSlug =
+            v.modelSlug ||
+            (v.model || '')
+              .toLowerCase()
+              .trim()
+              .replace(/[^\w\s-]/g, '')
+              .replace(/[\s_-]+/g, '-');
+          matches.push({ ...v, brandSlug, modelSlug });
           addedModels.add(v.model);
         }
       }
@@ -908,38 +925,55 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
 
   updateSEOMetadata(art: Article | null) {
     if (art) {
-      // Build absolute image URL
-      const imageUrl = art.imageUrl
-        ? (art.imageUrl.startsWith('http') ? art.imageUrl : `https://evcorn.com${art.imageUrl}`)
-        : undefined;
+      const path = `/articles/${art.id}`;
+      const imageUrl = art.imageUrl || undefined;
+      const authorName =
+        typeof art.author === 'string'
+          ? art.author
+          : (art.author?.name || 'EVCorn Editorial');
+      const metaTitle = art.seo?.metaTitle || art.title;
+      const metaDescription =
+        art.seo?.metaDescription ||
+        art.description ||
+        `Read ${art.title} on EVCorn — electric vehicle news, reviews, and buying guides for India.`;
 
       this.seoService.updateSeo({
-        title: art.title,
-        description: art.description || '',
+        title: metaTitle,
+        description: metaDescription,
         image: imageUrl,
+        imageAlt: art.title,
+        url: path,
         type: 'article',
-        author: 'EVCorn',
-        publishDate: art.createdAt
+        author: authorName,
+        publishDate: art.createdAt,
+        modifiedDate: art.updatedAt || art.createdAt
       });
-      
+
       this.schemaService.setSchema([
         this.schemaService.buildBreadcrumbs([
-          { name: 'Home', url: '' },
+          { name: 'Home', url: '/' },
           { name: 'Articles', url: '/articles' },
-          { name: art.title, url: `/articles/${art.id}` }
+          { name: art.title, url: path }
         ]),
+        this.schemaService.buildWebPage(metaTitle, metaDescription, path),
         this.schemaService.buildArticle({
           headline: art.title,
-          description: art.description,
+          description: metaDescription,
           image: imageUrl,
           datePublished: art.createdAt,
-          dateModified: art.createdAt
-        })
+          dateModified: art.updatedAt || art.createdAt,
+          author: authorName,
+          path
+        }),
+        ...(imageUrl
+          ? [this.schemaService.buildImageObject(imageUrl, art.title, 1200, 630)]
+          : [])
       ]);
     } else {
       this.seoService.updateSeo({
         title: 'Article Not Found',
-        description: 'The requested article could not be found.'
+        description: 'The requested article could not be found on EVCorn. Browse EV reviews and news instead.',
+        noindex: true
       });
       this.schemaService.setSchema([]);
     }

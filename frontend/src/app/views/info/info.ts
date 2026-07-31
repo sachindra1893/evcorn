@@ -70,6 +70,24 @@ export class InfoComponent implements OnInit {
   title = '';
   content = '';
 
+  private readonly faqItems = [
+    {
+      question: 'Is EVCorn affiliated with any EV brands?',
+      answer:
+        'No. EVCorn is a completely independent public database cataloging EV specs and electric transition insights.'
+    },
+    {
+      question: 'Can I publish my own EV specs?',
+      answer:
+        'Currently, specs publishing is restricted to the administrator. If you want to contribute listings, please reach out via our contact page.'
+    },
+    {
+      question: 'How are compared metrics compiled?',
+      answer:
+        'Dimensions, motor output values, and battery sizes are sourced directly from brand official product manuals.'
+    }
+  ];
+
   constructor(
     private route: ActivatedRoute,
     private seoService: SeoService,
@@ -84,14 +102,17 @@ export class InfoComponent implements OnInit {
   }
 
   setupContent(path: string) {
-    let pageTitle = 'Information | EVCorn';
-    let metaDesc = 'Learn more about EVCorn, including our terms, privacy policy, and contact information.';
+    let pageTitle = 'Information';
+    let metaDesc =
+      'Learn more about EVCorn, including terms of use, privacy policy, FAQs, and how to contact the team about electric vehicles in India.';
+    let faqs: { question: string; answer: string }[] | null = null;
 
     switch (path) {
       case 'terms':
         this.title = 'Terms & Conditions';
-        pageTitle = 'Terms & Conditions | EVCorn';
-        metaDesc = 'Read the terms and conditions for using the EVCorn website.';
+        pageTitle = 'Terms & Conditions';
+        metaDesc =
+          'Read the terms and conditions for using EVCorn. Learn how EV specs, articles, and reviews may be used and what intellectual property rules apply.';
         this.content = `
           <p>Welcome to EVCorn. By accessing or using our website, you agree to comply with and be bound by the following terms and conditions:</p>
           <h2>1. Use of Content</h2>
@@ -102,8 +123,9 @@ export class InfoComponent implements OnInit {
         break;
       case 'privacy':
         this.title = 'Privacy Policy';
-        pageTitle = 'Privacy Policy | EVCorn';
-        metaDesc = 'Read our privacy policy to understand how EVCorn handles and protects your data.';
+        pageTitle = 'Privacy Policy';
+        metaDesc =
+          'Read the EVCorn privacy policy to understand what data we collect, how cookies and local storage are used, and how we protect visitor information.';
         this.content = `
           <p>Your privacy is important to us. It is EVCorn's policy to respect your privacy regarding any information we may collect from you across our website:</p>
           <h2>1. Data Collection</h2>
@@ -114,21 +136,22 @@ export class InfoComponent implements OnInit {
         break;
       case 'faqs':
         this.title = 'Frequently Asked Questions';
-        pageTitle = 'Frequently Asked Questions (FAQ) | EVCorn';
-        metaDesc = 'Have questions about EVCorn or electric vehicles? Read our frequently asked questions.';
-        this.content = `
-          <h2>Q1: Is EVCorn affiliated with any EV brands?</h2>
-          <p>No. EVCorn is a completely independent public database cataloging EV specs and electric transition insights.</p>
-          <h2>Q2: Can I publish my own EV specs?</h2>
-          <p>Currently, specs publishing is restricted to the administrator. If you want to contribute listings, please reach out via our contact page.</p>
-          <h2>Q3: How are compared metrics compiled?</h2>
-          <p>Dimensions, motor output values, and battery sizes are sourced directly from brand official product manuals.</p>
-        `;
+        pageTitle = 'Frequently Asked Questions (FAQ)';
+        metaDesc =
+          'Have questions about EVCorn or electric vehicles in India? Read FAQs on brand affiliation, contributing specs, and how comparison metrics are compiled.';
+        this.content = this.faqItems
+          .map(
+            (item, i) =>
+              `<h2>Q${i + 1}: ${item.question}</h2><p>${item.answer}</p>`
+          )
+          .join('');
+        faqs = this.faqItems;
         break;
       case 'feedback':
         this.title = 'Feedback';
-        pageTitle = 'Give Feedback | EVCorn';
-        metaDesc = 'Share your feedback, feature requests, and suggestions with the EVCorn team.';
+        pageTitle = 'Give Feedback';
+        metaDesc =
+          'Share feedback, feature requests, and suggestions with the EVCorn team to improve EV comparison tools, directory features, and reviews.';
         this.content = `
           <p>We value your suggestions to make EVCorn the best electric vehicle platform online!</p>
           <p>Please share your feedback regarding directory features, compare fields, or visual style layouts. We read and implement suggestions regularly.</p>
@@ -137,8 +160,9 @@ export class InfoComponent implements OnInit {
         break;
       case 'contact':
         this.title = 'Contact Us';
-        pageTitle = 'Contact Us | EVCorn';
-        metaDesc = 'Get in touch with the EVCorn team for business inquiries, collaborations, or general questions.';
+        pageTitle = 'Contact Us';
+        metaDesc =
+          'Get in touch with the EVCorn team for business inquiries, collaborations, content suggestions, or general questions about electric vehicles in India.';
         this.content = `
           <p>Get in touch with our team for general queries, collaborations, or content suggestions.</p>
           <h2>Business Enquiries</h2>
@@ -148,8 +172,9 @@ export class InfoComponent implements OnInit {
         break;
       case 'advertise':
         this.title = 'Advertise with Us';
-        pageTitle = 'Advertise | EVCorn';
-        metaDesc = 'Partner with EVCorn to display your electric mobility products to a dedicated eco-conscious audience.';
+        pageTitle = 'Advertise';
+        metaDesc =
+          'Partner with EVCorn to advertise electric mobility products, charging networks, and services to an eco-conscious EV audience in India.';
         this.content = `
           <p>Partner with EVCorn to display your electric mobility products, accessories, charging networks, or services to a dedicated eco-conscious audience.</p>
           <h2>Sponsorship Inquiries</h2>
@@ -161,17 +186,26 @@ export class InfoComponent implements OnInit {
         this.content = '<p>Information page content is currently empty.</p>';
     }
 
+    const routePath = `/${path || 'info'}`;
+
     this.seoService.updateSeo({
       title: pageTitle,
-      description: metaDesc
+      description: metaDesc,
+      url: routePath
     });
 
-    this.schemaService.setSchema([
+    const schemas: any[] = [
       this.schemaService.buildBreadcrumbs([
-        { name: 'Home', url: '' },
-        { name: this.title, url: `/info/${path}` }
+        { name: 'Home', url: '/' },
+        { name: this.title, url: routePath }
       ]),
-      this.schemaService.buildWebPage(this.title, metaDesc)
-    ]);
+      this.schemaService.buildWebPage(this.title, metaDesc, routePath)
+    ];
+
+    if (faqs) {
+      schemas.push(this.schemaService.buildFAQ(faqs));
+    }
+
+    this.schemaService.setSchema(schemas);
   }
 }

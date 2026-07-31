@@ -48,7 +48,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
                 <a [routerLink]="['/articles', heroArticle.id]" class="hero-article-link">
                   <div class="hero-article-card">
                     @if (heroArticle.imageUrl) {
-                      <img [src]="getOptimizedUrl(heroArticle.imageUrl, 1200)" class="hero-image" alt="{{heroArticle.title}}" fetchpriority="high" decoding="async">
+                      <img [src]="getOptimizedUrl(heroArticle.imageUrl, 1200)" class="hero-image" alt="{{heroArticle.title}}" fetchpriority="high" decoding="async" width="1200" height="675">
                     } @else {
                       <div class="hero-image-placeholder">⚡ EVCorn Featured</div>
                     }
@@ -191,20 +191,22 @@ export class ArticlesComponent implements OnInit {
   }
 
   ngOnInit() {
+    const title = 'EV Reviews & News India 2026';
+    const description =
+      'Read the latest electric vehicle reviews, news, battery technology updates, and charging infrastructure developments across India on EVCorn Insights.';
+
     this.seoService.updateSeo({
-      title: 'EV Reviews & News India 2026 | EVCorn Insights',
-      description: 'Read the latest electric vehicle reviews, news, battery technology updates, and charging infrastructure developments in India.'
+      title,
+      description,
+      url: '/articles'
     });
 
     this.schemaService.setSchema([
       this.schemaService.buildBreadcrumbs([
-        { name: 'Home', url: '' },
+        { name: 'Home', url: '/' },
         { name: 'Articles', url: '/articles' }
       ]),
-      this.schemaService.buildCollectionPage(
-        'EV Reviews & News India',
-        'Read the latest electric vehicle reviews, news, battery technology updates, and charging infrastructure developments in India.'
-      )
+      this.schemaService.buildCollectionPage(title, description, '/articles')
     ]);
     
     this.loadData();

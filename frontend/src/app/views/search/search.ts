@@ -396,29 +396,37 @@ export class SearchComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.seoService.updateSeo({
-      title: 'Search Electric Vehicles & EV News',
-      description: 'Search for electric cars, two-wheelers, EV brands, and the latest news articles on EVCorn.'
-    });
-
-    this.schemaService.setSchema([
-      this.schemaService.buildBreadcrumbs([
-        { name: 'Home', url: '' },
-        { name: 'Search', url: '/search' }
-      ]),
-      this.schemaService.buildWebPage(
-        'Search EVCorn',
-        'Search for electric cars, two-wheelers, EV brands, and the latest news articles on EVCorn.'
-      )
-    ]);
+    this.applyBaseSearchSeo();
 
     this.route.queryParams.subscribe(params => {
       const q = params['q'];
       if (q) {
         this.searchQuery = q;
       }
+      this.updateSearchSchema();
       this.loadSearchArticles();
     });
+  }
+
+  private applyBaseSearchSeo(query?: string) {
+    const trimmed = (query || '').trim();
+    if (trimmed) {
+      this.seoService.updateSeo({
+        title: `Search results for "${trimmed}"`,
+        description:
+          `Find electric cars, EV brands, and news matching "${trimmed}" on EVCorn. Compare specs, range, and prices across India’s EV catalog.`,
+        url: `/search?q=${encodeURIComponent(trimmed)}`,
+        keepQuery: true,
+        noindex: true
+      });
+    } else {
+      this.seoService.updateSeo({
+        title: 'Search Electric Vehicles & EV News',
+        description:
+          'Search electric cars, two-wheelers, EV brands, and the latest EV news articles on EVCorn. Find prices, range, and reviews for India.',
+        url: '/search'
+      });
+    }
   }
 
   loadSearchArticles() {
@@ -496,15 +504,29 @@ export class SearchComponent implements OnInit {
   }
 
   updateSearchSchema() {
-    if (this.searchQuery.trim().length > 0) {
-      this.schemaService.setSchema([
-        this.schemaService.buildBreadcrumbs([
-          { name: 'Home', url: '' },
-          { name: 'Search', url: '/search' }
-        ]),
-        this.schemaService.buildSearchResultsPage(this.searchQuery)
-      ]);
+    const q = this.searchQuery.trim();
+    this.applyBaseSearchSeo(q);
+
+    const schemas: any[] = [
+      this.schemaService.buildBreadcrumbs([
+        { name: 'Home', url: '/' },
+        { name: 'Search', url: '/search' }
+      ])
+    ];
+
+    if (q.length > 0) {
+      schemas.push(this.schemaService.buildSearchResultsPage(q));
+    } else {
+      schemas.push(
+        this.schemaService.buildWebPage(
+          'Search EVCorn',
+          'Search for electric cars, two-wheelers, EV brands, and the latest news articles on EVCorn.',
+          '/search'
+        )
+      );
     }
+
+    this.schemaService.setSchema(schemas);
   }
 
   get filteredItems(): SearchItem[] {

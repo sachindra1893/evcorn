@@ -640,9 +640,9 @@ import { RouterLink } from '@angular/router';
       <section class="related-content-section animate-fade" style="margin-top: 60px; padding-top: 40px; border-top: 1px solid rgba(0,0,0,0.05); max-width: 1200px; margin: 60px auto 0 auto; position: relative; z-index: 1;">
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 20px;">Explore More EV Tools</h2>
         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-          <a routerLink="/charging" class="related-link-card" style="flex: 1; min-width: 280px; padding: 24px; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
-            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: #0284C7;">Calculate EV Charging Time</h3>
-            <p style="font-size: 0.9rem; color: #64748B;">Simulate charging speeds across different battery sizes and chargers.</p>
+          <a routerLink="/evs" class="related-link-card" style="flex: 1; min-width: 280px; padding: 24px; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: #0284C7;">Browse Electric Vehicles</h3>
+            <p style="font-size: 0.9rem; color: #64748B;">Explore EV models by brand with price, range, and battery options.</p>
           </a>
           <a routerLink="/compare" class="related-link-card" style="flex: 1; min-width: 280px; padding: 24px; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block;">
             <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: #7952FF;">Compare Electric Vehicles</h3>
@@ -1358,17 +1358,20 @@ export class EnergyComponent implements OnInit {
   ngOnInit() {
     this.seoService.updateSeo({
       title: 'Solar EV Charging Calculator — Charge for ₹0',
-      description: 'Calculate the solar panel and battery capacity required to charge your electric vehicle for free in India. Estimate your monthly savings and carbon offset.'
+      description:
+        'Calculate the solar panel and battery capacity required to charge your EV for free in India. Estimate monthly savings, subsidy impact, and carbon offset on EVCorn.',
+      url: '/energy'
     });
 
     this.schemaService.setSchema([
       this.schemaService.buildBreadcrumbs([
-        { name: 'Home', url: '' },
+        { name: 'Home', url: '/' },
         { name: 'Energy Hub', url: '/energy' }
       ]),
       this.schemaService.buildWebPage(
         'Solar EV Charging Calculator',
-        'Calculate the solar panel and battery capacity required to charge your electric vehicle for free in India.'
+        'Calculate the solar panel and battery capacity required to charge your electric vehicle for free in India.',
+        '/energy'
       )
     ]);
     

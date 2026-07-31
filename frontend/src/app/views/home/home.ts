@@ -1675,11 +1675,20 @@ export class HomeComponent implements OnInit {
 
   ngOnInit() {
     this.seoService.updateSeo({
-      title: 'Compare EVs, Charging Stations & EV News India',
-      description: 'Compare electric cars, find charging stations, and read the latest EV news and reviews in India on EVCorn.'
+      title: 'Compare EVs, Charging & EV News India',
+      description:
+        'Compare electric cars in India, estimate solar EV charging savings, and read the latest EV news and reviews on EVCorn — specs, range, and prices.'
     });
 
-    this.schemaService.setSchema([]);
+    this.schemaService.setSchema([
+      this.schemaService.buildOrganization(),
+      this.schemaService.buildWebSite(),
+      this.schemaService.buildWebPage(
+        'EVCorn — Electric Vehicles in India',
+        'Compare electric cars in India, estimate solar EV charging savings, and read the latest EV news and reviews on EVCorn.',
+        '/'
+      )
+    ]);
 
     this.loadData();
   }

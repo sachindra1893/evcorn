@@ -53,6 +53,21 @@ function checkDocument(name, html) {
   const hasLd = /application\/ld\+json/i.test(html);
   if (!hasLd) issues.push('missing JSON-LD structured data');
 
+  const canonical = extract(html, /rel=["']canonical["'][^>]+href=["']([^"']*)["']/i)
+    || extract(html, /href=["']([^"']*)["'][^>]+rel=["']canonical["']/i);
+  if (name === 'index.html' && !canonical) {
+    issues.push('missing canonical');
+  }
+  if (canonical && !/^https:\/\/evcorn\.com/i.test(canonical)) {
+    issues.push('canonical not on production domain');
+  }
+
+  const robots = extract(html, /name=["']robots["'][^>]+content=["']([^"']*)["']/i)
+    || extract(html, /content=["']([^"']*)["'][^>]+name=["']robots["']/i);
+  if (name === 'index.html' && (!robots || !/index/i.test(robots))) {
+    issues.push('missing index robots directive');
+  }
+
   if (name === 'index.html') {
     if (!/rel=["']manifest["']/i.test(html)) {
       issues.push('missing web app manifest link');
@@ -120,6 +135,34 @@ if (!fs.existsSync(manifestPath)) {
 }
 manifestResult.pass = manifestResult.issues.length === 0;
 results.push(manifestResult);
+
+const robotsPath = path.join(DIST, 'robots.txt');
+const robotsResult = { name: 'robots.txt', pass: false, issues: [] };
+if (!fs.existsSync(robotsPath)) {
+  robotsResult.issues.push('robots.txt missing from dist');
+} else {
+  const robots = fs.readFileSync(robotsPath, 'utf8');
+  if (!/Disallow:\s*\/admin/i.test(robots)) robotsResult.issues.push('missing Disallow /admin');
+  if (!/Sitemap:\s*https:\/\/evcorn\.com\/sitemap\.xml/i.test(robots)) {
+    robotsResult.issues.push('missing production Sitemap directive');
+  }
+}
+robotsResult.pass = robotsResult.issues.length === 0;
+results.push(robotsResult);
+
+const sitemapPath = path.join(DIST, 'sitemap.xml');
+const sitemapResult = { name: 'sitemap.xml', pass: false, issues: [] };
+if (!fs.existsSync(sitemapPath)) {
+  sitemapResult.issues.push('sitemap.xml missing from dist');
+} else {
+  const sitemap = fs.readFileSync(sitemapPath, 'utf8');
+  if (!/<urlset/i.test(sitemap)) sitemapResult.issues.push('invalid sitemap root');
+  if (!/https:\/\/evcorn\.com\/evs/i.test(sitemap)) sitemapResult.issues.push('missing /evs URL');
+  if (/\/admin/i.test(sitemap)) sitemapResult.issues.push('admin URL should not be listed');
+  if (/\/charging/i.test(sitemap)) sitemapResult.issues.push('dead /charging URL should not be listed');
+}
+sitemapResult.pass = sitemapResult.issues.length === 0;
+results.push(sitemapResult);
 
 const pass = results.every((r) => r.pass);
 const report = {
