@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ArticleBlock, BlockType } from '../../models/blocks.model';
+import { BlogDataService } from '../../services/blog-data.service';
 
 @Component({
   selector: 'app-block-editor',
@@ -48,7 +49,7 @@ import { ArticleBlock, BlockType } from '../../models/blocks.model';
                 <input type="text" [(ngModel)]="block.data.url" placeholder="Image URL (or upload file)" class="form-control" style="flex-grow: 1;" />
                 <input type="file" accept="image/*" (change)="onImageBlockUpload($event, block)" style="display: none;" #imgUpload>
                 <button type="button" class="btn secondary-btn" style="white-space: nowrap;" (click)="imgUpload.click()" [disabled]="block._uploading">
-                  {{ block._uploading ? 'Processing...' : '📁 Upload' }}
+                  {{ block._uploading ? 'Uploading...' : '📁 Upload' }}
                 </button>
               </div>
               <input type="text" [(ngModel)]="block.data.caption" placeholder="Caption (optional)" class="form-control mb-2" />
@@ -478,6 +479,8 @@ export class BlockEditorComponent {
   @Input() blocks: ArticleBlock[] = [];
   @Output() blocksChange = new EventEmitter<ArticleBlock[]>();
 
+  private readonly dataService = inject(BlogDataService);
+
   trackByIndex(index: number, obj: any): any {
     return index;
   }
@@ -669,64 +672,66 @@ export class BlockEditorComponent {
     this.notifyChange();
   }
 
-  // --- Image Upload Helpers ---
-  processImageFile(file: File, callback: (base64Url: string) => void) {
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const MAX_WIDTH = 1200;
-        if (width > MAX_WIDTH) {
-          height = Math.round((height * MAX_WIDTH) / width);
-          width = MAX_WIDTH;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const base64Data = canvas.toDataURL('image/jpeg', 0.80);
-          callback(base64Data);
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+  // --- Image Upload Helpers (same Cloudinary pipeline as cover photos) ---
+  /** Local blob preview only; replace with CDN URL after upload — never persist Base64. */
+  private uploadArticleImageFile(
+    file: File,
+    applyUrl: (url: string) => void,
+    setUploading: (uploading: boolean) => void
+  ) {
+    const localPreview = URL.createObjectURL(file);
+    applyUrl(localPreview);
+    setUploading(true);
+    this.notifyChange();
+
+    this.dataService.uploadImage(file).subscribe({
+      next: (res) => {
+        URL.revokeObjectURL(localPreview);
+        applyUrl(res.url);
+        setUploading(false);
+        this.notifyChange();
+      },
+      error: (err: any) => {
+        URL.revokeObjectURL(localPreview);
+        applyUrl('');
+        setUploading(false);
+        this.notifyChange();
+        alert('Failed to upload image to Cloudinary: ' + (err.error?.error || err.message));
+      }
+    });
   }
 
   onImageBlockUpload(event: Event, block: any) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
-    
-    block._uploading = true;
-    this.notifyChange(); // Trigger UI update for "Processing..."
-    
-    this.processImageFile(input.files[0], (base64Url) => {
-      block.data.url = base64Url;
-      block._uploading = false;
-      this.notifyChange();
-    });
-    
-    // Clear input so same file can be selected again if needed
+    const file = input.files[0];
     input.value = '';
+
+    this.uploadArticleImageFile(
+      file,
+      (url) => {
+        block.data.url = url;
+      },
+      (uploading) => {
+        block._uploading = uploading;
+      }
+    );
   }
 
-  onGalleryImageUpload(event: Event, img: any, block: any) {
+  onGalleryImageUpload(event: Event, img: any, _block: any) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
-    
-    img._uploading = true;
-    this.notifyChange(); // Trigger UI update
-    
-    this.processImageFile(input.files[0], (base64Url) => {
-      img.url = base64Url;
-      img._uploading = false;
-      this.notifyChange();
-    });
-    
+    const file = input.files[0];
     input.value = '';
+
+    this.uploadArticleImageFile(
+      file,
+      (url) => {
+        img.url = url;
+      },
+      (uploading) => {
+        img._uploading = uploading;
+      }
+    );
   }
 }

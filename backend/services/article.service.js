@@ -9,6 +9,7 @@ const { deleteImage } = require('./upload.service');
 const { parseQueryParams, buildArticleFilterQuery, formatResponse } = require('../utils/apiQuery');
 const { toArticleDTO, toArticleListDTO, toArticleLightListDTO } = require('../dto/article.dto');
 const { NotFoundError } = require('../errors/AppError');
+const { assertNoDataImageInArticle } = require('../utils/articleImageSanitize');
 const appCache = require('../utils/cache');
 const perf = require('../utils/perf');
 
@@ -134,6 +135,9 @@ class ArticleService {
   }
 
   async createArticle(data) {
+    // Fail-closed: Base64 data:image must never reach Mongo (cover or body).
+    assertNoDataImageInArticle(data);
+
     // Defense-in-depth: if a client POST includes an existing article id
     // (e.g. mis-routed edit), update in place instead of minting a duplicate.
     const incomingId = data?.id != null && String(data.id).trim()
@@ -142,6 +146,7 @@ class ArticleService {
 
     if (incomingId) {
       const { id: _ignoreId, _id: _ignoreMongoId, ...rest } = data;
+      assertNoDataImageInArticle(rest);
       const existing = await articleRepository.findById(incomingId);
       if (existing) {
         const updated = await articleRepository.update(incomingId, rest);
@@ -159,6 +164,7 @@ class ArticleService {
   }
 
   async updateArticle(id, data) {
+    assertNoDataImageInArticle(data);
     const updated = await articleRepository.update(id, data);
     if (!updated) {
       throw new NotFoundError(`Article with id "${id}" not found`);

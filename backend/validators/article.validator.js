@@ -2,6 +2,7 @@
  * Article Input & Publication Validator
  */
 const { BadRequestError } = require('../errors/AppError');
+const { assertNoDataImageInArticle } = require('../utils/articleImageSanitize');
 
 function validateArticleInput(body) {
   if (!body || typeof body !== 'object') {
@@ -11,6 +12,9 @@ function validateArticleInput(body) {
   if (!body.title || typeof body.title !== 'string' || body.title.trim().length === 0) {
     throw new BadRequestError('Article field "title" is required.');
   }
+
+  // Never persist Base64 images in cover or __EVBLOCKS__ body.
+  assertNoDataImageInArticle(body);
 
   // Publication Validation Guard
   if (body.status === 'published') {

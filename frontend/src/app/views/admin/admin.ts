@@ -14,6 +14,13 @@ import {
   resolveArticleId,
   upsertArticleInList
 } from './article-edit.util';
+import {
+  articleHasUploadingImages,
+  assertNoLocalPreviewImages,
+  uploadCoverIfDataUrl,
+  uploadDataImagesInBlocks
+} from '../../utils/article-image-upload.util';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-admin',
@@ -906,7 +913,7 @@ export class AdminComponent implements OnInit {
   // ==========================================
   // ARTICLES EVENT HANDLERS
   // ==========================================
-  onPublishArticle(event: Event) {
+  async onPublishArticle(event: Event) {
     event.preventDefault();
     if (this.saving) return;
 
@@ -922,19 +929,47 @@ export class AdminComponent implements OnInit {
       return;
     }
 
-    // To bypass backend schema restrictions, we serialize all blocks into the paragraphs array.
+    if (articleHasUploadingImages(this.articleBlocks, this.imageProcessing)) {
+      alert('Please wait for image uploads to finish before saving.');
+      return;
+    }
+
+    this.saving = true;
+    this.cdr.detectChanges();
+
+    const uploadViaApi = (file: File) =>
+      firstValueFrom(this.dataService.uploadImage(file));
+
+    try {
+      // Defense-in-depth: any leftover data:image (e.g. pasted) → Cloudinary before serialize.
+      this.articleImageUrl = await uploadCoverIfDataUrl(this.articleImageUrl, uploadViaApi);
+      this.articleBlocks = await uploadDataImagesInBlocks(this.articleBlocks, uploadViaApi);
+
+      const localPreviewError = assertNoLocalPreviewImages(this.articleBlocks, this.articleImageUrl);
+      if (localPreviewError) {
+        this.saving = false;
+        this.cdr.detectChanges();
+        alert(localPreviewError);
+        return;
+      }
+    } catch (err: any) {
+      this.saving = false;
+      this.cdr.detectChanges();
+      alert('Failed to upload article images to Cloudinary: ' + (err?.error?.error || err?.message || err));
+      return;
+    }
+
+    // Persist blocks as __EVBLOCKS__ in paragraphs (Mongo schema has no blocks path).
     const serializedBlocks = JSON.stringify(this.articleBlocks);
-    
-    // We still keep the backward compatibility fallback for old components if they need it.
+
     const fallbackParagraphs = this.articleBlocks
       .filter(b => b.type === 'paragraph' && b.data.text)
       .map(b => (b as any).data.text.trim());
-      
-    // The first paragraph will be the magic serialized blocks.
+
     const paragraphs = [ `__EVBLOCKS__${serializedBlocks}`, ...fallbackParagraphs ];
 
-    const generatedDesc = fallbackParagraphs[0] 
-      ? (fallbackParagraphs[0].length > 150 ? fallbackParagraphs[0].substring(0, 147) + '...' : fallbackParagraphs[0]) 
+    const generatedDesc = fallbackParagraphs[0]
+      ? (fallbackParagraphs[0].length > 150 ? fallbackParagraphs[0].substring(0, 147) + '...' : fallbackParagraphs[0])
       : '';
 
     const articleData: Article = {
@@ -946,8 +981,6 @@ export class AdminComponent implements OnInit {
       blocks: this.articleBlocks,
       active: true
     };
-
-    this.saving = true;
 
     if (updateTarget.ok) {
       articleData.id = updateTarget.id;

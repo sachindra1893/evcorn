@@ -63,6 +63,7 @@ class ArticleController {
 
   async updateArticle(req, res, next) {
     try {
+      validateArticleInput(req.body);
       const result = await articleService.updateArticle(req.params.id, req.body);
       res.json(result);
     } catch (err) {
