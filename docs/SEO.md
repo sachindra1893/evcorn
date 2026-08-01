@@ -87,7 +87,7 @@ See `artifacts/PHASE_7_2_AEO_ARCHITECTURE.md`, `PHASE_7_2_FINAL_AUDIT.md`.
 
 ## 7. Phase 7.3 (Entity & Knowledge Graph)
 
-**Shipped (M1–M4):** derived Entity Graph layer at `frontend/src/app/entity/`.
+**COMPLETE (M1–M4 shipped + production verified):** derived Entity Graph layer at `frontend/src/app/entity/`.
 
 | Milestone | Outcome |
 | :--- | :--- |
@@ -101,6 +101,8 @@ See `artifacts/PHASE_7_2_AEO_ARCHITECTURE.md`, `PHASE_7_2_FINAL_AUDIT.md`.
 **Lifecycle / data flow:** Detail pages load CMS + RecommendationService slate → `getOrBuild*PageGraph` (LRU) → AEO + `safe*SchemaFromGraph` → SchemaService/SeoService. Failure isolation: empty/throwing graph omits enhanced links only.
 
 **Scalability:** Page-local + capped related only — no full-catalog graph, no recursive site crawl. See `artifacts/PHASE_7_3_ENTITY_ARCHITECTURE.md`, `artifacts/PHASE_7_3_M4_HARDENING.md`.
+
+**Production:** commit `3fd39db` · https://evcorn.com · Vercel `dpl_7BJR9MB84a6iGmByezr1zN8xXNyc` · live CSR verify `scripts/phase73-prod-verify.mjs` (42/42) · `npm run validate:production` PASS.
 
 **Deferred:** inverse Vehicle→Articles index, Neo4j, Redis adjacency, author pages, article slug routes as primary `@id`.
 
