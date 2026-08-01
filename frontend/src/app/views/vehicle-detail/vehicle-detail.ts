@@ -18,6 +18,13 @@ import {
   formatLastUpdatedLabel,
   hasAeoChrome
 } from '../../aeo';
+import {
+  brandBrowseHref,
+  evsIndexHref,
+  getOrBuildVehiclePageGraph,
+  modelHref,
+  safeVehicleSchemaFromGraph
+} from '../../entity';
 
 interface OverviewData {
   priceRange: string;
@@ -1319,11 +1326,12 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
           );
           this.relatedArticlesForAeo = data.recommendedArticles || [];
           this.refreshAeo();
-          // FAQ schema does not depend on related slate — skip SEO re-write.
+          // Related slate feeds JSON-LD isRelatedTo (Phase 7.3 M3) — refresh schema.
+          this.updateSEO();
           this.cdr.detectChanges();
         },
         error: () => {
-          // Related failure → omit sections; keep local AEO facts.
+          // Related failure → omit sections; keep local AEO facts + Phase 7.1 schema.
         }
       });
   }
@@ -1365,6 +1373,14 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
     if (stamp === this.lastAeoStamp && this.aeo) return;
 
     try {
+      // Page-local Entity Graph (Phase 7.3) — LRU cached; failure → empty; AEO falls back to DTOs.
+      const entityGraph = getOrBuildVehiclePageGraph({
+        brand: this.brand,
+        variants: this.siblingVariants,
+        selectedVariant: this.selectedVariant,
+        recommendedVehicles: this.relatedVehiclesForAeo,
+        recommendedArticles: this.relatedArticlesForAeo
+      });
       this.aeo = buildVehicleAeo({
         brandName: this.brand.name,
         modelName: this.modelName,
@@ -1374,7 +1390,8 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
         selectedVariant: this.selectedVariant,
         seoMetaDescription: this.selectedVariant.seo?.metaDescription,
         relatedVehicles: this.relatedVehiclesForAeo,
-        relatedArticles: this.relatedArticlesForAeo
+        relatedArticles: this.relatedArticlesForAeo,
+        entityGraph
       });
       this.aeoLastUpdatedLabel = formatLastUpdatedLabel(this.aeo.lastUpdated);
       this.lastAeoStamp = stamp;
@@ -1388,7 +1405,14 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   updateSEO() {
     if (!this.brand) return;
 
-    const path = `/ev/${this.currentBrandSlug}/${this.currentModelSlug}`;
+    const path =
+      modelHref({
+        brandName: this.brand.name,
+        brandSlug: this.currentBrandSlug,
+        parentModel: this.modelName,
+        modelSlug: this.currentModelSlug
+      }) || `/ev/${this.currentBrandSlug}/${this.currentModelSlug}`;
+    const brandPath = brandBrowseHref(this.brand.name);
     const title = `${this.brand.name} ${this.modelName} EV: Price, Range & Battery Options`;
     const desc = buildVehicleSeoDescription(this.brand.name, this.modelName, this.overview);
     const image = this.activeImageUrl
@@ -1404,6 +1428,16 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       type: 'product'
     });
 
+    // Entity graph → schema inputs (optional). LRU hit when AEO already built. Failure → Phase 7.1 only.
+    const entityGraph = getOrBuildVehiclePageGraph({
+      brand: this.brand,
+      variants: this.siblingVariants,
+      selectedVariant: this.selectedVariant,
+      recommendedVehicles: this.relatedVehiclesForAeo,
+      recommendedArticles: this.relatedArticlesForAeo
+    });
+    const graphSchema = safeVehicleSchemaFromGraph(entityGraph);
+
     const vehicleSchema = this.schemaService.buildVehicle({
       name: `${this.brand.name} ${this.modelName}`,
       brand: this.brand.name,
@@ -1414,21 +1448,37 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       range: this.overview.claimedRange,
       chargingTime: this.overview.charging,
       path,
-      bodyStyle: this.siblingVariants[0]?.bodyStyle
+      bodyStyle: this.siblingVariants[0]?.bodyStyle,
+      ...(graphSchema?.path ? { id: graphSchema.path } : { id: path }),
+      ...(graphSchema?.brand
+        ? {
+            brandPath: graphSchema.brand.path,
+            brandLogoUrl: graphSchema.brand.logoUrl,
+            brandIdentifier: graphSchema.brand.identifier
+          }
+        : { brandPath }),
+      ...(graphSchema?.about ? { about: graphSchema.about } : {}),
+      ...(graphSchema?.isRelatedTo ? { isRelatedTo: graphSchema.isRelatedTo } : {})
     });
 
     const schemas: any[] = [
       this.schemaService.buildBreadcrumbs([
         { name: 'Home', url: '/' },
-        { name: 'Browse EVs', url: '/evs' },
-        { name: this.brand.name, url: '/evs' },
+        { name: 'Browse EVs', url: evsIndexHref() },
+        { name: this.brand.name, url: brandPath },
         { name: this.modelName, url: path }
       ]),
       this.schemaService.buildWebPage(title, desc, path),
       vehicleSchema
     ];
 
+    // Separate Brand node for entity linking (real CMS fields only).
+    if (graphSchema?.brand) {
+      schemas.push(this.schemaService.buildBrand(graphSchema.brand));
+    }
+
     // Phase 7.1 FAQ schema path — AEO feeds items; SchemaService owns JSON-LD.
+    // At most one FAQPage (never duplicate).
     if (this.aeo?.faqs?.length) {
       schemas.push(this.schemaService.buildFAQ(this.aeo.faqs));
     }

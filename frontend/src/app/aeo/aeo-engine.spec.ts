@@ -1,3 +1,4 @@
+import { buildVehiclePageGraph } from '../entity/entity-graph';
 import { buildArticleAeo, buildVehicleAeo } from './aeo-engine';
 import { clearAeoCache, getCachedAeo } from './aeo-cache';
 
@@ -146,5 +147,69 @@ describe('AeoEngine', () => {
     });
     expect(model.ctas.viewSpecs?.href).toBe('/ev/tata-motors/nexon-ev#aeo-specs');
     expect(model.ctas.viewSpecs?.href.startsWith('#')).toBe(false);
+  });
+
+  it('prefers Entity Graph related edges (entity-href) over raw DTO slate', () => {
+    const brand = { id: 'cat-tata', name: 'Tata Motors' };
+    const selected = {
+      id: 'nexon-1',
+      parentModel: 'Nexon EV',
+      brandName: 'Tata Motors',
+      categoryId: 'cat-tata',
+      updatedAt: '2026-07-10T00:00:00.000Z'
+    };
+    const entityGraph = buildVehiclePageGraph({
+      brand,
+      variants: [selected],
+      selectedVariant: selected,
+      recommendedVehicles: [
+        { id: 'peer-graph', parentModel: 'ZS EV', brandName: 'MG' }
+      ],
+      recommendedArticles: [{ id: 'art-graph', title: 'From Graph' }]
+    });
+
+    const model = buildVehicleAeo({
+      brandName: 'Tata Motors',
+      modelName: 'Nexon EV',
+      brandSlug: 'tata-motors',
+      modelSlug: 'nexon-ev',
+      variants: [selected],
+      selectedVariant: selected,
+      // Conflicting DTO slate — must not win when graph has related edges.
+      relatedVehicles: [
+        { id: 'peer-dto', parentModel: 'XUV400', brandName: 'Mahindra' }
+      ],
+      relatedArticles: [{ id: 'art-dto', title: 'From DTO' }],
+      entityGraph
+    });
+
+    expect(model.relatedVehicles.map((v) => v.id)).toEqual(['peer-graph']);
+    expect(model.relatedVehicles[0].href).toBe('/ev/mg/zs-ev');
+    expect(model.relatedArticles.map((a) => a.id)).toEqual(['art-graph']);
+    expect(model.relatedComparisons.length).toBe(1);
+    expect(model.internalLinks.some((l) => l.href === '/faqs')).toBe(true);
+  });
+
+  it('falls back to DTO generators when entity graph is empty', () => {
+    const selected = {
+      id: 'nexon-1',
+      parentModel: 'Nexon EV',
+      updatedAt: '2026-07-10T00:00:00.000Z'
+    };
+    const model = buildVehicleAeo({
+      brandName: 'Tata Motors',
+      modelName: 'Nexon EV',
+      brandSlug: 'tata-motors',
+      modelSlug: 'nexon-ev',
+      variants: [selected],
+      selectedVariant: selected,
+      relatedVehicles: [
+        { id: 'peer-dto', parentModel: 'XUV400', brandName: 'Mahindra' }
+      ],
+      relatedArticles: [{ id: 'art-dto', title: 'From DTO' }],
+      entityGraph: { nodes: [], edges: [] }
+    });
+    expect(model.relatedVehicles.map((v) => v.id)).toEqual(['peer-dto']);
+    expect(model.relatedArticles[0].href).toBe('/articles/art-dto');
   });
 });

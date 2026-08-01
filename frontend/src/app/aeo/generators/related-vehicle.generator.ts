@@ -1,3 +1,5 @@
+import { compareHref, modelHref } from '../../entity/entity-href';
+import { entitySlugify } from '../../entity/entity-slug';
 import { AeoRelatedVehicle, AeoRelatedVehicleInput } from '../aeo.types';
 
 const MAX_RELATED = 6;
@@ -5,6 +7,7 @@ const MAX_RELATED = 6;
 /**
  * Map pre-fetched related vehicle DTOs → Aeo related links.
  * Pure: does not call RecommendationService / HTTP.
+ * Hrefs via entity-href SSOT (Phase 7.3 M1).
  */
 export function generateRelatedVehicles(
   related: AeoRelatedVehicleInput[] | null | undefined,
@@ -22,8 +25,10 @@ export function generateRelatedVehicles(
 
     // Canonical vehicle URLs use slugify(category.name), not raw brandSlug/categoryId
     // (e.g. brandSlug "tata" → route "/ev/tata-motors/..."). Prefer brandName.
-    const brandSlug = slugify(item.brandName || item.brandSlug || item.categoryId || '');
-    const modelSlug = slugify(item.modelSlug || item.parentModel || '');
+    const brandSlug = entitySlugify(item.brandName || item.brandSlug || item.categoryId || '');
+    const modelSlug = entitySlugify(
+      item.parentModel || item.modelSlug || item.name || ''
+    );
     if (
       opts?.excludeBrandSlug &&
       opts?.excludeModelSlug &&
@@ -41,27 +46,19 @@ export function generateRelatedVehicles(
       [item.parentModel, item.variantName].filter(Boolean).join(' ') ||
       item.name ||
       'Related EV';
-    // Only emit /ev/ when we have a brandName-backed slug (or both slugs look usable).
+    const evHref = modelHref({
+      brandName: item.brandName,
+      brandSlug: item.brandSlug || item.categoryId,
+      parentModel: item.parentModel,
+      modelSlug: item.modelSlug,
+      name: item.name
+    });
+    // Only emit /ev/ when entity-href can build a brand+model path.
     // Otherwise fall back to a valid compare deep-link — never invent a placeholder path.
-    const canLinkEv = !!(item.brandName?.trim() || item.brandSlug?.trim()) && !!brandSlug && !!modelSlug;
-    const href = canLinkEv
-      ? `/ev/${brandSlug}/${modelSlug}`
-      : `/compare?ids=${encodeURIComponent(id)}`;
+    const href = evHref || compareHref([id]);
 
     out.push({ id, name: name.trim(), href });
   }
 
   return out;
-}
-
-function slugify(text: string): string {
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
 }

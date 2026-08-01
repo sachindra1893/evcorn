@@ -129,11 +129,25 @@ export interface Article {
   paragraphs: string[];
   blocks?: ArticleBlock[]; // NEW dynamic blocks array
   active: boolean;
+  publishAt?: string;
   createdAt?: string;
   updatedAt?: string;
-  author?: { name?: string; role?: string } | string;
+  author?:
+    | {
+        name?: string;
+        role?: string;
+        bio?: string;
+        imageUrl?: string;
+        socialLinks?: { twitter?: string; linkedin?: string };
+      }
+    | string;
   seo?: SEO;
   relationships?: {
+    /** Schema / DTO SSOT (Phase 7.3) */
+    relatedArticleIds?: string[];
+    relatedVehicleIds?: string[];
+    relatedBrandIds?: string[];
+    /** @deprecated Historical short names — accepted by entity-normalize */
     relatedArticles?: string[];
     relatedVehicles?: string[];
     relatedBrands?: string[];

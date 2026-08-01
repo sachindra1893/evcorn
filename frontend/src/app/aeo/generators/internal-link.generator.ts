@@ -1,3 +1,12 @@
+import {
+  articlesIndexHref,
+  brandBrowseHref,
+  compareHref,
+  energyHref,
+  evsIndexHref,
+  faqsHref,
+  modelHref
+} from '../../entity/entity-href';
 import { AeoInternalLink, AeoRelatedArticle, AeoRelatedVehicle } from '../aeo.types';
 
 const MAX_LINKS = 8;
@@ -23,6 +32,7 @@ export interface InternalLinkContext {
 /**
  * Site-internal navigation hints from entities already on the page.
  * Related slate is optional; prefer dedicated Related* sections over duplicating here.
+ * Hubs/model paths via entity-href SSOT (Phase 7.3 M1).
  */
 export function generateInternalLinks(ctx: InternalLinkContext): AeoInternalLink[] {
   const links: AeoInternalLink[] = [];
@@ -34,35 +44,42 @@ export function generateInternalLinks(ctx: InternalLinkContext): AeoInternalLink
     links.push({ label, href });
   };
 
-  if (ctx.brandSlug) {
+  if (ctx.brandSlug || ctx.brandName) {
+    // Prefer page-canonical brandSlug (already slugify(Category.name) on detail routes).
     push(
       ctx.brandName ? `All ${ctx.brandName} EVs` : 'Browse brand EVs',
-      `/evs?category=${encodeURIComponent(ctx.brandSlug)}`
+      brandBrowseHref(ctx.brandSlug || ctx.brandName)
     );
   } else {
-    push('Browse EVs', '/evs');
+    push('Browse EVs', evsIndexHref());
   }
 
-  if (ctx.includeModelOverview !== false && ctx.brandSlug && ctx.modelSlug) {
-    push(
-      ctx.modelName ? `${ctx.modelName} overview` : 'Model overview',
-      `/ev/${ctx.brandSlug}/${ctx.modelSlug}`
-    );
+  if (ctx.includeModelOverview !== false && (ctx.brandSlug || ctx.brandName) && ctx.modelSlug) {
+    // Path segments come from the route — pass as brandSlug/modelSlug so a short
+    // display brandName cannot rewrite `/ev/tata-motors/...` → `/ev/tata/...`.
+    const href = modelHref({
+      brandSlug: ctx.brandSlug || ctx.brandName,
+      modelSlug: ctx.modelSlug,
+      parentModel: ctx.modelName
+    });
+    if (href) {
+      push(ctx.modelName ? `${ctx.modelName} overview` : 'Model overview', href);
+    }
   }
 
   if (ctx.selectedVariantId) {
-    push('Compare this EV', `/compare?ids=${encodeURIComponent(ctx.selectedVariantId)}`);
+    push('Compare this EV', compareHref([ctx.selectedVariantId]));
   } else {
-    push('EV Compare', '/compare');
+    push('EV Compare', compareHref([]));
   }
 
-  push('EV articles & guides', '/articles');
+  push('EV articles & guides', articlesIndexHref());
 
   if (ctx.includeFaqs !== false) {
-    push('EVCorn FAQs', '/faqs');
+    push('EVCorn FAQs', faqsHref());
   }
   if (ctx.includeEnergy) {
-    push('Energy & charging', '/energy');
+    push('Energy & charging', energyHref());
   }
 
   for (const v of ctx.relatedVehicles || []) {

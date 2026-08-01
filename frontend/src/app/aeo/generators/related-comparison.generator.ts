@@ -1,3 +1,4 @@
+import { compareHref } from '../../entity/entity-href';
 import {
   AeoRelatedComparison,
   AeoRelatedVehicle,
@@ -37,7 +38,7 @@ export function generateRelatedComparisons(
     const peerName = peerDisplayName(peer);
     out.push({
       label: `${labelLeft} vs ${peerName}`,
-      href: `/compare?ids=${encodeURIComponent(selectedId)},${encodeURIComponent(peerId)}`
+      href: compareHref([selectedId, peerId])
     });
   }
 

@@ -1,3 +1,4 @@
+import { articleHref } from '../../entity/entity-href';
 import { AeoRelatedArticle, AeoRelatedArticleInput } from '../aeo.types';
 
 const MAX_RELATED = 4;
@@ -5,6 +6,7 @@ const MAX_RELATED = 4;
 /**
  * Map pre-fetched related article DTOs → Aeo related links.
  * Prefer resolved DTOs from relationships / RecommendationService at the wire layer.
+ * Hrefs via entity-href SSOT (Phase 7.3 M1).
  */
 export function generateRelatedArticles(
   related: AeoRelatedArticleInput[] | null | undefined,
@@ -22,7 +24,9 @@ export function generateRelatedArticles(
     if (!id || !title || id === opts?.excludeId) continue;
     if (seen.has(id)) continue;
     seen.add(id);
-    out.push({ id, title, href: `/articles/${id}` });
+    const href = articleHref(id);
+    if (!href) continue;
+    out.push({ id, title, href });
   }
 
   return out;

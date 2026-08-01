@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
+import { SITE_ORIGIN } from '../../services/seo.constants';
 import { BlogDataService, Article } from '../../services/blog-data.service';
 import { getOptimizedImageUrl } from '../../utils/image.utils';
 import { BlockRendererComponent } from '../../components/block-renderer/block-renderer.component';
@@ -19,6 +20,15 @@ import {
   formatLastUpdatedLabel,
   hasArticleAnswerChrome
 } from '../../aeo';
+import {
+  articleHref,
+  articlesIndexHref,
+  brandBrowseHref,
+  getOrBuildArticlePageGraph,
+  normalizeArticleRelationships,
+  primaryVehicleHintsFromGraph,
+  safeArticleSchemaFromGraph
+} from '../../entity';
 
 type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
 
@@ -892,23 +902,67 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   private refreshArticleAeo(article: Article): void {
     if (!this.aeoEnabled || !article.id) return;
     try {
+      const rel = normalizeArticleRelationships(article.relationships);
       const relatedIds = collectRelatedArticleIds(
-        article.relationships?.relatedArticles,
+        rel.relatedArticleIds,
         article.blocks as any
       );
-      const fromRelationships = relatedIds.length
-        ? this.articlesQueue
-            .filter((a) => a.id && relatedIds.includes(a.id))
-            .map((a) => ({ id: a.id, title: a.title, imageUrl: a.imageUrl, description: a.description }))
+      // Resolve editorial ids from already-loaded page data only (no catalog scan / extra API).
+      // Preserve editorial order; attach metadata from queue / recommendation slate when present.
+      const editorialArticles = relatedIds.length
+        ? relatedIds.map((id) => {
+            const hit = this.articlesQueue.find((a) => a.id === id);
+            return hit
+              ? {
+                  id: hit.id!,
+                  title: hit.title,
+                  imageUrl: hit.imageUrl,
+                  description: hit.description
+                }
+              : { id, title: 'Related article' };
+          })
         : [];
-      const relatedArticles =
-        fromRelationships.length > 0 ? fromRelationships : this.relatedArticlesForAeo;
+      const editorialVehicles = rel.relatedVehicleIds.length
+        ? rel.relatedVehicleIds.map((id) => {
+            const fromPage = (this.vehicles || []).find((v) => v?.id === id);
+            if (fromPage) return this.enrichRelatedVehiclesForAeo([fromPage])[0];
+            const fromRec = this.relatedVehiclesForAeo.find((v) => v?.id === id);
+            return fromRec || { id };
+          })
+        : [];
 
-      const relatedStamp = `${this.relatedVehiclesForAeo.length}:${relatedArticles.length}:${
-        this.relatedVehiclesForAeo[0]?.id || ''
+      const relatedArticles =
+        editorialArticles.length > 0 ? editorialArticles : this.relatedArticlesForAeo;
+      const relatedVehicles =
+        editorialVehicles.length > 0 ? editorialVehicles : this.relatedVehiclesForAeo;
+
+      const relatedStamp = `${relatedVehicles.length}:${relatedArticles.length}:${
+        relatedVehicles[0]?.id || ''
       }:${relatedArticles[0]?.id || ''}`;
       const stamp = `${article.id}|${article.updatedAt || article.createdAt || ''}|${relatedStamp}`;
       if (stamp === this.lastArticleAeoStamp[article.id] && this.aeoById[article.id]) return;
+
+      const entityGraph = getOrBuildArticlePageGraph({
+        article: {
+          id: article.id,
+          title: article.title,
+          description: article.description,
+          categoryId: article.categoryId,
+          imageUrl: article.imageUrl,
+          author: article.author,
+          seo: article.seo,
+          publishAt: article.publishAt,
+          updatedAt: article.updatedAt,
+          relationships: article.relationships,
+          blocks: article.blocks as any
+        },
+        brands: this.categoriesForAeo,
+        editorialVehicles: editorialVehicles.length ? editorialVehicles : undefined,
+        editorialArticles: editorialArticles.length ? editorialArticles : undefined,
+        recommendedVehicles: this.relatedVehiclesForAeo,
+        recommendedArticles: this.relatedArticlesForAeo
+      });
+      const hints = primaryVehicleHintsFromGraph(entityGraph);
 
       const model = buildArticleAeo({
         id: article.id,
@@ -920,8 +974,13 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
         updatedAt: article.updatedAt,
         createdAt: article.createdAt,
         author: article.author,
-        relatedVehicles: this.relatedVehiclesForAeo,
-        relatedArticles
+        brandSlug: hints.brandSlug,
+        modelSlug: hints.modelSlug,
+        relatedVehicles,
+        relatedArticles,
+        relatedVehicleIds: rel.relatedVehicleIds,
+        relatedArticleIds: relatedIds,
+        entityGraph
       });
       this.aeoById[article.id] = model;
       this.lastArticleAeoStamp[article.id] = stamp;
@@ -950,10 +1009,12 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
           );
           this.relatedArticlesForAeo = data.recommendedArticles || [];
           this.refreshArticleAeo(article);
+          // Related slate feeds Article about/mentions JSON-LD (Phase 7.3 M3).
+          this.updateSEOMetadata(article);
           this.cdr.detectChanges();
         },
         error: () => {
-          // Related failure → omit AEO related; keep answer chrome.
+          // Related failure → omit AEO related; keep answer chrome + Phase 7.1 schema.
         }
       });
   }
@@ -985,7 +1046,7 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   shareArticle(article: Article) {
     if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
 
-    const shareUrl = `https://evcorn.com/articles/${article.id}`;
+    const shareUrl = `${SITE_ORIGIN}${articleHref(article.id) || `/articles/${article.id}`}`;
     const shareData = {
       title: article.title,
       text: article.description || 'Check out this article on EVCorn!',
@@ -1188,7 +1249,7 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
           reload: true,
           config: function() {
             this.page.identifier = articleId;
-            this.page.url = `https://evcorn.com/articles/${articleId}`;
+            this.page.url = `${SITE_ORIGIN}${articleHref(articleId) || `/articles/${articleId}`}`;
             this.page.title = title;
             this.page.developer = 1;
           }
@@ -1197,7 +1258,7 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
         // Load disqus config and script for the first time
         (window as any).disqus_config = function() {
           this.page.identifier = articleId;
-          this.page.url = `https://evcorn.com/articles/${articleId}`;
+          this.page.url = `${SITE_ORIGIN}${articleHref(articleId) || `/articles/${articleId}`}`;
           this.page.title = title;
           this.page.developer = 1;
         };
@@ -1280,7 +1341,7 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
 
   updateSEOMetadata(art: Article | null) {
     if (art) {
-      const path = `/articles/${art.id}`;
+      const path = articleHref(art.id) || `/articles/${art.id}`;
       const imageUrl = art.imageUrl || undefined;
       const authorName =
         typeof art.author === 'string'
@@ -1304,26 +1365,87 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
         modifiedDate: art.updatedAt || art.createdAt
       });
 
-      this.schemaService.setSchema([
+      // Entity graph → schema inputs (optional). Failure → Phase 7.1 Article only.
+      const rel = normalizeArticleRelationships(art.relationships);
+      const editorialVehicles = rel.relatedVehicleIds.length
+        ? rel.relatedVehicleIds.map((id) => {
+            const fromPage = (this.vehicles || []).find((v) => v?.id === id);
+            if (fromPage) return this.enrichRelatedVehiclesForAeo([fromPage])[0];
+            const fromRec = this.relatedVehiclesForAeo.find((v) => v?.id === id);
+            return fromRec || { id };
+          })
+        : [];
+      const entityGraph = getOrBuildArticlePageGraph({
+        article: {
+          id: art.id,
+          title: art.title,
+          description: art.description,
+          categoryId: art.categoryId,
+          imageUrl: art.imageUrl,
+          author: art.author,
+          seo: art.seo,
+          publishAt: art.publishAt,
+          updatedAt: art.updatedAt,
+          relationships: art.relationships,
+          blocks: art.blocks as any
+        },
+        brands: this.categoriesForAeo,
+        editorialVehicles: editorialVehicles.length ? editorialVehicles : undefined,
+        recommendedVehicles: this.relatedVehiclesForAeo,
+        recommendedArticles: this.relatedArticlesForAeo
+      });
+      const graphSchema = safeArticleSchemaFromGraph(entityGraph, {
+        author: art.author
+      });
+
+      const articleSchema = this.schemaService.buildArticle({
+        headline: art.title,
+        description: metaDescription,
+        image: imageUrl,
+        datePublished: art.createdAt,
+        dateModified: art.updatedAt || art.createdAt,
+        author: graphSchema?.authorPerson || authorName,
+        path,
+        id: graphSchema?.path || path,
+        ...(graphSchema?.about ? { about: graphSchema.about } : {}),
+        ...(graphSchema?.mentions ? { mentions: graphSchema.mentions } : {})
+      });
+
+      const schemas: any[] = [
         this.schemaService.buildBreadcrumbs([
           { name: 'Home', url: '/' },
-          { name: 'Articles', url: '/articles' },
+          { name: 'Articles', url: articlesIndexHref() },
           { name: art.title, url: path }
         ]),
         this.schemaService.buildWebPage(metaTitle, metaDescription, path),
-        this.schemaService.buildArticle({
-          headline: art.title,
-          description: metaDescription,
-          image: imageUrl,
-          datePublished: art.createdAt,
-          dateModified: art.updatedAt || art.createdAt,
-          author: authorName,
-          path
-        }),
-        ...(imageUrl
-          ? [this.schemaService.buildImageObject(imageUrl, art.title, 1200, 630)]
-          : [])
-      ]);
+        articleSchema
+      ];
+
+      // Related Brand nodes (CMS name + browse @id only) — dedupe by path; no invented sameAs.
+      const brandAbout = (graphSchema?.about || []).filter((a) =>
+        a.types.includes('Brand')
+      );
+      const seenBrand = new Set<string>();
+      for (const b of brandAbout) {
+        if (!b.path || seenBrand.has(b.path)) continue;
+        seenBrand.add(b.path);
+        const cat = (this.categoriesForAeo || []).find(
+          (c) => brandBrowseHref(c.name) === b.path
+        );
+        schemas.push(
+          this.schemaService.buildBrand({
+            name: b.name || cat?.name || 'Brand',
+            path: b.path,
+            identifier: cat?.id
+          })
+        );
+      }
+
+      if (imageUrl) {
+        schemas.push(this.schemaService.buildImageObject(imageUrl, art.title, 1200, 630));
+      }
+
+      this.schemaService.setSchema(schemas);
     } else {
       this.seoService.updateSeo({
         title: 'Article Not Found',

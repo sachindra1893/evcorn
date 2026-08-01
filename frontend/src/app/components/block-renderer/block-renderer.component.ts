@@ -3,6 +3,7 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ArticleBlock } from '../../models/blocks.model';
+import { compareHref, modelHref } from '../../entity/entity-href';
 import { getOptimizedImageUrl } from '../../utils/image.utils';
 
 @Component({
@@ -691,20 +692,14 @@ export class BlockRendererComponent implements OnChanges {
       if (!v.model) continue;
       const modelRegex = new RegExp(`\\b(${v.brand ? v.brand + ' ' : ''}${v.model})\\b`, 'gi');
       if (!addedModels.has(v.model) && modelRegex.test(linkedText)) {
-        const brandSlug = (v.brandSlug || v.brand || '')
-          .toLowerCase()
-          .trim()
-          .replace(/[^\w\s-]/g, '')
-          .replace(/[\s_-]+/g, '-');
-        const modelSlug = (v.modelSlug || v.model || '')
-          .toLowerCase()
-          .trim()
-          .replace(/[^\w\s-]/g, '')
-          .replace(/[\s_-]+/g, '-');
+        // Canonical paths via entity-href SSOT (prefer brand display name).
         const href =
-          brandSlug && modelSlug
-            ? `/ev/${brandSlug}/${modelSlug}`
-            : `/compare?model=${encodeURIComponent(v.model)}`;
+          modelHref({
+            brandName: v.brand,
+            brandSlug: v.brandSlug,
+            parentModel: v.model,
+            modelSlug: v.modelSlug
+          }) || compareHref([]);
         linkedText = linkedText.replace(
           modelRegex,
           `<a href="${href}" style="color: #0088CC; text-decoration: underline; font-weight: 500;">$1</a>`

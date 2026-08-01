@@ -1,9 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { combineLatest } from 'rxjs';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { BlogDataService } from '../../services/blog-data.service';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
+import { articleHref, modelHref } from '../../entity';
 
 interface SearchItem {
   type: 'article' | 'company' | 'vehicle';
@@ -13,8 +15,8 @@ interface SearchItem {
   logo?: string;
   active?: boolean;
   createdAt?: string;
-  brandSlug?: string;
-  modelSlug?: string;
+  /** Canonical entity path from entity-href (vehicles / articles). */
+  href?: string;
 }
 
 @Component({
@@ -67,7 +69,7 @@ interface SearchItem {
             @for (item of filteredItems; track item.id) {
               @if (item.type === 'article') {
                 @if (item.active) {
-                  <a [routerLink]="['/articles', item.id]" class="result-card article-item">
+                  <a [routerLink]="item.href || ['/articles', item.id]" class="result-card article-item">
                     <div class="type-tag">Article</div>
                     <h2>{{ item.title }}</h2>
                     <p>{{ item.description }}</p>
@@ -80,7 +82,7 @@ interface SearchItem {
                   </div>
                 }
               } @else if (item.type === 'vehicle') {
-                <a [routerLink]="['/ev', item.brandSlug || 'ev', item.modelSlug || item.id]" class="result-card vehicle-item">
+                <a [routerLink]="item.href || '/evs'" class="result-card vehicle-item">
                   <div class="type-tag vehicle-tag" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">Electric Vehicle</div>
                   <h2>{{ item.title }}</h2>
                   <p>{{ item.description }}</p>
@@ -438,13 +440,14 @@ export class SearchComponent implements OnInit {
     // Load articles
     this.dataService.getArticlesLight().subscribe({
       next: (articles) => {
-        const articleSearchItems: SearchItem[] = articles.map(art => ({
+        const articleSearchItems: SearchItem[] = articles.map((art) => ({
           type: 'article' as const,
           id: art.id || '',
           title: art.title || '',
           description: art.description || '',
           active: art.active,
-          createdAt: art.createdAt
+          createdAt: art.createdAt,
+          href: articleHref(art.id) || (art.id ? `/articles/${art.id}` : undefined)
         }));
         
         const nonArticles = this.searchItems.filter(item => item.type !== 'article');
@@ -459,14 +462,29 @@ export class SearchComponent implements OnInit {
       }
     });
 
-    // Load vehicles for search
-    this.dataService.getVehiclesLight().subscribe({
-      next: (vehicles) => {
-        const vehicleSearchItems: SearchItem[] = vehicles.map(v => {
+    // Load vehicles + categories so entity-href can prefer brandName for /ev/ paths.
+    combineLatest([
+      this.dataService.getVehiclesLight(),
+      this.dataService.getCategories()
+    ]).subscribe({
+      next: ([vehicles, categories]) => {
+        const brandById = new Map(
+          (categories || []).map((c) => [String(c.id || '').trim(), c.name || ''])
+        );
+        const vehicleSearchItems: SearchItem[] = vehicles.map((v) => {
           const item = v as any;
           const range = item.performance?.rangeText || item.range || '';
           const price = item.pricing?.priceText || item.price || '';
           const descParts = [item.variantName, range, price].filter(Boolean);
+          const brandName = brandById.get(String(item.categoryId || '').trim()) || '';
+          const href =
+            modelHref({
+              brandName,
+              brandSlug: item.brandSlug || item.categoryId,
+              parentModel: item.parentModel,
+              name: item.name,
+              modelSlug: item.modelSlug
+            }) || '/evs';
 
           return {
             type: 'vehicle' as const,
@@ -474,12 +492,11 @@ export class SearchComponent implements OnInit {
             title: item.parentModel || item.name || '',
             description: descParts.join(' • '),
             active: true,
-            brandSlug: String(item.categoryId || '').toLowerCase().replace(/\s+/g, '-'),
-            modelSlug: String(item.parentModel || item.name || '').toLowerCase().replace(/\s+/g, '-')
+            href
           };
         });
 
-        const nonVehicles = this.searchItems.filter(item => item.type !== 'vehicle');
+        const nonVehicles = this.searchItems.filter((item) => item.type !== 'vehicle');
         this.searchItems = [...nonVehicles, ...vehicleSearchItems];
         this.vehiclesSettled = true;
         this.cdr.detectChanges();

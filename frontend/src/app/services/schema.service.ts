@@ -9,6 +9,30 @@ import {
 } from './seo.constants';
 import { toAbsoluteUrl, toCanonicalUrl } from './seo.utils';
 
+/** Thing ref accepted by enhanced Vehicle / Article builders (from entity-schema-bridge). */
+export interface SchemaThingRef {
+  path: string;
+  name?: string;
+  types: string[];
+}
+
+export interface SchemaBrandOptions {
+  name: string;
+  /** Relative brand browse path (`/evs?category=…`) for @id / url. */
+  path?: string;
+  logoUrl?: string;
+  /** Persisted Category id — real CMS data only. */
+  identifier?: string;
+}
+
+export interface SchemaAuthorPersonOptions {
+  name: string;
+  jobTitle?: string;
+  description?: string;
+  imageUrl?: string;
+  sameAs?: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -42,7 +66,13 @@ export class SchemaService {
 
   currentPageUrl(path?: string): string {
     const raw = path ?? this.router.url.split('?')[0];
-    return toCanonicalUrl(raw);
+    return this.absoluteId(raw);
+  }
+
+  /** Absolute @id / item URL; keeps intentional query (brand browse, compare). */
+  private absoluteId(pathOrUrl?: string): string {
+    const raw = (pathOrUrl || '/').trim() || '/';
+    return toCanonicalUrl(raw, { keepQuery: raw.includes('?') });
   }
 
   buildOrganization() {
@@ -120,7 +150,7 @@ export class SchemaService {
       '@type': 'ListItem',
       'position': index + 1,
       'name': item.name,
-      'item': toCanonicalUrl(item.url || '/')
+      'item': this.absoluteId(item.url || '/')
     }));
 
     return {
@@ -155,23 +185,122 @@ export class SchemaService {
     return schema;
   }
 
+  /**
+   * Brand node from real CMS Category data only.
+   * No invented sameAs / country / address fields.
+   */
+  buildBrand(brand: SchemaBrandOptions) {
+    const name = (brand.name || '').trim();
+    const path = (brand.path || '').trim();
+    const idUrl = path ? this.absoluteId(path) : undefined;
+
+    const schema: Record<string, unknown> = {
+      '@context': 'https://schema.org',
+      '@type': 'Brand',
+      'name': name || this.siteName
+    };
+    if (idUrl) {
+      schema['@id'] = idUrl;
+      schema['url'] = idUrl;
+    }
+    const identifier = (brand.identifier || '').trim();
+    if (identifier) {
+      schema['identifier'] = identifier;
+    }
+    const logoUrl = (brand.logoUrl || '').trim();
+    if (logoUrl && logoUrl !== 'N/A') {
+      schema['logo'] = this.buildImageObject(
+        logoUrl,
+        `${name || 'Brand'} logo`,
+        undefined,
+        undefined,
+        { standalone: false }
+      );
+    }
+    return schema;
+  }
+
+  private mapThingRefs(refs: SchemaThingRef[] | undefined): Record<string, unknown>[] | undefined {
+    if (!refs?.length) return undefined;
+    const out: Record<string, unknown>[] = [];
+    const seen = new Set<string>();
+    for (const ref of refs) {
+      const path = (ref.path || '').trim();
+      if (!path || seen.has(path)) continue;
+      seen.add(path);
+      const types = (ref.types || []).filter(Boolean);
+      const node: Record<string, unknown> = {
+        '@type': types.length === 1 ? types[0] : types.length > 1 ? types : 'Thing',
+        '@id': this.absoluteId(path)
+      };
+      const name = (ref.name || '').trim();
+      if (name) node['name'] = name;
+      out.push(node);
+    }
+    return out.length ? out : undefined;
+  }
+
+  private buildAuthorNode(
+    author?: string | SchemaAuthorPersonOptions
+  ): Record<string, unknown> {
+    if (author && typeof author === 'object' && author.name?.trim()) {
+      const person: Record<string, unknown> = {
+        '@type': 'Person',
+        'name': author.name.trim()
+      };
+      if (author.jobTitle?.trim()) person['jobTitle'] = author.jobTitle.trim();
+      if (author.description?.trim()) person['description'] = author.description.trim();
+      if (author.imageUrl?.trim()) {
+        person['image'] = this.buildImageObject(
+          author.imageUrl,
+          author.name.trim(),
+          undefined,
+          undefined,
+          { standalone: false }
+        );
+      }
+      const sameAs = (author.sameAs || [])
+        .map((u) => (u || '').trim())
+        .filter((u) => /^https?:\/\//i.test(u));
+      if (sameAs.length) person['sameAs'] = sameAs;
+      return person;
+    }
+
+    const name =
+      typeof author === 'string' && author.trim()
+        ? author.trim()
+        : this.siteName;
+    return {
+      '@type': 'Organization',
+      'name': name
+    };
+  }
+
   buildArticle(article: {
     headline: string,
     description?: string,
     image?: string,
     datePublished?: string,
     dateModified?: string,
-    author?: string,
-    path?: string
-  }) {
+    author?: string | SchemaAuthorPersonOptions,
+    path?: string,
+    /** Absolute or relative @id override (entity graph). */
+    id?: string,
+    about?: SchemaThingRef[],
+    mentions?: SchemaThingRef[]
+  }): Record<string, unknown> {
     const imageUrl = article.image
       ? toAbsoluteUrl(article.image)
       : this.logoUrl;
     const pageUrl = this.currentPageUrl(article.path);
+    const idUrl = article.id?.trim()
+      ? this.absoluteId(article.id)
+      : pageUrl;
 
-    return {
+    const schema: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'Article',
+      '@id': idUrl,
       'mainEntityOfPage': {
         '@type': 'WebPage',
         '@id': pageUrl
@@ -179,10 +308,7 @@ export class SchemaService {
       'headline': article.headline,
       'description': article.description,
       'image': this.buildImageObject(imageUrl, article.headline, 1200, 630, { standalone: false }),
-      'author': {
-        '@type': 'Organization',
-        'name': article.author || this.siteName
-      },
+      'author': this.buildAuthorNode(article.author),
       'publisher': {
         '@type': 'Organization',
         'name': this.siteName,
@@ -191,6 +317,13 @@ export class SchemaService {
       'datePublished': article.datePublished || new Date().toISOString(),
       'dateModified': article.dateModified || article.datePublished || new Date().toISOString()
     };
+
+    const about = this.mapThingRefs(article.about);
+    if (about) schema['about'] = about;
+    const mentions = this.mapThingRefs(article.mentions);
+    if (mentions) schema['mentions'] = mentions;
+
+    return schema;
   }
 
   buildProduct(product: {
@@ -202,19 +335,50 @@ export class SchemaService {
     batteryCapacity?: string,
     range?: string,
     chargingTime?: string,
-    path?: string
-  }) {
-    const schema: any = {
+    path?: string,
+    id?: string,
+    brandPath?: string,
+    brandLogoUrl?: string,
+    brandIdentifier?: string,
+    about?: SchemaThingRef[],
+    isRelatedTo?: SchemaThingRef[]
+  }): Record<string, unknown> {
+    const pageUrl = this.currentPageUrl(product.path);
+    const idUrl = product.id?.trim()
+      ? this.absoluteId(product.id)
+      : pageUrl;
+
+    const brandNode: Record<string, unknown> = {
+      '@type': 'Brand',
+      'name': product.brand
+    };
+    if (product.brandPath?.trim()) {
+      const brandId = this.absoluteId(product.brandPath);
+      brandNode['@id'] = brandId;
+      brandNode['url'] = brandId;
+    }
+    if (product.brandIdentifier?.trim()) {
+      brandNode['identifier'] = product.brandIdentifier.trim();
+    }
+    if (product.brandLogoUrl?.trim()) {
+      brandNode['logo'] = this.buildImageObject(
+        product.brandLogoUrl,
+        `${product.brand} logo`,
+        undefined,
+        undefined,
+        { standalone: false }
+      );
+    }
+
+    const schema: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'Product',
+      '@id': idUrl,
       'name': product.name,
-      'brand': {
-        '@type': 'Brand',
-        'name': product.brand
-      },
+      'brand': brandNode,
       'category': 'Vehicle > Electric Vehicle',
       'description': product.description || `Explore specifications and pricing for the ${product.name}.`,
-      'url': this.currentPageUrl(product.path)
+      'url': pageUrl
     };
 
     if (product.image) {
@@ -239,7 +403,7 @@ export class SchemaService {
           'priceCurrency': 'INR',
           'price': cleanPrice,
           'availability': 'https://schema.org/InStock',
-          'url': this.currentPageUrl(product.path)
+          'url': pageUrl
         };
       }
     }
@@ -271,12 +435,18 @@ export class SchemaService {
       schema['additionalProperty'] = additionalProperties;
     }
 
+    const about = this.mapThingRefs(product.about);
+    if (about) schema['about'] = about;
+    const isRelatedTo = this.mapThingRefs(product.isRelatedTo);
+    if (isRelatedTo) schema['isRelatedTo'] = isRelatedTo;
+
     return schema;
   }
 
   /**
    * Vehicle-appropriate schema: Product + Car additional type for EV model pages.
    * Scalable for thousands of model pages without hardcoding.
+   * Entity-graph enhancements (@id, brand ref, about, isRelatedTo) are additive.
    */
   buildVehicle(vehicle: {
     name: string,
@@ -288,23 +458,31 @@ export class SchemaService {
     range?: string,
     chargingTime?: string,
     path?: string,
-    bodyStyle?: string
-  }) {
+    bodyStyle?: string,
+    id?: string,
+    brandPath?: string,
+    brandLogoUrl?: string,
+    brandIdentifier?: string,
+    about?: SchemaThingRef[],
+    isRelatedTo?: SchemaThingRef[]
+  }): Record<string, unknown> {
     const product = this.buildProduct(vehicle);
-    return {
+    // Single Product+Car node — never emit a second Product/Car duplicate.
+    const schema: Record<string, unknown> = {
       ...product,
       '@type': ['Product', 'Car'],
       'vehicleConfiguration': 'Electric Vehicle',
-      'fuelType': 'Electric',
-      ...(vehicle.bodyStyle ? { bodyType: vehicle.bodyStyle } : {}),
-      ...(vehicle.range ? {
-        mileageFromOdometer: {
-          '@type': 'QuantitativeValue',
-          'value': vehicle.range,
-          'unitCode': 'KMT'
-        }
-      } : {})
+      'fuelType': 'Electric'
     };
+    if (vehicle.bodyStyle) schema['bodyType'] = vehicle.bodyStyle;
+    if (vehicle.range) {
+      schema['mileageFromOdometer'] = {
+        '@type': 'QuantitativeValue',
+        'value': vehicle.range,
+        'unitCode': 'KMT'
+      };
+    }
+    return schema;
   }
 
   buildFAQ(faqs: { question: string, answer: string }[]) {

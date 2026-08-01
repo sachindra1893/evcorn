@@ -9,6 +9,12 @@ const { toVehicleLightListDTO } = require('../dto/vehicle.dto');
 const { toArticleLightListDTO } = require('../dto/article.dto');
 const { publishedVehicleStatusFilter, escapeRegex } = require('../utils/apiQuery');
 const appCache = require('../utils/cache');
+const {
+  articleHref,
+  brandBrowseHref,
+  compareHref,
+  modelHref
+} = require('../utils/entity-href');
 
 const SEARCH_VEHICLE_PROJECTION = [
   'id', 'name', 'categoryId', 'parentModel', 'variantName',
@@ -68,35 +74,47 @@ class SearchService {
 
     const suggestions = [];
 
-    // 1. Brand / Category Matches
+    const categoryById = new Map(
+      (categories || []).map((c) => [String(c.id || '').trim(), c])
+    );
+
+    // 1. Brand / Category Matches — browse filter via entity-href (name slug, not raw id)
     categories.filter(c => (c.name || '').toLowerCase().includes(searchTerm)).forEach(c => {
       suggestions.push({
         type: 'brand',
         title: c.name,
         subtitle: 'Brand',
-        url: `/evs?category=${c.id}`
+        url: brandBrowseHref(c.name)
       });
     });
 
-    // 2. Vehicle Matches
+    // 2. Vehicle Matches — canonical /ev/{brandNameSlug}/{model} via entity-href
     vehicles.forEach(v => {
+      const cat = categoryById.get(String(v.categoryId || '').trim());
+      const href =
+        modelHref({
+          brandName: cat?.name,
+          brandSlug: v.categoryId,
+          parentModel: v.parentModel,
+          name: v.name
+        }) || (v.id ? compareHref([v.id]) : '/evs');
       suggestions.push({
         type: 'vehicle',
         title: v.name,
         subtitle: v.parentModel || 'Electric Vehicle',
-        url: `/ev/${v.categoryId}/${v.parentModel ? v.parentModel.toLowerCase().replace(/\s+/g, '-') : v.id}`,
+        url: href,
         imageUrl: v.imageUrl
       });
     });
 
-    // 3. Article Matches
+    // 3. Article Matches — id-stable path via entity-href
     articles.forEach(a => {
       const artId = a._id ? a._id.toString() : a.id;
       suggestions.push({
         type: 'article',
         title: a.title,
         subtitle: 'Article / Buying Guide',
-        url: `/articles/${artId}`,
+        url: articleHref(artId) || `/articles/${artId}`,
         imageUrl: a.imageUrl
       });
     });

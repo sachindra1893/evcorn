@@ -18,6 +18,32 @@
  * repository/service-level Mongo projection (see article.service.js) from
  * being silently defeated by this DTO re-deriving the bloat from `imageUrl`.
  */
+/**
+ * Normalize article relationships to schema SSOT `*Ids` keys.
+ * Accepts Mongo `*Ids` or historical short names (`relatedArticles`, …).
+ */
+function normalizeRelationships(raw) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const list = (primary, legacy) => {
+    const src = Array.isArray(primary) ? primary : Array.isArray(legacy) ? legacy : [];
+    const out = [];
+    const seen = new Set();
+    for (const id of src) {
+      if (typeof id !== 'string') continue;
+      const t = id.trim();
+      if (!t || seen.has(t)) continue;
+      seen.add(t);
+      out.push(t);
+    }
+    return out;
+  };
+  return {
+    relatedArticleIds: list(r.relatedArticleIds, r.relatedArticles),
+    relatedVehicleIds: list(r.relatedVehicleIds, r.relatedVehicles),
+    relatedBrandIds: list(r.relatedBrandIds, r.relatedBrands)
+  };
+}
+
 function toArticleDTO(doc) {
   if (!doc) return null;
 
@@ -41,7 +67,7 @@ function toArticleDTO(doc) {
     blocks: obj.blocks || [],
     author: obj.author || { name: 'EVCorn Editorial', role: 'Staff Writer' },
     seo: obj.seo || { metaTitle: obj.title || '', metaDescription: obj.description || '' },
-    relationships: obj.relationships || { relatedArticles: [], relatedVehicles: [], relatedBrands: [] },
+    relationships: normalizeRelationships(obj.relationships),
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt
   };

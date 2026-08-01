@@ -3,6 +3,8 @@
  * Generators fill sections independently; missing sources omit fields.
  */
 
+import type { EntityGraph } from '../entity/entity.types';
+
 export type IsoDateString = string;
 
 export interface AeoTocItem {
@@ -123,6 +125,8 @@ export interface AeoVehicleContext {
   /** Pre-fetched RecommendationService / relationship DTOs — wire layer only. */
   relatedVehicles?: AeoRelatedVehicleInput[];
   relatedArticles?: AeoRelatedArticleInput[];
+  /** Optional page Entity Graph (Phase 7.3 M2) — preferred for related and compare when present. */
+  entityGraph?: EntityGraph;
 }
 
 export interface AeoArticleContext {
@@ -145,6 +149,8 @@ export interface AeoArticleContext {
   /** Explicit relationship ids from article schema / related blocks (optional resolve upstream). */
   relatedVehicleIds?: string[];
   relatedArticleIds?: string[];
+  /** Optional page Entity Graph (Phase 7.3 M2) — preferred for related sections when present. */
+  entityGraph?: EntityGraph;
 }
 
 /** Minimal vehicle shape generators need (CarSpec-compatible). */

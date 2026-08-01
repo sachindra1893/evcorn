@@ -1,3 +1,4 @@
+import { aeoRelatedFromGraph } from '../entity/entity-graph';
 import { getCachedAeo, setCachedAeo } from './aeo-cache';
 import {
   AeoArticleContext,
@@ -66,30 +67,48 @@ function cloneModel(model: AeoPageModel): AeoPageModel {
 /**
  * Related / comparison / internal-link sections depend on async wire inputs.
  * Re-apply them on every build so cache hits (entityId+updatedAt) stay correct.
+ * Prefer Entity Graph edges (hrefs via entity-href). On empty/throw → DTO generators.
  */
 function applyVehicleRelatedSections(model: AeoPageModel, ctx: AeoVehicleContext): void {
-  model.relatedVehicles = safeRun(
+  const fromGraph = safeRun(
     () =>
-      generateRelatedVehicles(ctx.relatedVehicles, {
-        excludeId: ctx.selectedVariant?.id,
-        excludeBrandSlug: ctx.brandSlug,
-        excludeModelSlug: ctx.modelSlug
+      aeoRelatedFromGraph(ctx.entityGraph, {
+        selectedVariantId: ctx.selectedVariant?.id,
+        labelLeft: [ctx.brandName, ctx.modelName].filter(Boolean).join(' ') || undefined
       }),
-    []
+    null
   );
-  model.relatedArticles = safeRun(
-    () => generateRelatedArticles(ctx.relatedArticles),
-    []
-  );
-  model.relatedComparisons = safeRun(
-    () =>
-      generateRelatedComparisons(ctx.selectedVariant, ctx.relatedVehicles || model.relatedVehicles, {
-        brandName: ctx.brandName,
-        modelName: ctx.modelName
-      }),
-    []
-  );
+
+  if (fromGraph) {
+    model.relatedVehicles = fromGraph.relatedVehicles;
+    model.relatedArticles = fromGraph.relatedArticles;
+    model.relatedComparisons = fromGraph.relatedComparisons;
+  } else {
+    model.relatedVehicles = safeRun(
+      () =>
+        generateRelatedVehicles(ctx.relatedVehicles, {
+          excludeId: ctx.selectedVariant?.id,
+          excludeBrandSlug: ctx.brandSlug,
+          excludeModelSlug: ctx.modelSlug
+        }),
+      []
+    );
+    model.relatedArticles = safeRun(
+      () => generateRelatedArticles(ctx.relatedArticles),
+      []
+    );
+    model.relatedComparisons = safeRun(
+      () =>
+        generateRelatedComparisons(ctx.selectedVariant, ctx.relatedVehicles || model.relatedVehicles, {
+          brandName: ctx.brandName,
+          modelName: ctx.modelName
+        }),
+      []
+    );
+  }
+
   // Core hub links only — Related* sections own vehicle/article deep-links (no dup UI).
+  // Paths via entity-href SSOT inside the generator.
   model.internalLinks = safeRun(
     () =>
       generateInternalLinks({
@@ -106,18 +125,31 @@ function applyVehicleRelatedSections(model: AeoPageModel, ctx: AeoVehicleContext
 }
 
 function applyArticleRelatedSections(model: AeoPageModel, ctx: AeoArticleContext): void {
-  model.relatedVehicles = safeRun(
-    () => generateRelatedVehicles(ctx.relatedVehicles),
-    []
-  );
-  model.relatedArticles = safeRun(
-    () => generateRelatedArticles(ctx.relatedArticles, { excludeId: ctx.id }),
-    []
-  );
-  model.relatedComparisons = safeRun(
-    () => generateRelatedComparisons(undefined, ctx.relatedVehicles),
-    []
-  );
+  const fromGraph = safeRun(() => aeoRelatedFromGraph(ctx.entityGraph), null);
+
+  if (fromGraph) {
+    model.relatedVehicles = fromGraph.relatedVehicles;
+    model.relatedArticles = fromGraph.relatedArticles.filter((a) => a.id !== ctx.id);
+    // Preserve Phase 7.2 article compare deep-links from the related vehicle slate.
+    model.relatedComparisons = safeRun(
+      () => generateRelatedComparisons(undefined, model.relatedVehicles),
+      []
+    );
+  } else {
+    model.relatedVehicles = safeRun(
+      () => generateRelatedVehicles(ctx.relatedVehicles),
+      []
+    );
+    model.relatedArticles = safeRun(
+      () => generateRelatedArticles(ctx.relatedArticles, { excludeId: ctx.id }),
+      []
+    );
+    model.relatedComparisons = safeRun(
+      () => generateRelatedComparisons(undefined, ctx.relatedVehicles),
+      []
+    );
+  }
+
   model.internalLinks = safeRun(
     () =>
       generateInternalLinks({

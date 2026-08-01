@@ -93,6 +93,148 @@ test.describe('SEO validation (critical routes)', () => {
     expect(blob.includes('"Car"') || blob.includes('Product')).toBeTruthy();
   });
 
+  test('vehicle detail entity linking: Brand @id, Product @id, no duplicate Product/FAQ', async ({
+    page
+  }) => {
+    await expectHttpOk(page, '/ev/tata-motors/nexon-ev');
+    await waitForSettledContent(page, 'h1');
+    await page.waitForTimeout(1500);
+
+    const parsed = await page.evaluate(() => {
+      const scripts = Array.from(
+        document.querySelectorAll('script[type="application/ld+json"]')
+      );
+      return scripts.map((s) => {
+        try {
+          return JSON.parse(s.textContent || '{}');
+        } catch {
+          return null;
+        }
+      }).filter(Boolean) as Record<string, unknown>[];
+    });
+
+    const typeOf = (node: Record<string, unknown>): string[] => {
+      const t = node['@type'];
+      if (Array.isArray(t)) return t.map(String);
+      return t ? [String(t)] : [];
+    };
+
+    const products = parsed.filter((n) => {
+      const t = typeOf(n);
+      return t.includes('Product') || t.includes('Car');
+    });
+    const brands = parsed.filter((n) => typeOf(n).includes('Brand'));
+    const faqs = parsed.filter((n) => typeOf(n).includes('FAQPage'));
+    const articles = parsed.filter((n) => typeOf(n).includes('Article'));
+    const breadcrumbs = parsed.filter((n) => typeOf(n).includes('BreadcrumbList'));
+
+    // Existing Phase 7.1 schemas present; exactly one Product/Car (no dups).
+    expect(products.length).toBe(1);
+    expect(faqs.length).toBeLessThanOrEqual(1);
+    expect(articles.length).toBe(0);
+    expect(breadcrumbs.length).toBeGreaterThanOrEqual(1);
+
+    const product = products[0];
+    expect(String(product['@id'] || '')).toMatch(/\/ev\/tata-motors\/nexon-ev/i);
+
+    // Brand entity linking when graph available (CMS brand on page).
+    if (brands.length > 0) {
+      expect(brands.length).toBe(1);
+      const brand = brands[0];
+      expect(brand['name']).toBeTruthy();
+      expect(String(brand['@id'] || '')).toMatch(/evs\?category=/i);
+      expect(brand['sameAs']).toBeUndefined();
+      expect(brand['address']).toBeUndefined();
+    }
+
+    // Caps: isRelatedTo vehicles ≤6, articles ≤4 when present.
+    const related = product['isRelatedTo'];
+    if (Array.isArray(related)) {
+      expect(related.length).toBeGreaterThan(0);
+      const vehicleRelated = related.filter((r: any) => {
+        const t = Array.isArray(r['@type']) ? r['@type'] : [r['@type']];
+        return t.includes('Product') || t.includes('Car');
+      });
+      const articleRelated = related.filter((r: any) => {
+        const t = Array.isArray(r['@type']) ? r['@type'] : [r['@type']];
+        return t.includes('Article');
+      });
+      expect(vehicleRelated.length).toBeLessThanOrEqual(6);
+      expect(articleRelated.length).toBeLessThanOrEqual(4);
+      // No empty relationship arrays serialized as empty
+      expect(related.length).toBeGreaterThan(0);
+    }
+
+    // Breadcrumb brand crumb keeps entity-href category query when present.
+    const crumb = breadcrumbs[0];
+    const items = (crumb['itemListElement'] as any[]) || [];
+    const brandCrumb = items.find(
+      (i) => typeof i?.item === 'string' && i.item.includes('category=')
+    );
+    if (brandCrumb) {
+      expect(brandCrumb.item).toMatch(/evs\?category=/i);
+    }
+  });
+
+  test('article detail entity linking: Article @id, no duplicate Article/FAQ', async ({
+    page
+  }) => {
+    await expectHttpOk(page, '/articles/local-art-windsor-vs-punch');
+    await waitForSettledContent(page, 'h1');
+    await page.waitForTimeout(1500);
+
+    const parsed = await page.evaluate(() => {
+      const scripts = Array.from(
+        document.querySelectorAll('script[type="application/ld+json"]')
+      );
+      return scripts.map((s) => {
+        try {
+          return JSON.parse(s.textContent || '{}');
+        } catch {
+          return null;
+        }
+      }).filter(Boolean) as Record<string, unknown>[];
+    });
+
+    const typeOf = (node: Record<string, unknown>): string[] => {
+      const t = node['@type'];
+      if (Array.isArray(t)) return t.map(String);
+      return t ? [String(t)] : [];
+    };
+
+    const articles = parsed.filter((n) => typeOf(n).includes('Article'));
+    const faqs = parsed.filter((n) => typeOf(n).includes('FAQPage'));
+    const products = parsed.filter((n) => {
+      const t = typeOf(n);
+      return t.includes('Product') || t.includes('Car');
+    });
+
+    // Exactly one Article schema for the page (no dups); FAQ ≤1.
+    expect(articles.length).toBe(1);
+    expect(faqs.length).toBeLessThanOrEqual(1);
+    // Article page must not emit a standalone Product/Car duplicate of related vehicles.
+    expect(products.length).toBe(0);
+
+    const article = articles[0];
+    expect(String(article['@id'] || '')).toMatch(/\/articles\//i);
+
+    const about = article['about'];
+    if (Array.isArray(about)) {
+      expect(about.length).toBeGreaterThan(0);
+      const vehicleAbout = about.filter((r: any) => {
+        const t = Array.isArray(r['@type']) ? r['@type'] : [r['@type']];
+        return t.includes('Product') || t.includes('Car');
+      });
+      expect(vehicleAbout.length).toBeLessThanOrEqual(6);
+    }
+
+    const mentions = article['mentions'];
+    if (Array.isArray(mentions)) {
+      expect(mentions.length).toBeLessThanOrEqual(4);
+      expect(mentions.length).toBeGreaterThan(0);
+    }
+  });
+
   test('search with query is noindex', async ({ page }) => {
     await page.goto('/search?q=nexon', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
