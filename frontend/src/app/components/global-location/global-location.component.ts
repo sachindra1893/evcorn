@@ -12,8 +12,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
   template: `
     <!-- The Pill (Global Context) -->
     <div class="premium-pill" (click)="openModal()" *ngIf="context === 'global'">
-      <span class="pill-icon">🌐</span>
-      <span class="pill-text">{{ currentLocation?.displayName || 'Location' }}</span>
+      <span class="pill-icon">📍</span>
+      <span class="pill-text">{{ isDetecting ? 'Detecting location...' : (currentLocation?.displayName || 'Location') }}</span>
       <span class="pill-chevron">▼</span>
     </div>
 
@@ -21,7 +21,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     <div class="override-badge" (click)="openModal()" *ngIf="context !== 'global'">
       <div class="badge-content">
         <span class="lbl">{{ isUsingGlobal ? '🌐 Using Global Location' : '📍 Using Local Override' }}</span>
-        <span class="val">{{ currentLocation?.displayName || 'Location' }}</span>
+        <span class="val">{{ isDetecting ? 'Detecting location...' : (currentLocation?.displayName || 'Location') }}</span>
       </div>
       <span class="change-btn">Change</span>
     </div>
@@ -594,6 +594,7 @@ export class GlobalLocationComponent implements OnInit, OnDestroy, AfterViewChec
   
   currentLocation: LocationData | null = null;
   isUsingGlobal: boolean = true;
+  isDetecting: boolean = true;
   
   isModalOpen = false;
   setAsGlobal = false;
@@ -614,11 +615,16 @@ export class GlobalLocationComponent implements OnInit, OnDestroy, AfterViewChec
 
   private searchSubject = new Subject<string>();
   private sub: Subscription | null = null;
+  private detectingSub: Subscription | null = null;
   private focusTimeout: any;
 
   constructor(private locationService: LocationService) {}
 
   ngOnInit() {
+    this.detectingSub = this.locationService.isDetecting$().subscribe(d => {
+      this.isDetecting = d;
+    });
+
     this.sub = this.locationService.getLocationForModule(this.context).subscribe(loc => {
       this.currentLocation = loc;
       // Determine if using global or local based on context and storage
@@ -648,6 +654,7 @@ export class GlobalLocationComponent implements OnInit, OnDestroy, AfterViewChec
 
   ngOnDestroy() {
     if (this.sub) this.sub.unsubscribe();
+    if (this.detectingSub) this.detectingSub.unsubscribe();
     if (this.focusTimeout) clearTimeout(this.focusTimeout);
   }
 
