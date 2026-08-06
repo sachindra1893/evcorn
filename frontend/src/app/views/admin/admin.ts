@@ -353,20 +353,35 @@ import { firstValueFrom } from 'rxjs';
                 </div>
                 <div class="admin-card-body" *ngIf="adminSecPerformance">
                   <div class="form-group">
-                    <label for="acceleration">Acceleration (0-100 km/h) (e.g. 3.8 Seconds)</label>
-                    <input type="text" id="acceleration" name="acceleration" [(ngModel)]="vehAcceleration">
+                    <label for="acceleration">Acceleration (0-100 km/h)</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" step="0.1" min="0" id="acceleration" name="acceleration" [(ngModel)]="vehAccelerationNum" placeholder="e.g. 3.8" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">Sec</span>
+                    </div>
                   </div>
                   <div class="form-group">
-                    <label for="maxPower">Max Power (e.g. 150 kW / 201 bhp)</label>
-                    <input type="text" id="maxPower" name="maxPower" [(ngModel)]="vehMaxPower">
+                    <label for="maxPower">Max Power</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" step="1" min="0" id="maxPower" name="maxPower" [(ngModel)]="vehMaxPowerNum" placeholder="e.g. 201" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">bhp</span>
+                    </div>
                   </div>
                   <div class="form-group">
-                    <label for="torque">Peak Torque (e.g. 310 Nm)</label>
-                    <input type="text" id="torque" name="torque" [(ngModel)]="vehTorque">
+                    <label for="torque">Peak Torque</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" step="1" min="0" id="torque" name="torque" [(ngModel)]="vehTorqueNum" placeholder="e.g. 310" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">Nm</span>
+                    </div>
                   </div>
                   <div class="form-group">
-                    <label for="drivetrain">Drivetrain Type (e.g. Dual Motor AWD / RWD / FWD)</label>
-                    <input type="text" id="drivetrain" name="drivetrain" [(ngModel)]="vehDrivetrain">
+                    <label for="drivetrain">Drivetrain Type</label>
+                    <select id="drivetrain" name="drivetrain" [(ngModel)]="vehDrivetrain">
+                      <option value="FWD">FWD (Front-Wheel Drive)</option>
+                      <option value="RWD">RWD (Rear-Wheel Drive)</option>
+                      <option value="AWD">AWD (All-Wheel Drive)</option>
+                      <option value="FWD/AWD">FWD/AWD</option>
+                      <option value="N/A">N/A</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -379,9 +394,9 @@ import { firstValueFrom } from 'rxjs';
                 </div>
                 <div class="admin-card-body" *ngIf="adminSecBattery">
                   <div class="form-group">
-                    <label for="battery">Battery Capacity (kWh)</label>
+                    <label for="battery">Battery Capacity</label>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                      <input type="number" step="0.1" min="0" id="battery" name="battery" [(ngModel)]="vehBatteryCapacityNum" placeholder="e.g. 82" style="flex: 1;">
+                      <input type="number" step="0.1" min="0" id="battery" name="battery" [(ngModel)]="vehBatteryCapacityNum" placeholder="e.g. 82.5" style="flex: 1;">
                       <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kWh</span>
                     </div>
                   </div>
@@ -400,12 +415,38 @@ import { firstValueFrom } from 'rxjs';
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="acCharging">AC Charging Speed / Time (e.g. 11 kW / 0-100% in 8h)</label>
-                    <input type="text" id="acCharging" name="acCharging" [(ngModel)]="vehAcCharging">
+                    <label for="batteryChemistry">Battery Chemistry</label>
+                    <select id="batteryChemistry" name="batteryChemistry" [(ngModel)]="vehBatteryChemistry">
+                      <option value="LFP">LFP (Lithium Iron Phosphate)</option>
+                      <option value="NMC">NMC (Nickel Manganese Cobalt)</option>
+                      <option value="Sodium-Ion">Sodium-Ion</option>
+                      <option value="Solid-State">Solid-State</option>
+                      <option value="Unknown">Unknown / Standard</option>
+                    </select>
                   </div>
                   <div class="form-group">
-                    <label for="dcCharging">DC Fast Charging Speed / Time (e.g. 150 kW / 10-80% in 30m)</label>
-                    <input type="text" id="dcCharging" name="dcCharging" [(ngModel)]="vehDcCharging">
+                    <label for="portType">Charging Port Type</label>
+                    <select id="portType" name="portType" [(ngModel)]="vehPortType">
+                      <option value="CCS2">CCS2 (Standard India/EU)</option>
+                      <option value="Type 2">Type 2 AC</option>
+                      <option value="CHAdeMO">CHAdeMO</option>
+                      <option value="GB/T">GB/T</option>
+                      <option value="NACS">NACS (Tesla Supercharger)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="acCharging">AC Charging Speed</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" step="0.1" min="0" id="acCharging" name="acCharging" [(ngModel)]="vehAcChargingKW" placeholder="e.g. 11" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kW</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="dcCharging">DC Fast Charging Speed</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" step="1" min="0" id="dcCharging" name="dcCharging" [(ngModel)]="vehDcChargingKW" placeholder="e.g. 150" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kW</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -418,16 +459,39 @@ import { firstValueFrom } from 'rxjs';
                 </div>
                 <div class="admin-card-body" *ngIf="adminSecSafety">
                   <div class="form-group">
-                    <label for="safety">NCAP Safety Rating (e.g. 5-Star Euro NCAP)</label>
-                    <input type="text" id="safety" name="safety" [(ngModel)]="vehSafetyRating">
+                    <label for="safety">NCAP Safety Rating</label>
+                    <select id="safety" name="safety" [(ngModel)]="vehSafetyRating">
+                      <option value="5-Star Euro NCAP">5-Star Euro NCAP</option>
+                      <option value="5-Star Bharat NCAP">5-Star Bharat NCAP</option>
+                      <option value="5-Star Global NCAP">5-Star Global NCAP</option>
+                      <option value="5-Star ANCAP">5-Star ANCAP</option>
+                      <option value="4-Star Euro NCAP">4-Star Euro NCAP</option>
+                      <option value="4-Star Bharat NCAP">4-Star Bharat NCAP</option>
+                      <option value="3-Star Euro NCAP">3-Star Euro NCAP</option>
+                      <option value="Not Tested / N/A">Not Tested / N/A</option>
+                    </select>
                   </div>
                   <div class="form-group">
-                    <label for="adas">ADAS Level (e.g. Level 2 / Yes / No)</label>
-                    <input type="text" id="adas" name="adas" [(ngModel)]="vehAdas">
+                    <label for="adas">ADAS Level</label>
+                    <select id="adas" name="adas" [(ngModel)]="vehAdas">
+                      <option value="Level 2">Level 2</option>
+                      <option value="Level 2+">Level 2+</option>
+                      <option value="Level 1">Level 1</option>
+                      <option value="Level 3">Level 3</option>
+                      <option value="None">None</option>
+                    </select>
                   </div>
                   <div class="form-group">
-                    <label for="airbags">Number of Airbags (e.g. 6 Airbags)</label>
-                    <input type="text" id="airbags" name="airbags" [(ngModel)]="vehAirbags">
+                    <label for="airbags">Number of Airbags</label>
+                    <select id="airbags" name="airbags" [(ngModel)]="vehAirbags">
+                      <option value="6 Airbags">6 Airbags</option>
+                      <option value="7 Airbags">7 Airbags</option>
+                      <option value="8 Airbags">8 Airbags</option>
+                      <option value="9+ Airbags">9+ Airbags</option>
+                      <option value="4 Airbags">4 Airbags</option>
+                      <option value="2 Airbags">2 Airbags</option>
+                      <option value="0 Airbags">0 Airbags</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -440,7 +504,7 @@ import { firstValueFrom } from 'rxjs';
                 </div>
                 <div class="admin-card-body" *ngIf="adminSecDimensions">
                   <div class="form-group">
-                    <label>Dimensions (Length × Width × Height in mm)</label>
+                    <label>Dimensions (Length × Width × Height)</label>
                     <div style="display: flex; gap: 6px; align-items: center;">
                       <input type="number" min="0" id="dimLength" name="dimLength" [(ngModel)]="vehLengthMM" placeholder="Length (mm)" style="flex: 1;">
                       <span style="color: #94A3B8; font-weight: 700;">×</span>
@@ -451,28 +515,44 @@ import { firstValueFrom } from 'rxjs';
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="wheelbase">Wheelbase (e.g. 2654 mm)</label>
-                    <input type="text" id="wheelbase" name="wheelbase" [(ngModel)]="vehWheelbase">
-                  </div>
-                  <div class="form-group">
-                    <label for="ground">Ground Clearance (e.g. 138 mm)</label>
-                    <input type="text" id="ground" name="ground" [(ngModel)]="vehGroundClearance">
-                  </div>
-                  <div class="form-group">
-                    <label for="boot">Boot / Frunk Space (e.g. 649 L / 88 L)</label>
-                    <input type="text" id="boot" name="boot" [(ngModel)]="vehBootFrunkSpace">
-                  </div>
-                  <div class="form-group">
-                    <label for="kerbWeight">Kerb Weight (kg)</label>
+                    <label for="wheelbase">Wheelbase</label>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                      <input type="number" min="0" id="kerbWeight" name="kerbWeight" [(ngModel)]="vehKerbWeightNum" placeholder="e.g. 1500" style="flex: 1;">
+                      <input type="number" min="0" id="wheelbase" name="wheelbase" [(ngModel)]="vehWheelbaseNum" placeholder="e.g. 2654" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">mm</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="ground">Ground Clearance</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" min="0" id="ground" name="ground" [(ngModel)]="vehGroundClearanceNum" placeholder="e.g. 182" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">mm</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="bootSpace">Boot Space</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" min="0" id="bootSpace" name="bootSpace" [(ngModel)]="vehBootSpaceNum" placeholder="e.g. 350" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">L</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="frunkSpace">Frunk Space</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" min="0" id="frunkSpace" name="frunkSpace" [(ngModel)]="vehFrunkSpaceNum" placeholder="e.g. 50" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">L</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="kerbWeight">Kerb Weight</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" min="0" id="kerbWeight" name="kerbWeight" [(ngModel)]="vehKerbWeightNum" placeholder="e.g. 1910" style="flex: 1;">
                       <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kg</span>
                     </div>
                   </div>
                   <div class="form-group">
-                    <label for="grossWeight">Gross Weight (kg)</label>
+                    <label for="grossWeight">Gross Weight</label>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                      <input type="number" min="0" id="grossWeight" name="grossWeight" [(ngModel)]="vehGrossWeightNum" placeholder="e.g. 1950" style="flex: 1;">
+                      <input type="number" min="0" id="grossWeight" name="grossWeight" [(ngModel)]="vehGrossWeightNum" placeholder="e.g. 2350" style="flex: 1;">
                       <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kg</span>
                     </div>
                   </div>
@@ -491,8 +571,14 @@ import { firstValueFrom } from 'rxjs';
                 </div>
                 <div class="admin-card-body" *ngIf="adminSecEntertainment">
                   <div class="form-group">
-                    <label for="seating">Seating Capacity (e.g. 5 Seats)</label>
-                    <input type="text" id="seating" name="seating" [(ngModel)]="vehSeating">
+                    <label for="seating">Seating Capacity</label>
+                    <select id="seating" name="seating" [(ngModel)]="vehSeating">
+                      <option value="5 Seats">5 Seats</option>
+                      <option value="4 Seats">4 Seats</option>
+                      <option value="6 Seats">6 Seats</option>
+                      <option value="7 Seats">7 Seats</option>
+                      <option value="2 Seats">2 Seats</option>
+                    </select>
                   </div>
                   <div class="form-group">
                     <label for="screen">Screen Display (e.g. 15.6-inch Touchscreen)</label>
@@ -921,15 +1007,26 @@ export class AdminComponent implements OnInit {
   vehKeyHighlights = '';
   isBorrowedImage = false;
 
-  // Structured Unit Input State (Phase A)
+  // Structured Unit Input State (Release 3)
   vehBatteryCapacityNum: number | null = null;
   vehRangeNum: number | null = null;
   vehRangeStandard = 'MIDC';
+  vehBatteryChemistry = 'LFP';
+  vehPortType = 'CCS2';
   vehLengthMM: number | null = null;
   vehWidthMM: number | null = null;
   vehHeightMM: number | null = null;
+  vehWheelbaseNum: number | null = null;
+  vehGroundClearanceNum: number | null = null;
+  vehBootSpaceNum: number | null = null;
+  vehFrunkSpaceNum: number | null = null;
   vehKerbWeightNum: number | null = null;
   vehGrossWeightNum: number | null = null;
+  vehAccelerationNum: number | null = null;
+  vehMaxPowerNum: number | null = null;
+  vehTorqueNum: number | null = null;
+  vehAcChargingKW: number | null = null;
+  vehDcChargingKW: number | null = null;
 
   // 3. Admin Form Section Accordions
   adminSecOverview = true;
@@ -1318,8 +1415,8 @@ export class AdminComponent implements OnInit {
     const normModel = this.normalizeModel(model);
     const fullName = `${normModel}::${variant.trim()}`;
 
-    const ac = this.vehAcCharging.trim() || 'N/A';
-    const dc = this.vehDcCharging.trim() || 'N/A';
+    const acText = this.vehAcChargingKW ? `${this.vehAcChargingKW} kW` : (this.vehAcCharging.trim() || 'N/A');
+    const dcText = this.vehDcChargingKW ? `${this.vehDcChargingKW} kW` : (this.vehDcCharging.trim() || 'N/A');
     const batText = this.vehBatteryCapacityNum ? `${this.vehBatteryCapacityNum} kWh` : (this.vehBatteryCapacity.trim() || 'N/A');
     const rangeText = this.vehRangeNum ? `${this.vehRangeNum} km (${this.vehRangeStandard || 'MIDC'})` : (this.vehRange.trim() || 'N/A');
     const highlights = this.vehKeyHighlights.trim() || 'N/A';
@@ -1329,7 +1426,7 @@ export class AdminComponent implements OnInit {
       finalGalleryUrls = '';
     }
 
-    const batEncoded = `${batText}||${ac}||${dc}||${finalGalleryUrls || 'N/A'}||${rangeText}||${highlights}||${this.vehBodyStyle || 'N/A'}`;
+    const batEncoded = `${batText}||${acText}||${dcText}||${finalGalleryUrls || 'N/A'}||${rangeText}||${highlights}||${this.vehBodyStyle || 'N/A'}`;
 
     let dimStr = 'N/A';
     if (this.vehLengthMM && this.vehWidthMM && this.vehHeightMM) {
@@ -1337,13 +1434,26 @@ export class AdminComponent implements OnInit {
     } else if (this.vehDimensions.trim()) {
       dimStr = this.vehDimensions.trim();
     }
-    const dimensionsEncoded = `${dimStr}||${this.vehWheelbase.trim() || 'N/A'}`;
+    const wheelbaseStr = this.vehWheelbaseNum ? `${this.vehWheelbaseNum} mm` : (this.vehWheelbase.trim() || 'N/A');
+    const dimensionsEncoded = `${dimStr}||${wheelbaseStr}`;
+
+    const groundStr = this.vehGroundClearanceNum ? `${this.vehGroundClearanceNum} mm` : (this.vehGroundClearance.trim() || 'N/A');
 
     const kerbStr = this.vehKerbWeightNum ? `${this.vehKerbWeightNum} kg` : (this.vehKerbWeight.trim() || 'N/A');
     const grossStr = this.vehGrossWeightNum ? `${this.vehGrossWeightNum} kg` : (this.vehGrossWeight.trim() || 'N/A');
     const weightCombined = `${kerbStr}~${grossStr}`;
 
-    const perfEncoded = `${this.vehAcceleration.trim() || 'N/A'}||${this.vehMaxPower.trim() || 'N/A'}||${this.vehTorque.trim() || 'N/A'}`;
+    const accStr = this.vehAccelerationNum ? `${this.vehAccelerationNum} Sec` : (this.vehAcceleration.trim() || 'N/A');
+    const powerStr = this.vehMaxPowerNum ? `${this.vehMaxPowerNum} bhp` : (this.vehMaxPower.trim() || 'N/A');
+    const torqueStr = this.vehTorqueNum ? `${this.vehTorqueNum} Nm` : (this.vehTorque.trim() || 'N/A');
+    const perfEncoded = `${accStr}||${powerStr}||${torqueStr}`;
+
+    const bootStr = this.vehBootSpaceNum ? `${this.vehBootSpaceNum} L` : '';
+    const frunkStr = this.vehFrunkSpaceNum ? `${this.vehFrunkSpaceNum} L` : '';
+    let bootFrunkStr = 'N/A';
+    if (bootStr && frunkStr) bootFrunkStr = `${bootStr} / ${frunkStr}`;
+    else if (bootStr) bootFrunkStr = bootStr;
+    else if (this.vehBootFrunkSpace.trim()) bootFrunkStr = this.vehBootFrunkSpace.trim();
 
     const vehicleData: CarSpec = {
       name: fullName,
@@ -1351,20 +1461,26 @@ export class AdminComponent implements OnInit {
       parentModel: normModel,
       variantName: variant.trim(),
       price: this.vehPrice.trim() || 'N/A',
-      seating: `${this.vehSeating.trim() || 'N/A'}||N/A||${weightCombined}||${this.vehScreen.trim() || 'N/A'}||${this.vehAudio.trim() || 'N/A'}||${this.vehConnectivity.trim() || 'N/A'}`,
+      seating: `${this.vehSeating.trim() || '5 Seats'}||N/A||${weightCombined}||${this.vehScreen.trim() || 'N/A'}||${this.vehAudio.trim() || 'N/A'}||${this.vehConnectivity.trim() || 'N/A'}`,
       dimensions: dimensionsEncoded,
-      groundClearance: this.vehGroundClearance.trim() || 'N/A',
+      groundClearance: groundStr,
       batteryCapacity: batEncoded,
       range: rangeText,
       tyreSize: this.vehTyreSize.trim() || 'N/A',
-      bootFrunkSpace: this.vehBootFrunkSpace.trim() || 'N/A',
+      bootFrunkSpace: bootFrunkStr,
       bhpTorque: perfEncoded,
-      drivetrain: this.vehDrivetrain.trim(),
-      safetyRating: `${this.vehSafetyRating.trim() || 'N/A'}||${this.vehAdas.trim() || 'N/A'}||${this.vehAirbags.trim() || 'N/A'}`,
+      drivetrain: this.vehDrivetrain || 'FWD',
+      safetyRating: `${this.vehSafetyRating || '5-Star Euro NCAP'}||${this.vehAdas || 'Level 2'}||${this.vehAirbags || '6 Airbags'}`,
       imageUrl: this.vehImageUrl.trim(),
       keyHighlights: highlights,
       kerbWeight: kerbStr,
-      grossWeight: grossStr
+      grossWeight: grossStr,
+      wheelbase: wheelbaseStr,
+      acCharging: acText,
+      dcCharging: dcText,
+      acceleration: accStr,
+      maxPower: powerStr,
+      torque: torqueStr
     };
 
     if (this.editingVehicleId) {
@@ -1407,7 +1523,7 @@ export class AdminComponent implements OnInit {
     const matchedCat = this.categories.find(c => c.id === veh.categoryId);
     this.vehBrandName = matchedCat ? matchedCat.name : '';
     this.vehPrice = veh.price;
-    this.vehSeating = veh.seating;
+    this.vehSeating = veh.seating && veh.seating.includes('Seats') ? veh.seating : '5 Seats';
     this.vehDimensions = veh.dimensions;
     this.vehWheelbase = veh.wheelbase || '';
     this.vehGroundClearance = veh.groundClearance;
@@ -1450,28 +1566,64 @@ export class AdminComponent implements OnInit {
       this.vehHeightMM = null;
     }
 
+    // Parse AC Charging kW
+    const acKwMatch = (veh.acCharging || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehAcChargingKW = acKwMatch ? parseFloat(acKwMatch[1]) : null;
     this.vehAcCharging = veh.acCharging || '';
+
+    // Parse DC Fast Charging kW
+    const dcKwMatch = (veh.dcCharging || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehDcChargingKW = dcKwMatch ? parseFloat(dcKwMatch[1]) : null;
     this.vehDcCharging = veh.dcCharging || '';
+
+    // Parse Acceleration sec
+    const accMatch = (veh.acceleration || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehAccelerationNum = accMatch ? parseFloat(accMatch[1]) : null;
+    this.vehAcceleration = veh.acceleration || '';
+
+    // Parse Max Power bhp
+    const powerMatch = (veh.maxPower || veh.bhpTorque || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehMaxPowerNum = powerMatch ? parseFloat(powerMatch[1]) : null;
+    this.vehMaxPower = veh.maxPower || veh.bhpTorque || '';
+
+    // Parse Torque Nm
+    const torqueMatch = (veh.torque || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehTorqueNum = torqueMatch ? parseFloat(torqueMatch[1]) : null;
+    this.vehTorque = veh.torque || '';
+
+    // Parse Wheelbase mm
+    const wbMatch = (veh.wheelbase || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehWheelbaseNum = wbMatch ? parseFloat(wbMatch[1]) : null;
+
+    // Parse Ground Clearance mm
+    const gcMatch = (veh.groundClearance || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehGroundClearanceNum = gcMatch ? parseFloat(gcMatch[1]) : null;
+
+    // Parse Boot space L
+    const bootMatch = (veh.bootFrunkSpace || '').match(/(\d+(?:\.\d+)?)\s*L/i);
+    this.vehBootSpaceNum = bootMatch ? parseFloat(bootMatch[1]) : null;
+
+    // Parse Frunk space L
+    const frunkMatch = (veh.bootFrunkSpace || '').match(/\/\s*(\d+(?:\.\d+)?)\s*L/i);
+    this.vehFrunkSpaceNum = frunkMatch ? parseFloat(frunkMatch[1]) : null;
+
     this.vehTyreSize = veh.tyreSize;
     this.vehBootFrunkSpace = veh.bootFrunkSpace;
     this.vehBhpTorque = veh.bhpTorque || '';
-    this.vehAcceleration = veh.acceleration || '';
-    this.vehMaxPower = veh.maxPower || veh.bhpTorque || '';
-    this.vehTorque = veh.torque || '';
-    this.vehDrivetrain = veh.drivetrain || '';
-    this.vehSafetyRating = veh.safetyRating || '';
+    this.vehDrivetrain = veh.drivetrain || 'FWD';
+    this.vehSafetyRating = veh.safetyRating?.includes('Star') ? veh.safetyRating : '5-Star Euro NCAP';
     this.vehWeight = veh.weight || '';
     this.vehScreen = veh.screen || '';
     this.vehAudio = veh.audio || '';
     this.vehConnectivity = veh.connectivity || '';
-    this.vehAdas = veh.adasLevel || '';
-    this.vehAirbags = veh.airbags || '';
+    this.vehAdas = veh.adasLevel || 'Level 2';
+    this.vehAirbags = veh.airbags ? (veh.airbags.includes('Airbags') ? veh.airbags : `${veh.airbags} Airbags`) : '6 Airbags';
     this.vehImageUrl = veh.imageUrl || '';
     this.vehGalleryImages = veh.galleryImages && veh.galleryImages.length > 0 
       ? [veh.galleryImages[0] || '', veh.galleryImages[1] || '', veh.galleryImages[2] || '', veh.galleryImages[3] || '']
       : [veh.imageUrl || '', '', '', ''];
     this.vehKeyHighlights = veh.keyHighlights || '';
-    this.vehBodyStyle = veh.bodyStyle || '';
+    this.vehBodyStyle = veh.bodyStyle || 'SUV';
     this.isBorrowedImage = veh.imageBorrowed || false;
   }
 
@@ -1653,11 +1805,28 @@ export class AdminComponent implements OnInit {
     this.vehBatteryCapacityNum = null;
     this.vehRangeNum = null;
     this.vehRangeStandard = 'MIDC';
+    this.vehBatteryChemistry = 'LFP';
+    this.vehPortType = 'CCS2';
     this.vehLengthMM = null;
     this.vehWidthMM = null;
     this.vehHeightMM = null;
+    this.vehWheelbaseNum = null;
+    this.vehGroundClearanceNum = null;
+    this.vehBootSpaceNum = null;
+    this.vehFrunkSpaceNum = null;
     this.vehKerbWeightNum = null;
     this.vehGrossWeightNum = null;
+    this.vehAccelerationNum = null;
+    this.vehMaxPowerNum = null;
+    this.vehTorqueNum = null;
+    this.vehAcChargingKW = null;
+    this.vehDcChargingKW = null;
+    this.vehDrivetrain = 'FWD';
+    this.vehSafetyRating = '5-Star Euro NCAP';
+    this.vehAdas = 'Level 2';
+    this.vehAirbags = '6 Airbags';
+    this.vehSeating = '5 Seats';
+    this.vehBodyStyle = 'SUV';
   }
 
   onVehImageFileSelected(event: Event, slotIndex: number = 0) {
