@@ -29,6 +29,17 @@ import {
   primaryVehicleHintsFromGraph,
   safeArticleSchemaFromGraph
 } from '../../entity';
+import {
+  ContentIntelPageModel,
+  ExploreLink,
+  RelatedReadingLabelMap,
+  TopicNavItem,
+  emptyContentIntelPageModel,
+  exploreLinksForPage,
+  relatedReadingLabelMap,
+  buildTopicNav,
+  safeBuildArticleContentIntel
+} from '../../content-intel';
 
 type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
 
@@ -183,6 +194,7 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                      (click)="scrollToTop()">
                     <div class="related-card-content">
                       <h3>{{ rel.name }}</h3>
+                      <p class="ci-related-reason" *ngIf="relatedReason(article.id!, 'vehicle', rel.id) as reason">{{ reason }}</p>
                     </div>
                   </a>
                 </div>
@@ -195,6 +207,7 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                   <a *ngFor="let rel of aeoById[article.id!].relatedArticles" [routerLink]="['/articles', rel.id]" class="related-card" (click)="scrollToTop()">
                     <div class="related-card-content">
                       <h3>{{ rel.title }}</h3>
+                      <p class="ci-related-reason" *ngIf="relatedReason(article.id!, 'article', rel.id) as reason">{{ reason }}</p>
                     </div>
                   </a>
                 </div>
@@ -213,6 +226,32 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                   </a>
                 </div>
               </div>
+
+              <!-- Phase 7.4 — Topics + Explore (extends Internal Links; no Related* duplication; no HTML rewrite) -->
+              @if (aeoEnabled && topicNavById[article.id!]?.length) {
+                <nav class="ci-nav-section" aria-labelledby="ci-topics-{{ article.id }}">
+                  <h2 [attr.id]="'ci-topics-' + article.id" class="related-section-title">Topics</h2>
+                  <ul class="ci-nav-list">
+                    @for (item of topicNavById[article.id!]; track item.href + item.kind) {
+                      <li>
+                        <a [routerLink]="item.href.split('?')[0]" [queryParams]="aeoLinkQueryParams(item.href)" (click)="scrollToTop()">{{ item.label }}</a>
+                      </li>
+                    }
+                  </ul>
+                </nav>
+              }
+              @if (aeoEnabled && exploreLinksById[article.id!]?.length) {
+                <nav class="ci-nav-section" aria-labelledby="ci-explore-{{ article.id }}">
+                  <h2 [attr.id]="'ci-explore-' + article.id" class="related-section-title">Explore</h2>
+                  <ul class="ci-nav-list">
+                    @for (item of exploreLinksById[article.id!]; track item.href) {
+                      <li>
+                        <a [routerLink]="item.href.split('?')[0]" [queryParams]="aeoLinkQueryParams(item.href)" (click)="scrollToTop()">{{ item.label }}</a>
+                      </li>
+                    }
+                  </ul>
+                </nav>
+              }
 
               <!-- Loop Navigation -->
               <div class="article-footer-nav">
@@ -696,6 +735,37 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
       color: #64748B;
       line-height: 1.45;
     }
+    .ci-related-reason {
+      margin: 4px 0 0;
+      font-size: 0.78rem;
+      color: #64748B;
+      line-height: 1.35;
+    }
+    .ci-nav-section {
+      margin: 28px 0 8px;
+    }
+    .ci-nav-list {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .ci-nav-list li {
+      margin-bottom: 6px;
+    }
+    .ci-nav-list a {
+      color: #0284C7;
+      text-decoration: none;
+    }
+    .ci-nav-list a:hover {
+      text-decoration: underline;
+      color: #0369A1;
+    }
+    .ci-nav-list a:focus-visible {
+      outline: 2px solid #0284C7;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
     @media (max-width: 640px) {
       .aeo-article-chrome {
         padding: 14px 16px;
@@ -752,6 +822,11 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   readonly hasArticleAnswerChrome = hasArticleAnswerChrome;
   aeoById: { [id: string]: AeoPageModel } = {};
   aeoLastUpdatedLabel: string | undefined;
+  /** Phase 7.4 M2 — per-article Content Intelligence chrome. */
+  contentIntelById: { [id: string]: ContentIntelPageModel } = {};
+  exploreLinksById: { [id: string]: ExploreLink[] } = {};
+  topicNavById: { [id: string]: TopicNavItem[] } = {};
+  relatedReadingLabelsById: { [id: string]: RelatedReadingLabelMap } = {};
   private relatedVehiclesForAeo: any[] = [];
   private relatedArticlesForAeo: any[] = [];
   private relatedSub: Subscription | null = null;
@@ -833,7 +908,10 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
           this.state = 'loaded';
           this.relatedVehiclesForAeo = [];
           this.relatedArticlesForAeo = [];
-          if (article.id) delete this.lastArticleAeoStamp[article.id];
+          if (article.id) {
+            delete this.lastArticleAeoStamp[article.id];
+            this.clearArticleContentIntel(article.id);
+          }
           this.refreshArticleAeo(article);
           this.loadRelatedForAeo(article);
           this.updateSEOMetadata(article);
@@ -987,11 +1065,88 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
       if (article.id === this.currentArticleId) {
         this.aeoLastUpdatedLabel = formatLastUpdatedLabel(model.lastUpdated);
       }
+      this.refreshArticleContentIntel(article, entityGraph, model);
     } catch {
       this.aeoById[article.id] = emptyAeoPageModel();
       delete this.lastArticleAeoStamp[article.id];
       if (article.id === this.currentArticleId) this.aeoLastUpdatedLabel = undefined;
+      this.clearArticleContentIntel(article.id);
     }
+  }
+
+  /** Phase 7.4 — CI failure must never break AEO / Related* / SEO / article HTML. */
+  private refreshArticleContentIntel(
+    article: Article,
+    entityGraph: ReturnType<typeof getOrBuildArticlePageGraph>,
+    aeo: AeoPageModel
+  ): void {
+    if (!article.id) return;
+    try {
+      const ci = safeBuildArticleContentIntel({
+        entityGraph,
+        article: {
+          id: article.id,
+          title: article.title,
+          description: article.description,
+          categoryId: article.categoryId,
+          imageUrl: article.imageUrl,
+          author: article.author,
+          seo: article.seo,
+          publishAt: article.publishAt,
+          publishedAt: (article as any).publishedAt,
+          updatedAt: article.updatedAt,
+          createdAt: article.createdAt,
+          status: (article as any).status,
+          relationships: article.relationships,
+          blocks: article.blocks as any
+        },
+        brands: this.categoriesForAeo,
+        recommendedVehicles: this.relatedVehiclesForAeo,
+        recommendedArticles: this.relatedArticlesForAeo
+      });
+      this.contentIntelById[article.id] = ci;
+      const relatedHrefs = [
+        ...(aeo.relatedVehicles || []).map((v) => v.href),
+        ...(aeo.relatedArticles || []).map((a) => a.href),
+        ...(aeo.relatedComparisons || []).map((c) => c.href)
+      ];
+      this.exploreLinksById[article.id] = exploreLinksForPage(aeo.internalLinks, ci.hubLinks, [
+        `/articles/${article.id}`,
+        ...relatedHrefs
+      ]);
+      this.relatedReadingLabelsById[article.id] = relatedReadingLabelMap(ci.relatedReading);
+      this.topicNavById[article.id] = buildTopicNav(ci, {
+        excludeHrefs: [
+          ...relatedHrefs,
+          ...this.exploreLinksById[article.id].map((l) => l.href)
+        ]
+      });
+    } catch {
+      this.contentIntelById[article.id] = emptyContentIntelPageModel();
+      this.exploreLinksById[article.id] = [...(aeo.internalLinks || [])];
+      this.relatedReadingLabelsById[article.id] = { vehicles: {}, articles: {} };
+      this.topicNavById[article.id] = [];
+    }
+  }
+
+  private clearArticleContentIntel(articleId: string | undefined | null): void {
+    if (!articleId) return;
+    delete this.contentIntelById[articleId];
+    delete this.exploreLinksById[articleId];
+    delete this.topicNavById[articleId];
+    delete this.relatedReadingLabelsById[articleId];
+  }
+
+  /** Related* reason labels from CI — never invents; lookup only. */
+  relatedReason(
+    articleId: string,
+    kind: 'vehicle' | 'article',
+    itemId: string
+  ): string | undefined {
+    const map = this.relatedReadingLabelsById[articleId];
+    if (!map) return undefined;
+    const row = kind === 'vehicle' ? map.vehicles[itemId] : map.articles[itemId];
+    return row?.reason || undefined;
   }
 
   private loadRelatedForAeo(article: Article): void {

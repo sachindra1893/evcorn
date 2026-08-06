@@ -20,6 +20,7 @@ import {
   uploadCoverIfDataUrl,
   uploadDataImagesInBlocks
 } from '../../utils/article-image-upload.util';
+import { normalizeArticleRelationships } from '../../entity';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -86,7 +87,71 @@ import { firstValueFrom } from 'rxjs';
                 <p class="form-hint" *ngIf="imageProcessing" style="color: #0088CC; font-size: 0.85rem; margin-top: 5px;">Processing and compressing image...</p>
               </div>
 
+              <!-- Editorial Relationships (Phase 7.4) -->
+              <div class="admin-form-card">
+                <div class="admin-card-header" (click)="adminSecRelationships = !adminSecRelationships">
+                  <h4>🔗 Editorial Relationships (Phase 7.4)</h4>
+                  <span class="card-toggle">{{ adminSecRelationships ? '▲' : '▼' }}</span>
+                </div>
+                <div class="admin-card-body" *ngIf="adminSecRelationships">
+                  <div class="form-group">
+                    <label for="rel-vehicles">Related Vehicle IDs (comma-separated)</label>
+                    <input 
+                      type="text" 
+                      id="rel-vehicles" 
+                      name="rel-vehicles" 
+                      placeholder="e.g. tata-nexon-ev, mg-windsor-ev" 
+                      [(ngModel)]="articleRelVehicles"
+                      list="rel-vehicle-suggestions"
+                      autocomplete="off"
+                    >
+                    <datalist id="rel-vehicle-suggestions">
+                      @for (veh of vehicles; track veh.id) {
+                        <option [value]="veh.id">{{ veh.name }} ({{ veh.id }})</option>
+                      }
+                    </datalist>
+                    <p class="form-hint" style="color: #A8B2B2; font-size: 0.8rem; margin-top: 4px;">Connect this guide to specific EV variants.</p>
+                  </div>
 
+                  <div class="form-group">
+                    <label for="rel-articles">Related Article IDs (comma-separated)</label>
+                    <input 
+                      type="text" 
+                      id="rel-articles" 
+                      name="rel-articles" 
+                      placeholder="e.g. 66a2c..., 66a3f..." 
+                      [(ngModel)]="articleRelArticles"
+                      list="rel-article-suggestions"
+                      autocomplete="off"
+                    >
+                    <datalist id="rel-article-suggestions">
+                      @for (artItem of articles; track trackArticleId(artItem)) {
+                        <option [value]="trackArticleId(artItem)">{{ artItem.title }}</option>
+                      }
+                    </datalist>
+                    <p class="form-hint" style="color: #A8B2B2; font-size: 0.8rem; margin-top: 4px;">Connect this guide to related editorial stories.</p>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="rel-brands">Related Brand / Category IDs (comma-separated)</label>
+                    <input 
+                      type="text" 
+                      id="rel-brands" 
+                      name="rel-brands" 
+                      placeholder="e.g. tata, mg, mahindra" 
+                      [(ngModel)]="articleRelBrands"
+                      list="rel-brand-suggestions"
+                      autocomplete="off"
+                    >
+                    <datalist id="rel-brand-suggestions">
+                      @for (cat of categories; track cat.id) {
+                        <option [value]="cat.id">{{ cat.name }} ({{ cat.id }})</option>
+                      }
+                    </datalist>
+                    <p class="form-hint" style="color: #A8B2B2; font-size: 0.8rem; margin-top: 4px;">Connect this guide to target EV brand categories.</p>
+                  </div>
+                </div>
+              </div>
 
               <div class="form-group" style="margin-top: 20px;">
                 <label>Article Content Blocks</label>
@@ -789,6 +854,12 @@ export class AdminComponent implements OnInit {
   selectedFileName = '';
   imageProcessing = false;
 
+  // Editorial Relationships (Phase 7.4)
+  articleRelArticles = '';
+  articleRelVehicles = '';
+  articleRelBrands = '';
+  adminSecRelationships = false;
+
   // 2. Vehicle Form Properties
   editingVehicleId: string | null = null;
   vehName = '';
@@ -910,6 +981,20 @@ export class AdminComponent implements OnInit {
     return this.categoriesMap[catId] || 'EV Insights';
   }
 
+  private parseCommaIdList(input: string): string[] {
+    if (!input || typeof input !== 'string') return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const item of input.split(',')) {
+      const id = item.trim();
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        out.push(id);
+      }
+    }
+    return out;
+  }
+
   // ==========================================
   // ARTICLES EVENT HANDLERS
   // ==========================================
@@ -972,6 +1057,12 @@ export class AdminComponent implements OnInit {
       ? (fallbackParagraphs[0].length > 150 ? fallbackParagraphs[0].substring(0, 147) + '...' : fallbackParagraphs[0])
       : '';
 
+    const relationships = {
+      relatedArticleIds: this.parseCommaIdList(this.articleRelArticles),
+      relatedVehicleIds: this.parseCommaIdList(this.articleRelVehicles),
+      relatedBrandIds: this.parseCommaIdList(this.articleRelBrands)
+    };
+
     const articleData: Article = {
       title: this.articleTitle.trim(),
       description: generatedDesc,
@@ -979,7 +1070,8 @@ export class AdminComponent implements OnInit {
       categoryId: 'general',
       paragraphs: paragraphs,
       blocks: this.articleBlocks,
-      active: true
+      active: true,
+      relationships
     };
 
     if (updateTarget.ok) {
@@ -1038,6 +1130,11 @@ export class AdminComponent implements OnInit {
     this.articleTitle = art.title;
     this.articleImageUrl = art.imageUrl || '';
     this.articleBlocks = hydrateArticleBlocks(art);
+
+    const initialRels = normalizeArticleRelationships(art.relationships);
+    this.articleRelArticles = initialRels.relatedArticleIds.join(', ');
+    this.articleRelVehicles = initialRels.relatedVehicleIds.join(', ');
+    this.articleRelBrands = initialRels.relatedBrandIds.join(', ');
     this.cdr.detectChanges();
 
     // Canonical detail fetch — list payloads can omit body; always re-bind stable id.
@@ -1049,6 +1146,11 @@ export class AdminComponent implements OnInit {
         this.articleTitle = full.title;
         this.articleImageUrl = full.imageUrl || '';
         this.articleBlocks = hydrateArticleBlocks(full);
+
+        const rels = normalizeArticleRelationships(full.relationships || art.relationships);
+        this.articleRelArticles = rels.relatedArticleIds.join(', ');
+        this.articleRelVehicles = rels.relatedVehicleIds.join(', ');
+        this.articleRelBrands = rels.relatedBrandIds.join(', ');
         this.cdr.detectChanges();
       },
       error: () => {
@@ -1067,6 +1169,10 @@ export class AdminComponent implements OnInit {
     this.articleTitle = '';
     this.articleImageUrl = '';
     this.articleBlocks = [];
+    this.articleRelArticles = '';
+    this.articleRelVehicles = '';
+    this.articleRelBrands = '';
+    this.adminSecRelationships = false;
     this.selectedFileName = '';
     this.imageProcessing = false;
     this.cdr.detectChanges();

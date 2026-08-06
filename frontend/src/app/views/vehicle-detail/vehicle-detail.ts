@@ -22,9 +22,21 @@ import {
   brandBrowseHref,
   evsIndexHref,
   getOrBuildVehiclePageGraph,
+  modelEntityId,
   modelHref,
   safeVehicleSchemaFromGraph
 } from '../../entity';
+import {
+  ContentIntelPageModel,
+  ExploreLink,
+  RelatedReadingLabelMap,
+  TopicNavItem,
+  emptyContentIntelPageModel,
+  exploreLinksForPage,
+  relatedReadingLabelMap,
+  buildTopicNav,
+  safeBuildVehicleContentIntel
+} from '../../content-intel';
 
 interface OverviewData {
   priceRange: string;
@@ -233,7 +245,12 @@ interface OverviewData {
                   <h2 class="aeo-section-title">Related EVs</h2>
                   <ul>
                     @for (item of aeo.relatedVehicles; track item.id) {
-                      <li><a [routerLink]="item.href.split('?')[0]" [queryParams]="linkQueryParams(item.href)">{{ item.name }}</a></li>
+                      <li>
+                        <a [routerLink]="item.href.split('?')[0]" [queryParams]="linkQueryParams(item.href)">{{ item.name }}</a>
+                        @if (relatedReadingLabels.vehicles[item.id]?.reason; as reason) {
+                          <span class="ci-related-reason">{{ reason }}</span>
+                        }
+                      </li>
                     }
                   </ul>
                 </div>
@@ -253,7 +270,12 @@ interface OverviewData {
                   <h2 class="aeo-section-title">Related articles</h2>
                   <ul>
                     @for (item of aeo.relatedArticles; track item.id) {
-                      <li><a [routerLink]="['/articles', item.id]">{{ item.title }}</a></li>
+                      <li>
+                        <a [routerLink]="['/articles', item.id]">{{ item.title }}</a>
+                        @if (relatedReadingLabels.articles[item.id]?.reason; as reason) {
+                          <span class="ci-related-reason">{{ reason }}</span>
+                        }
+                      </li>
                     }
                   </ul>
                 </div>
@@ -272,11 +294,21 @@ interface OverviewData {
               @if (aeo.trust?.citationNote) {
                 <p class="aeo-trust aeo-block">{{ aeo.trust!.citationNote }}</p>
               }
-              @if (aeo.internalLinks.length > 0) {
+              @if (topicNav.length > 0) {
+                <nav class="aeo-topic-nav aeo-block" aria-labelledby="aeo-topics-heading">
+                  <h2 id="aeo-topics-heading" class="aeo-section-title">Topics</h2>
+                  <ul>
+                    @for (item of topicNav; track item.href + item.kind) {
+                      <li><a [routerLink]="item.href.split('?')[0]" [queryParams]="linkQueryParams(item.href)">{{ item.label }}</a></li>
+                    }
+                  </ul>
+                </nav>
+              }
+              @if (exploreLinks.length > 0) {
                 <nav class="aeo-internal aeo-block" aria-labelledby="aeo-explore-heading">
                   <h2 id="aeo-explore-heading" class="aeo-section-title">Explore</h2>
                   <ul>
-                    @for (item of aeo.internalLinks; track item.href) {
+                    @for (item of exploreLinks; track item.href) {
                       <li><a [routerLink]="item.href.split('?')[0]" [queryParams]="linkQueryParams(item.href)">{{ item.label }}</a></li>
                     }
                   </ul>
@@ -506,7 +538,8 @@ interface OverviewData {
     .aeo-takeaways ul,
     .aeo-toc ul,
     .aeo-related ul,
-    .aeo-internal ul {
+    .aeo-internal ul,
+    .aeo-topic-nav ul {
       margin: 0;
       padding-left: 1.15rem;
       color: #334155;
@@ -515,21 +548,31 @@ interface OverviewData {
     .aeo-takeaways li,
     .aeo-toc li,
     .aeo-related li,
-    .aeo-internal li {
+    .aeo-internal li,
+    .aeo-topic-nav li {
       margin-bottom: 6px;
     }
     .aeo-toc a,
     .aeo-related a,
-    .aeo-internal a {
+    .aeo-internal a,
+    .aeo-topic-nav a {
       color: #0284C7;
       text-decoration: none;
       cursor: pointer;
     }
     .aeo-toc a:hover,
     .aeo-related a:hover,
-    .aeo-internal a:hover {
+    .aeo-internal a:hover,
+    .aeo-topic-nav a:hover {
       text-decoration: underline;
       color: #0369A1;
+    }
+    .ci-related-reason {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.78rem;
+      color: #64748B;
+      line-height: 1.35;
     }
     .aeo-answer-section a:focus-visible,
     .aeo-cta-link:focus-visible {
@@ -645,6 +688,7 @@ interface OverviewData {
       .aeo-toc ul,
       .aeo-related ul,
       .aeo-internal ul,
+      .aeo-topic-nav ul,
       .aeo-takeaways ul {
         padding-left: 1rem;
       }
@@ -1134,6 +1178,11 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   readonly hasAeoChrome = hasAeoChrome;
   aeo: AeoPageModel | null = null;
   aeoLastUpdatedLabel: string | undefined;
+  /** Phase 7.4 M2 — Content Intelligence chrome (hubs / topic nav / related labels). */
+  contentIntel: ContentIntelPageModel | null = null;
+  exploreLinks: ExploreLink[] = [];
+  topicNav: TopicNavItem[] = [];
+  relatedReadingLabels: RelatedReadingLabelMap = { vehicles: {}, articles: {} };
   private relatedVehiclesForAeo: any[] = [];
   private relatedArticlesForAeo: any[] = [];
   private relatedSub: Subscription | null = null;
@@ -1300,6 +1349,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
             this.relatedVehiclesForAeo = [];
             this.relatedArticlesForAeo = [];
             this.lastAeoStamp = '';
+            this.clearContentIntelChrome();
             this.refreshAeo();
             this.updateSEO();
             this.loadRelatedForAeo();
@@ -1363,6 +1413,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       this.aeo = null;
       this.aeoLastUpdatedLabel = undefined;
       this.lastAeoStamp = '';
+      this.clearContentIntelChrome();
       return;
     }
     // Skip rebuild when variant + related slate fingerprint unchanged (related overlay still needed on first related load).
@@ -1395,11 +1446,75 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       });
       this.aeoLastUpdatedLabel = formatLastUpdatedLabel(this.aeo.lastUpdated);
       this.lastAeoStamp = stamp;
+      this.refreshContentIntel(entityGraph);
     } catch {
       this.aeo = emptyAeoPageModel();
       this.aeoLastUpdatedLabel = undefined;
       this.lastAeoStamp = '';
+      this.clearContentIntelChrome();
     }
+  }
+
+  /** Phase 7.4 — CI failure must never break AEO / Related* / Explore fallback / SEO. */
+  private refreshContentIntel(entityGraph: ReturnType<typeof getOrBuildVehiclePageGraph>): void {
+    if (!this.brand || !this.selectedVariant || !this.aeo) {
+      this.clearContentIntelChrome();
+      return;
+    }
+    try {
+      const brandId = this.brand.id || this.selectedVariant.categoryId || '';
+      const mid =
+        modelEntityId(brandId, this.selectedVariant) ||
+        `model:${brandId}:${this.currentModelSlug || this.modelName}`;
+      const mhref =
+        modelHref({
+          brandName: this.brand.name,
+          brandSlug: this.currentBrandSlug,
+          parentModel: this.modelName,
+          modelSlug: this.currentModelSlug
+        }) || '';
+      const ci = safeBuildVehicleContentIntel({
+        entityGraph,
+        brand: this.brand,
+        modelEntityId: mid,
+        modelHref: mhref,
+        variants: this.siblingVariants,
+        selectedVariant: this.selectedVariant,
+        recommendedVehicles: this.relatedVehiclesForAeo,
+        recommendedArticles: this.relatedArticlesForAeo
+      });
+      this.contentIntel = ci;
+      const relatedHrefs = [
+        ...(this.aeo.relatedVehicles || []).map((v) => v.href),
+        ...(this.aeo.relatedArticles || []).map((a) => a.href),
+        ...(this.aeo.relatedComparisons || []).map((c) => c.href)
+      ];
+      this.exploreLinks = exploreLinksForPage(this.aeo.internalLinks, ci.hubLinks, [
+        mhref,
+        ...relatedHrefs
+      ]);
+      this.relatedReadingLabels = relatedReadingLabelMap(ci.relatedReading);
+      this.topicNav = buildTopicNav(ci, {
+        excludeHrefs: [
+          mhref,
+          ...relatedHrefs,
+          ...this.exploreLinks.map((l) => l.href)
+        ]
+      });
+    } catch {
+      // Keep AEO Internal Links; omit CI chrome only.
+      this.contentIntel = emptyContentIntelPageModel();
+      this.exploreLinks = [...(this.aeo.internalLinks || [])];
+      this.relatedReadingLabels = { vehicles: {}, articles: {} };
+      this.topicNav = [];
+    }
+  }
+
+  private clearContentIntelChrome(): void {
+    this.contentIntel = null;
+    this.exploreLinks = [];
+    this.topicNav = [];
+    this.relatedReadingLabels = { vehicles: {}, articles: {} };
   }
 
   updateSEO() {

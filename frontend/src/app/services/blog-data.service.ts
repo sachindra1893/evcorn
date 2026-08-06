@@ -414,9 +414,7 @@ export class BlogDataService {
 
       this.http.get<Article>(`${this.apiUrl}/articles/${id}`).subscribe({
         next: (data) => {
-          // NOTE: intentionally left as the pre-existing raw (non-enveloped) write here —
-          // that mismatch is Root-Cause Cluster H (Latent), out of scope for this pass.
-          try { localStorage.setItem(cachedKey, JSON.stringify(data)); } catch {}
+          this.saveCache(cachedKey, data);
           subject.next(data);
         },
         error: (err) => {
