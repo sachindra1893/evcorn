@@ -379,12 +379,25 @@ import { firstValueFrom } from 'rxjs';
                 </div>
                 <div class="admin-card-body" *ngIf="adminSecBattery">
                   <div class="form-group">
-                    <label for="battery">Battery Capacity (e.g. 82 kWh)</label>
-                    <input type="text" id="battery" name="battery" [(ngModel)]="vehBatteryCapacity">
+                    <label for="battery">Battery Capacity (kWh)</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" step="0.1" min="0" id="battery" name="battery" [(ngModel)]="vehBatteryCapacityNum" placeholder="e.g. 82" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kWh</span>
+                    </div>
                   </div>
                   <div class="form-group">
-                    <label for="range">Claimed Range (e.g. 526 km)</label>
-                    <input type="text" id="range" name="range" [(ngModel)]="vehRange">
+                    <label for="range">Claimed Range</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" step="1" min="0" id="range" name="range" [(ngModel)]="vehRangeNum" placeholder="e.g. 526" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">km</span>
+                      <select id="rangeStandard" name="rangeStandard" [(ngModel)]="vehRangeStandard" style="width: 110px;">
+                        <option value="MIDC">MIDC</option>
+                        <option value="WLTP">WLTP</option>
+                        <option value="NEDC">NEDC</option>
+                        <option value="EPA">EPA</option>
+                        <option value="CLTC">CLTC</option>
+                      </select>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label for="acCharging">AC Charging Speed / Time (e.g. 11 kW / 0-100% in 8h)</label>
@@ -427,8 +440,15 @@ import { firstValueFrom } from 'rxjs';
                 </div>
                 <div class="admin-card-body" *ngIf="adminSecDimensions">
                   <div class="form-group">
-                    <label for="dimensions">Dimensions (L x W x H) (e.g. 4720 x 1850 x 1440 mm)</label>
-                    <input type="text" id="dimensions" name="dimensions" [(ngModel)]="vehDimensions">
+                    <label>Dimensions (Length × Width × Height in mm)</label>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      <input type="number" min="0" id="dimLength" name="dimLength" [(ngModel)]="vehLengthMM" placeholder="Length (mm)" style="flex: 1;">
+                      <span style="color: #94A3B8; font-weight: 700;">×</span>
+                      <input type="number" min="0" id="dimWidth" name="dimWidth" [(ngModel)]="vehWidthMM" placeholder="Width (mm)" style="flex: 1;">
+                      <span style="color: #94A3B8; font-weight: 700;">×</span>
+                      <input type="number" min="0" id="dimHeight" name="dimHeight" [(ngModel)]="vehHeightMM" placeholder="Height (mm)" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 12px; border-radius: 8px; font-weight: 700; font-size: 0.85rem;">mm</span>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label for="wheelbase">Wheelbase (e.g. 2654 mm)</label>
@@ -443,12 +463,18 @@ import { firstValueFrom } from 'rxjs';
                     <input type="text" id="boot" name="boot" [(ngModel)]="vehBootFrunkSpace">
                   </div>
                   <div class="form-group">
-                    <label for="kerbWeight">Kerb Weight (e.g. 1500 kg)</label>
-                    <input type="text" id="kerbWeight" name="kerbWeight" [(ngModel)]="vehKerbWeight">
+                    <label for="kerbWeight">Kerb Weight (kg)</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" min="0" id="kerbWeight" name="kerbWeight" [(ngModel)]="vehKerbWeightNum" placeholder="e.g. 1500" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kg</span>
+                    </div>
                   </div>
                   <div class="form-group">
-                    <label for="grossWeight">Gross Weight (e.g. 1950 kg)</label>
-                    <input type="text" id="grossWeight" name="grossWeight" [(ngModel)]="vehGrossWeight">
+                    <label for="grossWeight">Gross Weight (kg)</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" min="0" id="grossWeight" name="grossWeight" [(ngModel)]="vehGrossWeightNum" placeholder="e.g. 1950" style="flex: 1;">
+                      <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kg</span>
+                    </div>
                   </div>
                   <div class="form-group">
                     <label for="tyre">Tyre Size (e.g. 235/45 R18)</label>
@@ -467,10 +493,6 @@ import { firstValueFrom } from 'rxjs';
                   <div class="form-group">
                     <label for="seating">Seating Capacity (e.g. 5 Seats)</label>
                     <input type="text" id="seating" name="seating" [(ngModel)]="vehSeating">
-                  </div>
-                  <div class="form-group">
-                    <label for="colour">Colour Options (e.g. Red, Blue, White)</label>
-                    <input type="text" id="colour" name="colour" [(ngModel)]="vehColour">
                   </div>
                   <div class="form-group">
                     <label for="screen">Screen Display (e.g. 15.6-inch Touchscreen)</label>
@@ -887,7 +909,6 @@ export class AdminComponent implements OnInit {
   vehTorque = '';
   vehDrivetrain = '';
   vehSafetyRating = '';
-  vehColour = '';
   vehWeight = '';
   vehScreen = '';
   vehAudio = '';
@@ -899,6 +920,16 @@ export class AdminComponent implements OnInit {
   vehImageProcessing = false;
   vehKeyHighlights = '';
   isBorrowedImage = false;
+
+  // Structured Unit Input State (Phase A)
+  vehBatteryCapacityNum: number | null = null;
+  vehRangeNum: number | null = null;
+  vehRangeStandard = 'MIDC';
+  vehLengthMM: number | null = null;
+  vehWidthMM: number | null = null;
+  vehHeightMM: number | null = null;
+  vehKerbWeightNum: number | null = null;
+  vehGrossWeightNum: number | null = null;
 
   // 3. Admin Form Section Accordions
   adminSecOverview = true;
@@ -1268,19 +1299,29 @@ export class AdminComponent implements OnInit {
     }
   }
 
+  private normalizeModel(name: string): string {
+    if (!name) return '';
+    return name.trim().replace(/\s+/g, ' ');
+  }
+
+  private compareModels(a: string, b: string): boolean {
+    return this.normalizeModel(a).toLowerCase() === this.normalizeModel(b).toLowerCase();
+  }
+
   private _executeSaveVehicle(model: string, variant: string) {
 
-    if (model.toLowerCase() === variant.toLowerCase()) {
+    if (this.compareModels(model, variant)) {
       alert('Validation Error: The Model name and Variant name cannot be exactly the same (e.g., if Model is "Punch", Variant should be "30kWh" or "Pure", not "Punch"). Please give them different names.');
       return;
     }
 
-    const fullName = `${model}::${variant}`;
+    const normModel = this.normalizeModel(model);
+    const fullName = `${normModel}::${variant.trim()}`;
 
     const ac = this.vehAcCharging.trim() || 'N/A';
     const dc = this.vehDcCharging.trim() || 'N/A';
-    const bat = this.vehBatteryCapacity.trim() || 'N/A';
-    const range = this.vehRange.trim() || 'N/A';
+    const batText = this.vehBatteryCapacityNum ? `${this.vehBatteryCapacityNum} kWh` : (this.vehBatteryCapacity.trim() || 'N/A');
+    const rangeText = this.vehRangeNum ? `${this.vehRangeNum} km (${this.vehRangeStandard || 'MIDC'})` : (this.vehRange.trim() || 'N/A');
     const highlights = this.vehKeyHighlights.trim() || 'N/A';
     
     let finalGalleryUrls = this.vehGalleryImages.filter(u => u && u.trim().length > 10).join(';;;');
@@ -1288,31 +1329,42 @@ export class AdminComponent implements OnInit {
       finalGalleryUrls = '';
     }
 
-    const batEncoded = `${bat}||${ac}||${dc}||${finalGalleryUrls || 'N/A'}||${range}||${highlights}||${this.vehBodyStyle || 'N/A'}`;
+    const batEncoded = `${batText}||${ac}||${dc}||${finalGalleryUrls || 'N/A'}||${rangeText}||${highlights}||${this.vehBodyStyle || 'N/A'}`;
 
-    const dimensionsEncoded = `${this.vehDimensions.trim() || 'N/A'}||${this.vehWheelbase.trim() || 'N/A'}`;
-    const weightCombined = `${this.vehKerbWeight.trim() || 'N/A'}~${this.vehGrossWeight.trim() || 'N/A'}`;
+    let dimStr = 'N/A';
+    if (this.vehLengthMM && this.vehWidthMM && this.vehHeightMM) {
+      dimStr = `${this.vehLengthMM} x ${this.vehWidthMM} x ${this.vehHeightMM} mm`;
+    } else if (this.vehDimensions.trim()) {
+      dimStr = this.vehDimensions.trim();
+    }
+    const dimensionsEncoded = `${dimStr}||${this.vehWheelbase.trim() || 'N/A'}`;
+
+    const kerbStr = this.vehKerbWeightNum ? `${this.vehKerbWeightNum} kg` : (this.vehKerbWeight.trim() || 'N/A');
+    const grossStr = this.vehGrossWeightNum ? `${this.vehGrossWeightNum} kg` : (this.vehGrossWeight.trim() || 'N/A');
+    const weightCombined = `${kerbStr}~${grossStr}`;
 
     const perfEncoded = `${this.vehAcceleration.trim() || 'N/A'}||${this.vehMaxPower.trim() || 'N/A'}||${this.vehTorque.trim() || 'N/A'}`;
 
     const vehicleData: CarSpec = {
       name: fullName,
       categoryId: this.vehCategoryId,
-      parentModel: model,
-      variantName: variant,
+      parentModel: normModel,
+      variantName: variant.trim(),
       price: this.vehPrice.trim() || 'N/A',
-      seating: `${this.vehSeating.trim() || 'N/A'}||${this.vehColour.trim() || 'N/A'}||${weightCombined}||${this.vehScreen.trim() || 'N/A'}||${this.vehAudio.trim() || 'N/A'}||${this.vehConnectivity.trim() || 'N/A'}`,
+      seating: `${this.vehSeating.trim() || 'N/A'}||N/A||${weightCombined}||${this.vehScreen.trim() || 'N/A'}||${this.vehAudio.trim() || 'N/A'}||${this.vehConnectivity.trim() || 'N/A'}`,
       dimensions: dimensionsEncoded,
       groundClearance: this.vehGroundClearance.trim() || 'N/A',
       batteryCapacity: batEncoded,
-      range: this.vehRange.trim() || 'N/A',
+      range: rangeText,
       tyreSize: this.vehTyreSize.trim() || 'N/A',
       bootFrunkSpace: this.vehBootFrunkSpace.trim() || 'N/A',
       bhpTorque: perfEncoded,
       drivetrain: this.vehDrivetrain.trim(),
       safetyRating: `${this.vehSafetyRating.trim() || 'N/A'}||${this.vehAdas.trim() || 'N/A'}||${this.vehAirbags.trim() || 'N/A'}`,
       imageUrl: this.vehImageUrl.trim(),
-      keyHighlights: this.vehKeyHighlights.trim()
+      keyHighlights: highlights,
+      kerbWeight: kerbStr,
+      grossWeight: grossStr
     };
 
     if (this.editingVehicleId) {
@@ -1340,10 +1392,10 @@ export class AdminComponent implements OnInit {
     this.editingVehicleId = veh.id || null;
     this.vehName = veh.name;
     
-    let pModel = veh.parentModel || veh.name;
+    let pModel = this.normalizeModel(veh.parentModel || veh.name);
     let vName = veh.variantName || veh.name;
 
-    if (pModel === vName) {
+    if (this.compareModels(pModel, vName)) {
       const words = veh.name.split(' ');
       pModel = words[0];
       vName = veh.name.substring(pModel.length).trim() || 'Base';
@@ -1359,12 +1411,47 @@ export class AdminComponent implements OnInit {
     this.vehDimensions = veh.dimensions;
     this.vehWheelbase = veh.wheelbase || '';
     this.vehGroundClearance = veh.groundClearance;
+
+    // Parse weights
+    const kerbMatch = (veh.kerbWeight || veh.weight || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehKerbWeightNum = kerbMatch ? parseFloat(kerbMatch[1]) : null;
     this.vehKerbWeight = veh.kerbWeight || veh.weight || '';
+
+    const grossMatch = (veh.grossWeight || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehGrossWeightNum = grossMatch ? parseFloat(grossMatch[1]) : null;
     this.vehGrossWeight = veh.grossWeight || '';
-    this.vehBatteryCapacity = veh.batteryCapacity;
+
+    // Parse battery capacity number
+    const batMatch = (veh.batteryCapacity || '').match(/(\d+(?:\.\d+)?)/);
+    this.vehBatteryCapacityNum = batMatch ? parseFloat(batMatch[1]) : null;
+    this.vehBatteryCapacity = veh.batteryCapacity || '';
+
+    // Parse range number and standard
+    const rangeMatch = (veh.range || '').match(/(\d+(?:\.\d+)?)\s*km(?:\s*\(([^)]+)\))?/i);
+    if (rangeMatch) {
+      this.vehRangeNum = parseFloat(rangeMatch[1]);
+      this.vehRangeStandard = (rangeMatch[2] || 'MIDC').toUpperCase();
+    } else {
+      const numOnly = (veh.range || '').match(/(\d+(?:\.\d+)?)/);
+      this.vehRangeNum = numOnly ? parseFloat(numOnly[1]) : null;
+      this.vehRangeStandard = 'MIDC';
+    }
+    this.vehRange = veh.range || '';
+
+    // Parse length, width, height
+    const dimMatch = (veh.dimensions || '').match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)/i);
+    if (dimMatch) {
+      this.vehLengthMM = parseFloat(dimMatch[1]);
+      this.vehWidthMM = parseFloat(dimMatch[2]);
+      this.vehHeightMM = parseFloat(dimMatch[3]);
+    } else {
+      this.vehLengthMM = null;
+      this.vehWidthMM = null;
+      this.vehHeightMM = null;
+    }
+
     this.vehAcCharging = veh.acCharging || '';
     this.vehDcCharging = veh.dcCharging || '';
-    this.vehRange = veh.range || '';
     this.vehTyreSize = veh.tyreSize;
     this.vehBootFrunkSpace = veh.bootFrunkSpace;
     this.vehBhpTorque = veh.bhpTorque || '';
@@ -1373,7 +1460,6 @@ export class AdminComponent implements OnInit {
     this.vehTorque = veh.torque || '';
     this.vehDrivetrain = veh.drivetrain || '';
     this.vehSafetyRating = veh.safetyRating || '';
-    this.vehColour = veh.colour || '';
     this.vehWeight = veh.weight || '';
     this.vehScreen = veh.screen || '';
     this.vehAudio = veh.audio || '';
@@ -1400,9 +1486,6 @@ export class AdminComponent implements OnInit {
     const matched = this.categories.find(c => c.name.toLowerCase() === this.vehBrandName.trim().toLowerCase());
     const nextCategoryId = matched ? matched.id : '';
 
-    // Preserve edit id when brand is unchanged (ngModelChange fires on hydrate).
-    // Only clear edit mode when the brand actually switches — otherwise save would
-    // mint a new vehicle via POST upsert without the original id.
     if (this.editingVehicleId) {
       const editing = this.vehicles.find(v => v.id === this.editingVehicleId);
       const currentBrand = editing
@@ -1447,12 +1530,12 @@ export class AdminComponent implements OnInit {
       return;
     }
 
-    const trimmedModel = modelName.trim().toLowerCase();
+    const normTarget = this.normalizeModel(modelName).toLowerCase();
 
     // Look for matching existing vehicle with an image under the current brand OR globally if model name matches
     const existingVehicleWithImage = this.vehicles.find(v => {
-      const pModel = (v.parentModel || v.name).toLowerCase();
-      const isModelMatch = pModel === trimmedModel;
+      const pModel = this.normalizeModel(v.parentModel || v.name).toLowerCase();
+      const isModelMatch = pModel === normTarget;
       const isBrandMatch = !this.vehCategoryId || v.categoryId === this.vehCategoryId;
       return isModelMatch && isBrandMatch && v.imageUrl && v.imageUrl.length > 10;
     });
@@ -1479,8 +1562,8 @@ export class AdminComponent implements OnInit {
 
     // Auto-prefill the 5 core physical specs if present on existing model entry
     const existingVehicleWithSpecs = this.vehicles.find(v => {
-      const pModel = (v.parentModel || v.name).toLowerCase();
-      const isModelMatch = pModel === trimmedModel;
+      const pModel = this.normalizeModel(v.parentModel || v.name).toLowerCase();
+      const isModelMatch = pModel === normTarget;
       const isBrandMatch = !this.vehCategoryId || v.categoryId === this.vehCategoryId;
       return isModelMatch && isBrandMatch;
     });
@@ -1515,8 +1598,15 @@ export class AdminComponent implements OnInit {
     if (!brandId) return [];
     const models = this.vehicles
       .filter(car => car.categoryId === brandId)
-      .map(car => car.parentModel || car.name);
-    return Array.from(new Set(models));
+      .map(car => this.normalizeModel(car.parentModel || car.name));
+    
+    const uniqueMap = new Map<string, string>();
+    for (const m of models) {
+      if (!m) continue;
+      const key = m.toLowerCase();
+      if (!uniqueMap.has(key)) uniqueMap.set(key, m);
+    }
+    return Array.from(uniqueMap.values());
   }
 
   resetVehicleForm() {
@@ -1545,7 +1635,6 @@ export class AdminComponent implements OnInit {
     this.vehTorque = '';
     this.vehDrivetrain = '';
     this.vehSafetyRating = '';
-    this.vehColour = '';
     this.vehWeight = '';
     this.vehKerbWeight = '';
     this.vehGrossWeight = '';
@@ -1561,6 +1650,14 @@ export class AdminComponent implements OnInit {
     this.vehImageProcessing = false;
     this.vehKeyHighlights = '';
     this.isBorrowedImage = false;
+    this.vehBatteryCapacityNum = null;
+    this.vehRangeNum = null;
+    this.vehRangeStandard = 'MIDC';
+    this.vehLengthMM = null;
+    this.vehWidthMM = null;
+    this.vehHeightMM = null;
+    this.vehKerbWeightNum = null;
+    this.vehGrossWeightNum = null;
   }
 
   onVehImageFileSelected(event: Event, slotIndex: number = 0) {
@@ -1641,14 +1738,25 @@ export class AdminComponent implements OnInit {
   }
   
   getAdminModelsForBrand(brandId: string) {
-    const models = this.vehicles
+    const rawModels = this.vehicles
       .filter(v => v.categoryId === brandId)
-      .map(v => v.parentModel || v.name);
-    return Array.from(new Set(models));
+      .map(v => this.normalizeModel(v.parentModel || v.name));
+    
+    const uniqueMap = new Map<string, string>();
+    for (const m of rawModels) {
+      if (!m) continue;
+      const key = m.toLowerCase();
+      if (!uniqueMap.has(key)) uniqueMap.set(key, m);
+    }
+    return Array.from(uniqueMap.values());
   }
   
   getAdminVariants(brandId: string, modelName: string) {
-    return this.vehicles.filter(v => v.categoryId === brandId && (v.parentModel || v.name) === modelName);
+    const targetKey = this.normalizeModel(modelName).toLowerCase();
+    return this.vehicles.filter(v => 
+      v.categoryId === brandId && 
+      this.normalizeModel(v.parentModel || v.name).toLowerCase() === targetKey
+    );
   }
   
   selectAdminBrand(brandId: string) {

@@ -685,6 +685,11 @@ export class BlogDataService {
       if (seatParts.length > 4 && seatParts[4] !== 'N/A') v.audio = seatParts[4];
       if (seatParts.length > 5 && seatParts[5] !== 'N/A') v.connectivity = seatParts[5];
     }
+
+    if (v.dimensionsObj && typeof v.dimensionsObj === 'object') {
+      if (!v.kerbWeight && v.dimensionsObj.kerbWeightKG) v.kerbWeight = `${v.dimensionsObj.kerbWeightKG} kg`;
+      if (!v.grossWeight && v.dimensionsObj.grossWeightKG) v.grossWeight = `${v.dimensionsObj.grossWeightKG} kg`;
+    }
     
     // Parse ADAS and Airbags hidden in safetyRating
     if (v.safetyRating && v.safetyRating.includes('||')) {

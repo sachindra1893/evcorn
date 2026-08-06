@@ -38,6 +38,8 @@ function toVehicleDTO(doc) {
     tyreSize: validVal(obj.dimensionsObj?.tyreSize, obj.tyreSize || 'N/A'),
     bootFrunkSpace: validVal(obj.dimensionsObj?.bootFrunkText, obj.bootFrunkSpace || 'N/A'),
     bhpTorque: validVal(obj.performance?.bhpTorque, obj.bhpTorque || 'N/A'),
+    kerbWeight: validVal(obj.dimensionsObj?.kerbWeightKG ? `${obj.dimensionsObj.kerbWeightKG} kg` : null, obj.kerbWeight || 'N/A'),
+    grossWeight: validVal(obj.dimensionsObj?.grossWeightKG ? `${obj.dimensionsObj.grossWeightKG} kg` : null, obj.grossWeight || 'N/A'),
     drivetrain: validVal(obj.performance?.drivetrain, obj.drivetrain || 'FWD'),
     safetyRating: validVal(obj.safety?.safetyRatingText, obj.safetyRating || 'N/A'),
     imageUrl: obj.imageUrl || obj.media?.mainImage || '',

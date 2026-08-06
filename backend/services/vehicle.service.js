@@ -116,6 +116,10 @@ class VehicleService {
       claimedRangeKM: num(vehicleData.range),
       rangeText: vehicleData.range || 'N/A'
     };
+    vehicleData.dimensionsObj = vehicleData.dimensionsObj || {
+      kerbWeightKG: num(vehicleData.kerbWeight),
+      grossWeightKG: num(vehicleData.grossWeight)
+    };
 
     const doc = await vehicleRepository.upsert(vehicleData);
 

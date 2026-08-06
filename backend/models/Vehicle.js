@@ -98,6 +98,8 @@ const VehicleSchema = new mongoose.Schema({
   tyreSize: { type: String, default: 'N/A' },
   bootFrunkSpace: { type: String, default: 'N/A' },
   bhpTorque: { type: String, default: 'N/A' },
+  kerbWeight: { type: String, default: 'N/A' },
+  grossWeight: { type: String, default: 'N/A' },
   drivetrain: { type: String, default: 'N/A' },
   safetyRating: { type: String, default: 'N/A' },
   imageUrl: { type: String, default: '' },

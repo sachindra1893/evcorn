@@ -450,10 +450,6 @@ interface OverviewData {
                       <span class="spec-value">{{ selectedVariant.seating || '-' }}</span>
                     </div>
                     <div class="spec-row sub-row">
-                      <span class="spec-label">Colour Options</span>
-                      <span class="spec-value">{{ selectedVariant.colour || '-' }}</span>
-                    </div>
-                    <div class="spec-row sub-row">
                       <span class="spec-label">Screen Display</span>
                       <span class="spec-value">{{ selectedVariant.screen || '-' }}</span>
                     </div>

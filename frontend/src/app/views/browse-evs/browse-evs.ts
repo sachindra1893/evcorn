@@ -756,11 +756,12 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
         // Create deduped model cards for grid display
         const uniqueModels = new Map<string, any>();
         vehicles.forEach(v => {
-          const modelKey = v.parentModel || v.name;
-          if (!uniqueModels.has(modelKey)) {
-            uniqueModels.set(modelKey, { ...v, variantCount: 1 });
+          const rawKey = (v.parentModel || v.name || '').trim().replace(/\s+/g, ' ');
+          const groupKey = `${v.categoryId}:${rawKey.toLowerCase()}`;
+          if (!uniqueModels.has(groupKey)) {
+            uniqueModels.set(groupKey, { ...v, parentModel: rawKey, variantCount: 1 });
           } else {
-            const existing = uniqueModels.get(modelKey);
+            const existing = uniqueModels.get(groupKey);
             existing.variantCount++;
           }
         });
