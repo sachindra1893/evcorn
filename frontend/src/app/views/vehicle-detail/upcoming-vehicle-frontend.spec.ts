@@ -48,6 +48,12 @@ describe('Release 5.0 (Phase 2) — Upcoming Vehicle Frontend Integration', () =
       expect(priceLabel).toBe('Price Range');
       expect(batteryLabel).toBe('Battery Options');
       expect(rangeLabel).toBe('Claimed Range');
+      expect(launchedVehicle.launchDate || '—').toBe('July 2026');
+    });
+
+    it('displays fallback dash when Launched vehicle has empty launchDate', () => {
+      const carWithoutLaunchDate: CarSpec = { ...launchedVehicle, launchDate: undefined };
+      expect(carWithoutLaunchDate.launchDate || '—').toBe('—');
     });
 
     it('uses Expected labels and Expected Launch for Upcoming vehicles', () => {

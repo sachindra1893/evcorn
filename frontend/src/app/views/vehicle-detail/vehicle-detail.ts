@@ -122,6 +122,13 @@ interface OverviewData {
                         <span>DC Fast Charge</span>
                       </div>
                     </div>
+                    <div class="highlight-item">
+                      <span class="icon">📅</span>
+                      <div class="highlight-text">
+                        <strong>{{ selectedVariant?.launchDate || '—' }}</strong>
+                        <span>Launch</span>
+                      </div>
+                    </div>
                   } @else {
                     <div class="highlight-item">
                       <span class="icon">🟡</span>
