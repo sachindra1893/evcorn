@@ -16,9 +16,6 @@ export function generateBuyingRecommendation(
   if (!brand || !model || !selected) return undefined;
 
   const status = (selected.status || 'Published').trim();
-  if (/discontinued/i.test(status)) {
-    return `The ${brand} ${model} is listed as discontinued on EVCorn — treat current pricing and availability as historical reference only.`;
-  }
   if (/upcoming/i.test(status)) {
     return `The ${brand} ${model} is upcoming — use published specs as guidance and confirm final price, range, and charging before booking.`;
   }

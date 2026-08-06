@@ -207,6 +207,8 @@ export interface CarSpec {
   safety?: Safety;
   seo?: SEO;
   status?: string;
+  lifecycleStatus?: 'Upcoming' | 'Launched';
+  launchDate?: string;
   publishedAt?: string;
   createdAt?: string;
   updatedAt?: string;

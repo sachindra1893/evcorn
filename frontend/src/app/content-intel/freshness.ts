@@ -5,7 +5,7 @@
  * Documented thresholds (architecture §9.2; constants, not CMS):
  * - fresh:  ageDays ≤ 90
  * - aging:  91–180
- * - stale:  > 180, or vehicle status=Discontinued (editorial flag)
+ * - stale:  > 180
  * - unknown: no usable date
  */
 
@@ -64,16 +64,11 @@ export function deriveFreshness(
     if (status.toLowerCase() === 'scheduled') {
       reasons.push('status=scheduled');
     }
-    if (status.toLowerCase() === 'discontinued') {
-      reasons.push('status=Discontinued');
-    }
   }
 
   if (!lastUpdated) {
     return {
-      state: status.toLowerCase() === 'discontinued' ? 'stale' : 'unknown',
-      editorialPriority:
-        status.toLowerCase() === 'discontinued' ? 'review' : undefined,
+      state: 'unknown',
       reasons: reasons.length ? reasons : ['no usable publishAt/updatedAt']
     };
   }

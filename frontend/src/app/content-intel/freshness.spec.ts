@@ -40,15 +40,6 @@ describe('freshness', () => {
     expect(signal.editorialPriority).toBe('urgent');
   });
 
-  it('marks stale for Discontinued vehicles even if recently updated', () => {
-    const signal = deriveFreshness(
-      { updatedAt: '2026-07-20T00:00:00.000Z', status: 'Discontinued' },
-      now
-    );
-    expect(signal.state).toBe('stale');
-    expect(signal.reasons).toContain('status=Discontinued');
-  });
-
   it('returns unknown without usable dates', () => {
     const signal = deriveFreshness({ status: 'published' }, now);
     expect(signal.state).toBe('unknown');

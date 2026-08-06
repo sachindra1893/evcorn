@@ -238,6 +238,15 @@ import { firstValueFrom } from 'rxjs';
                   <span class="card-toggle">{{ adminSecOverview ? '▲' : '▼' }}</span>
                 </div>
                 <div class="admin-card-body" *ngIf="adminSecOverview">
+                  <!-- Vehicle Lifecycle Status -->
+                  <div class="form-group">
+                    <label for="car-lifecycle-status">Vehicle Status</label>
+                    <select id="car-lifecycle-status" name="car-lifecycle-status" [(ngModel)]="vehLifecycleStatus" (ngModelChange)="onLifecycleStatusChange($event)">
+                      <option value="Launched">Launched</option>
+                      <option value="Upcoming">Upcoming</option>
+                    </select>
+                  </div>
+
                   <!-- Brand / Category -->
                   <div class="form-group">
                     <label for="car-category">Brand / Category</label>
@@ -293,11 +302,82 @@ import { firstValueFrom } from 'rxjs';
                     >
                   </div>
 
+                  <!-- Launch Date / Expected Launch -->
+                  <div class="form-group">
+                    <label for="car-launch-date">{{ vehLifecycleStatus === 'Upcoming' ? 'Expected Launch' : 'Launch Date' }}</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <!-- Upcoming Period Dropdown -->
+                      <select *ngIf="vehLifecycleStatus === 'Upcoming'" id="car-launch-period" name="car-launch-period" [(ngModel)]="vehLaunchPeriod" style="flex: 1;">
+                        <option value="Early">Early</option>
+                        <option value="Mid">Mid</option>
+                        <option value="Late">Late</option>
+                      </select>
+
+                      <!-- Launched Month Dropdown -->
+                      <select *ngIf="vehLifecycleStatus !== 'Upcoming'" id="car-launch-month" name="car-launch-month" [(ngModel)]="vehLaunchMonth" style="flex: 1;">
+                        <option value="January">January</option>
+                        <option value="February">February</option>
+                        <option value="March">March</option>
+                        <option value="April">April</option>
+                        <option value="May">May</option>
+                        <option value="June">June</option>
+                        <option value="July">July</option>
+                        <option value="August">August</option>
+                        <option value="September">September</option>
+                        <option value="October">October</option>
+                        <option value="November">November</option>
+                        <option value="December">December</option>
+                      </select>
+
+                      <!-- Year Dropdown -->
+                      <select id="car-launch-year" name="car-launch-year" [(ngModel)]="vehLaunchYear" style="width: 110px;">
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                        <option value="2030">2030</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <!-- Price -->
                   <div class="form-group">
-                    <label for="price">Price (Ex-Showroom) (e.g. ₹14.5 Lakhs / $38,990)</label>
+                    <label for="price">{{ vehLifecycleStatus === 'Upcoming' ? 'Expected Price (e.g. ₹14.5 Lakhs / $38,990)' : 'Price (Ex-Showroom) (e.g. ₹14.5 Lakhs / $38,990)' }}</label>
                     <input type="text" id="price" name="price" [(ngModel)]="vehPrice">
                   </div>
+
+                  <!-- Expected Battery & Range for Upcoming -->
+                  <ng-container *ngIf="vehLifecycleStatus === 'Upcoming'">
+                    <div class="form-group">
+                      <label for="upcoming-battery">Expected Battery Capacity</label>
+                      <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="number" step="0.1" min="0" id="upcoming-battery" name="upcoming-battery" [(ngModel)]="vehBatteryCapacityNum" placeholder="e.g. 82.5" style="flex: 1;">
+                        <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">kWh</span>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="upcoming-range">Expected Claimed Range</label>
+                      <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="number" step="1" min="0" id="upcoming-range" name="upcoming-range" [(ngModel)]="vehRangeNum" placeholder="e.g. 526" style="flex: 1;">
+                        <span style="background: rgba(0, 212, 255, 0.15); color: #00D4FF; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;">km</span>
+                        <select id="upcomingRangeStandard" name="upcomingRangeStandard" [(ngModel)]="vehRangeStandard" style="width: 110px;">
+                          <option value="MIDC">MIDC</option>
+                          <option value="WLTP">WLTP</option>
+                          <option value="NEDC">NEDC</option>
+                          <option value="EPA">EPA</option>
+                          <option value="CLTC">CLTC</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="upcoming-overview">Short Overview / Expected Specs Summary</label>
+                      <textarea id="upcoming-overview" name="upcoming-overview" [(ngModel)]="vehKeyHighlights" rows="3" placeholder="e.g. Expected launch in Late 2027 with dual-motor AWD and next-gen battery tech."></textarea>
+                    </div>
+                  </ng-container>
 
                   <!-- Body Style Dropdown -->
                   <div class="form-group">
@@ -346,12 +426,13 @@ import { firstValueFrom } from 'rxjs';
               </div>
 
               <!-- Section 2: Performance & Motor -->
-              <div class="admin-form-card">
-                <div class="admin-card-header" (click)="adminSecPerformance = !adminSecPerformance">
+              <div class="admin-form-card" [class.locked-card]="vehLifecycleStatus === 'Upcoming'">
+                <div class="admin-card-header" [class.disabled-header]="vehLifecycleStatus === 'Upcoming'" (click)="toggleSectionPerformance()">
                   <h4>🏎️ 2. Performance & Motor</h4>
-                  <span class="card-toggle">{{ adminSecPerformance ? '▲' : '▼' }}</span>
+                  <span class="card-toggle" *ngIf="vehLifecycleStatus !== 'Upcoming'">{{ adminSecPerformance ? '▲' : '▼' }}</span>
+                  <span class="lock-badge" *ngIf="vehLifecycleStatus === 'Upcoming'">🔒 Available after official launch</span>
                 </div>
-                <div class="admin-card-body" *ngIf="adminSecPerformance">
+                <div class="admin-card-body" *ngIf="adminSecPerformance && vehLifecycleStatus !== 'Upcoming'">
                   <div class="form-group">
                     <label for="acceleration">Acceleration (0-100 km/h)</label>
                     <div style="display: flex; gap: 8px; align-items: center;">
@@ -387,12 +468,13 @@ import { firstValueFrom } from 'rxjs';
               </div>
 
               <!-- Section 3: Battery & Charging -->
-              <div class="admin-form-card">
-                <div class="admin-card-header" (click)="adminSecBattery = !adminSecBattery">
+              <div class="admin-form-card" [class.locked-card]="vehLifecycleStatus === 'Upcoming'">
+                <div class="admin-card-header" [class.disabled-header]="vehLifecycleStatus === 'Upcoming'" (click)="toggleSectionBattery()">
                   <h4>🔋 3. Battery & Charging</h4>
-                  <span class="card-toggle">{{ adminSecBattery ? '▲' : '▼' }}</span>
+                  <span class="card-toggle" *ngIf="vehLifecycleStatus !== 'Upcoming'">{{ adminSecBattery ? '▲' : '▼' }}</span>
+                  <span class="lock-badge" *ngIf="vehLifecycleStatus === 'Upcoming'">🔒 Available after official launch</span>
                 </div>
-                <div class="admin-card-body" *ngIf="adminSecBattery">
+                <div class="admin-card-body" *ngIf="adminSecBattery && vehLifecycleStatus !== 'Upcoming'">
                   <div class="form-group">
                     <label for="battery">Battery Capacity</label>
                     <div style="display: flex; gap: 8px; align-items: center;">
@@ -452,12 +534,13 @@ import { firstValueFrom } from 'rxjs';
               </div>
 
               <!-- Section 4: Safety & ADAS -->
-              <div class="admin-form-card">
-                <div class="admin-card-header" (click)="adminSecSafety = !adminSecSafety">
+              <div class="admin-form-card" [class.locked-card]="vehLifecycleStatus === 'Upcoming'">
+                <div class="admin-card-header" [class.disabled-header]="vehLifecycleStatus === 'Upcoming'" (click)="toggleSectionSafety()">
                   <h4>🛡️ 4. Safety & ADAS</h4>
-                  <span class="card-toggle">{{ adminSecSafety ? '▲' : '▼' }}</span>
+                  <span class="card-toggle" *ngIf="vehLifecycleStatus !== 'Upcoming'">{{ adminSecSafety ? '▲' : '▼' }}</span>
+                  <span class="lock-badge" *ngIf="vehLifecycleStatus === 'Upcoming'">🔒 Available after official launch</span>
                 </div>
-                <div class="admin-card-body" *ngIf="adminSecSafety">
+                <div class="admin-card-body" *ngIf="adminSecSafety && vehLifecycleStatus !== 'Upcoming'">
                   <div class="form-group">
                     <label for="safety">NCAP Safety Rating</label>
                     <select id="safety" name="safety" [(ngModel)]="vehSafetyRating">
@@ -497,12 +580,13 @@ import { firstValueFrom } from 'rxjs';
               </div>
 
               <!-- Section 5: Dimensions & Weight -->
-              <div class="admin-form-card">
-                <div class="admin-card-header" (click)="adminSecDimensions = !adminSecDimensions">
+              <div class="admin-form-card" [class.locked-card]="vehLifecycleStatus === 'Upcoming'">
+                <div class="admin-card-header" [class.disabled-header]="vehLifecycleStatus === 'Upcoming'" (click)="toggleSectionDimensions()">
                   <h4>📐 5. Dimensions & Weight</h4>
-                  <span class="card-toggle">{{ adminSecDimensions ? '▲' : '▼' }}</span>
+                  <span class="card-toggle" *ngIf="vehLifecycleStatus !== 'Upcoming'">{{ adminSecDimensions ? '▲' : '▼' }}</span>
+                  <span class="lock-badge" *ngIf="vehLifecycleStatus === 'Upcoming'">🔒 Available after official launch</span>
                 </div>
-                <div class="admin-card-body" *ngIf="adminSecDimensions">
+                <div class="admin-card-body" *ngIf="adminSecDimensions && vehLifecycleStatus !== 'Upcoming'">
                   <div class="form-group">
                     <label>Dimensions (Length × Width × Height)</label>
                     <div style="display: flex; gap: 6px; align-items: center;">
@@ -564,12 +648,13 @@ import { firstValueFrom } from 'rxjs';
               </div>
 
               <!-- Section 6: Entertainment & Interior -->
-              <div class="admin-form-card">
-                <div class="admin-card-header" (click)="adminSecEntertainment = !adminSecEntertainment">
+              <div class="admin-form-card" [class.locked-card]="vehLifecycleStatus === 'Upcoming'">
+                <div class="admin-card-header" [class.disabled-header]="vehLifecycleStatus === 'Upcoming'" (click)="toggleSectionEntertainment()">
                   <h4>🎵 6. Entertainment & Interior</h4>
-                  <span class="card-toggle">{{ adminSecEntertainment ? '▲' : '▼' }}</span>
+                  <span class="card-toggle" *ngIf="vehLifecycleStatus !== 'Upcoming'">{{ adminSecEntertainment ? '▲' : '▼' }}</span>
+                  <span class="lock-badge" *ngIf="vehLifecycleStatus === 'Upcoming'">🔒 Available after official launch</span>
                 </div>
-                <div class="admin-card-body" *ngIf="adminSecEntertainment">
+                <div class="admin-card-body" *ngIf="adminSecEntertainment && vehLifecycleStatus !== 'Upcoming'">
                   <div class="form-group">
                     <label for="seating">Seating Capacity</label>
                     <select id="seating" name="seating" [(ngModel)]="vehSeating">
@@ -686,7 +771,15 @@ import { firstValueFrom } from 'rxjs';
                       <tbody>
                         @for (veh of getAdminVariants(selectedAdminBrandId, selectedAdminModel); track veh.id) {
                           <tr>
-                            <td class="article-title" style="color: #A8B2B2; font-size: 0.95rem;">{{ veh.variantName || 'Standard' }}</td>
+                            <td class="article-title" style="color: #A8B2B2; font-size: 0.95rem;">
+                              {{ veh.variantName || 'Standard' }}
+                              <span class="status-badge" [ngClass]="{
+                                'status-upcoming': veh.lifecycleStatus === 'Upcoming' || veh.status === 'Upcoming',
+                                'status-launched': !veh.lifecycleStatus || veh.lifecycleStatus === 'Launched' || veh.status === 'Launched'
+                              }" style="margin-left: 6px;">
+                                {{ veh.lifecycleStatus || (veh.status === 'Upcoming' ? 'Upcoming' : 'Launched') }}
+                              </span>
+                            </td>
                             <td>{{ veh.price }}</td>
                             <td class="table-actions">
                               <button (click)="startEditVehicle(veh)" class="btn edit-btn">Edit</button>
@@ -937,6 +1030,37 @@ import { firstValueFrom } from 'rxjs';
       text-align: center;
       padding: 40px 20px;
     }
+    .disabled-header {
+      cursor: not-allowed !important;
+      opacity: 0.75;
+    }
+    .lock-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #F59E0B;
+      background: rgba(245, 158, 11, 0.12);
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .locked-card {
+      border: 1px dashed rgba(245, 158, 11, 0.3) !important;
+    }
+    .status-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .status-upcoming {
+      background: rgba(245, 158, 11, 0.15);
+      color: #F59E0B;
+    }
+    .status-launched {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10B981;
+    }
     @media (max-width: 992px) {
       .dashboard-grid {
         grid-template-columns: 1fr;
@@ -1028,6 +1152,12 @@ export class AdminComponent implements OnInit {
   vehAcChargingKW: number | null = null;
   vehDcChargingKW: number | null = null;
 
+  // Release 5.0 Upcoming Vehicle Lifecycle & Expected Launch State
+  vehLifecycleStatus: 'Upcoming' | 'Launched' = 'Launched';
+  vehLaunchPeriod: 'Early' | 'Mid' | 'Late' = 'Mid';
+  vehLaunchMonth = 'July';
+  vehLaunchYear = '2026';
+
   // 3. Admin Form Section Accordions
   adminSecOverview = true;
   adminSecPerformance = false;
@@ -1035,6 +1165,48 @@ export class AdminComponent implements OnInit {
   adminSecSafety = false;
   adminSecDimensions = false;
   adminSecEntertainment = false;
+
+  onLifecycleStatusChange(status: string) {
+    if (status === 'Upcoming') {
+      this.adminSecPerformance = false;
+      this.adminSecBattery = false;
+      this.adminSecDimensions = false;
+      this.adminSecSafety = false;
+      this.adminSecEntertainment = false;
+    }
+  }
+
+  toggleSectionPerformance() {
+    if (this.vehLifecycleStatus === 'Upcoming') return;
+    this.adminSecPerformance = !this.adminSecPerformance;
+  }
+
+  toggleSectionBattery() {
+    if (this.vehLifecycleStatus === 'Upcoming') return;
+    this.adminSecBattery = !this.adminSecBattery;
+  }
+
+  toggleSectionDimensions() {
+    if (this.vehLifecycleStatus === 'Upcoming') return;
+    this.adminSecDimensions = !this.adminSecDimensions;
+  }
+
+  toggleSectionSafety() {
+    if (this.vehLifecycleStatus === 'Upcoming') return;
+    this.adminSecSafety = !this.adminSecSafety;
+  }
+
+  toggleSectionEntertainment() {
+    if (this.vehLifecycleStatus === 'Upcoming') return;
+    this.adminSecEntertainment = !this.adminSecEntertainment;
+  }
+
+  getFormattedLaunchDate(): string {
+    if (this.vehLifecycleStatus === 'Upcoming') {
+      return `${this.vehLaunchPeriod} ${this.vehLaunchYear}`;
+    }
+    return `${this.vehLaunchMonth} ${this.vehLaunchYear}`;
+  }
 
   saving = false;
 
@@ -1480,7 +1652,10 @@ export class AdminComponent implements OnInit {
       dcCharging: dcText,
       acceleration: accStr,
       maxPower: powerStr,
-      torque: torqueStr
+      torque: torqueStr,
+      lifecycleStatus: this.vehLifecycleStatus,
+      status: this.vehLifecycleStatus,
+      launchDate: this.getFormattedLaunchDate()
     };
 
     if (this.editingVehicleId) {
@@ -1527,6 +1702,32 @@ export class AdminComponent implements OnInit {
     this.vehDimensions = veh.dimensions;
     this.vehWheelbase = veh.wheelbase || '';
     this.vehGroundClearance = veh.groundClearance;
+
+    this.vehLifecycleStatus = (veh.lifecycleStatus as any) || (veh.status === 'Upcoming' ? 'Upcoming' : 'Launched');
+    if (this.vehLifecycleStatus === 'Upcoming') {
+      this.adminSecPerformance = false;
+      this.adminSecBattery = false;
+      this.adminSecDimensions = false;
+      this.adminSecSafety = false;
+      this.adminSecEntertainment = false;
+    }
+
+    const launchStr = veh.launchDate || '';
+    if (launchStr) {
+      const parts = launchStr.split(' ');
+      if (parts.length >= 2) {
+        if (['Early', 'Mid', 'Late'].includes(parts[0])) {
+          this.vehLaunchPeriod = parts[0] as any;
+        } else {
+          this.vehLaunchMonth = parts[0];
+        }
+        this.vehLaunchYear = parts[1];
+      }
+    } else {
+      this.vehLaunchPeriod = 'Mid';
+      this.vehLaunchMonth = 'July';
+      this.vehLaunchYear = '2026';
+    }
 
     // Parse weights
     const kerbMatch = (veh.kerbWeight || veh.weight || '').match(/(\d+(?:\.\d+)?)/);
@@ -1768,6 +1969,10 @@ export class AdminComponent implements OnInit {
   }
 
   resetVehicleFormExceptBrand() {
+    this.vehLifecycleStatus = 'Launched';
+    this.vehLaunchPeriod = 'Mid';
+    this.vehLaunchMonth = 'July';
+    this.vehLaunchYear = '2026';
     this.vehName = '';
     this.vehParentModel = '';
     this.vehVariantName = '';

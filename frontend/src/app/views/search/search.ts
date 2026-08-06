@@ -18,6 +18,7 @@ interface SearchItem {
   createdAt?: string;
   /** Canonical entity path from entity-href (vehicles / articles). */
   href?: string;
+  lifecycleStatus?: 'Upcoming' | 'Launched';
 }
 
 @Component({
@@ -84,7 +85,12 @@ interface SearchItem {
                 }
               } @else if (item.type === 'vehicle') {
                 <a [routerLink]="item.href || '/evs'" class="result-card vehicle-item">
-                  <div class="type-tag vehicle-tag" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">Electric Vehicle</div>
+                  <div class="type-tag vehicle-tag" style="display: flex; align-items: center; justify-content: space-between; background: transparent; padding: 0; border: none; margin-bottom: 8px;">
+                    <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.75rem;">Electric Vehicle</span>
+                    @if (item.lifecycleStatus === 'Upcoming') {
+                      <span class="badge badge-upcoming" style="font-size: 0.75rem; font-weight: 700; color: #F59E0B; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 12px;">🟡 Upcoming</span>
+                    }
+                  </div>
                   <h2>{{ item.title }}</h2>
                   <p>{{ item.description }}</p>
                 </a>
@@ -494,7 +500,8 @@ export class SearchComponent implements OnInit {
             title: item.parentModel || item.name || '',
             description: descParts.join(' • '),
             active: true,
-            href
+            href,
+            lifecycleStatus: item.lifecycleStatus || (item.status === 'Upcoming' ? 'Upcoming' : 'Launched')
           };
         });
 

@@ -738,7 +738,9 @@ export class CompareComponent implements OnInit, OnDestroy {
     this.loadSub = this.blogData.getVehiclesLightState().subscribe((state) => {
       this.loadState = state as CompareLoadState;
       if (state.status === 'success') {
-        this.catalog = state.data as CarSpec[];
+        this.catalog = ((state.data as CarSpec[]) || []).filter(
+          (c) => c.lifecycleStatus !== 'Upcoming' && c.status !== 'Upcoming'
+        );
         const pending =
           clampCompareIds(this.selectedIds).length > 0
             ? clampCompareIds(this.selectedIds)

@@ -117,14 +117,20 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
                       </div>
                       <div class="model-info-row">
                         <div class="model-info">
-                          <h3 class="model-name">{{ car.parentModel || car.name }}</h3>
+                          <h3 class="model-name">
+                            {{ car.parentModel || car.name }}
+                            @if (car.lifecycleStatus === 'Upcoming' || car.status === 'Upcoming') {
+                              <span class="badge badge-upcoming" style="margin-left: 6px; font-size: 0.72rem; font-weight: 700; color: #F59E0B; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 12px; display: inline-block;">🟡 Upcoming</span>
+                            }
+                          </h3>
                           <p class="variant-name">{{ car.variantCount }} Variant{{ car.variantCount !== 1 ? 's' : '' }} Available</p>
                         </div>
                       </div>
                     </a>
                     <div class="model-card-actions">
-                      <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="card-action-btn details-btn">View Details</a>
+                      <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="card-action-btn details-btn" [style.grid-column]="(car.lifecycleStatus === 'Upcoming' || car.status === 'Upcoming') ? '1 / -1' : 'auto'">View Details</a>
                       <button
+                        *ngIf="car.lifecycleStatus !== 'Upcoming' && car.status !== 'Upcoming'"
                         type="button"
                         class="card-action-btn compare-btn"
                         [class.selected]="isInCompare(car.id)"

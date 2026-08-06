@@ -18,16 +18,6 @@ describe('BuyingRecommendationGenerator', () => {
     expect(text!.toLowerCase()).toMatch(/compare|suited|shortlisting/);
   });
 
-  it('uses discontinued tone without inventing specs', () => {
-    const text = generateBuyingRecommendation(
-      'Brand',
-      'Old EV',
-      { status: 'Discontinued', price: 'N/A' },
-      facts
-    );
-    expect(text).toContain('discontinued');
-  });
-
   it('returns undefined without brand/model', () => {
     expect(generateBuyingRecommendation('', '', { status: 'Published' }, facts)).toBeUndefined();
   });
