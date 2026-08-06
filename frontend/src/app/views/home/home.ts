@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { BlogDataService, Article } from '../../services/blog-data.service';
 import { getOptimizedImageUrl } from '../../utils/image.utils';
+import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-formatter';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
@@ -715,8 +716,12 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
                       
                       <div class="rec-specs">
                         <div class="spec-row">
-                          <span>Range / Battery:</span>
-                          <strong>{{ car.batteryCapacity }}</strong>
+                          <span>Claimed Range:</span>
+                          <strong>{{ formatRange(car.range) }}</strong>
+                        </div>
+                        <div class="spec-row">
+                          <span>Battery Capacity:</span>
+                          <strong>{{ formatBattery(car.batteryCapacity) }}</strong>
                         </div>
                         <div class="spec-row">
                           <span>Dimensions:</span>
@@ -1802,5 +1807,13 @@ export class HomeComponent implements OnInit {
       a.title.toLowerCase().includes(query) || 
       (a.description && a.description.toLowerCase().includes(query))
     );
+  }
+
+  formatRange(val: any): string {
+    return formatCardRange(val);
+  }
+
+  formatBattery(val: any): string {
+    return formatCardBattery(val);
   }
 }

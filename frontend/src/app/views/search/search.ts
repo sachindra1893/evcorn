@@ -6,6 +6,7 @@ import { SchemaService } from '../../services/schema.service';
 import { BlogDataService } from '../../services/blog-data.service';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 import { articleHref, modelHref } from '../../entity';
+import { formatCardRange } from '../../utils/vehicle-card-formatter';
 
 interface SearchItem {
   type: 'article' | 'company' | 'vehicle';
@@ -473,9 +474,10 @@ export class SearchComponent implements OnInit {
         );
         const vehicleSearchItems: SearchItem[] = vehicles.map((v) => {
           const item = v as any;
-          const range = item.performance?.rangeText || item.range || '';
+          const rawRange = item.performance?.rangeText || item.range || '';
+          const cleanRange = rawRange ? formatCardRange(rawRange) : '';
           const price = item.pricing?.priceText || item.price || '';
-          const descParts = [item.variantName, range, price].filter(Boolean);
+          const descParts = [item.variantName, cleanRange, price].filter(Boolean);
           const brandName = brandById.get(String(item.categoryId || '').trim()) || '';
           const href =
             modelHref({

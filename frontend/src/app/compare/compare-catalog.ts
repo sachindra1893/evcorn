@@ -4,6 +4,8 @@
  * Categories auto-render from this catalog.
  */
 
+import { formatCardBattery, formatCardRange } from '../utils/vehicle-card-formatter';
+
 export type CompareValue = string | number | boolean | null | undefined;
 
 export interface CompareFieldSource {
@@ -80,7 +82,11 @@ export const COMPARE_CATALOG: CompareCategoryDef[] = [
         label: 'Battery',
         source: {
           nested: ['battery', 'capacityText'],
-          flat: ['batteryCapacity']
+          flat: ['batteryCapacity'],
+          extract: (v) => {
+            const raw = (nestedGet(v, ['battery', 'capacityText']) || v['batteryCapacity']) as string;
+            return formatCardBattery(raw);
+          }
         }
       },
       {
@@ -88,7 +94,11 @@ export const COMPARE_CATALOG: CompareCategoryDef[] = [
         label: 'Claimed Range',
         source: {
           nested: ['performance', 'rangeText'],
-          flat: ['range']
+          flat: ['range'],
+          extract: (v) => {
+            const raw = (nestedGet(v, ['performance', 'rangeText']) || v['range']) as string;
+            return formatCardRange(raw);
+          }
         }
       },
       {

@@ -10,6 +10,7 @@ import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { CompareTrayComponent } from '../../components/compare-tray/compare-tray';
 import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
+import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-formatter';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 
 @Component({
@@ -171,9 +172,9 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
                         
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: flex-end;">
                           <div style="background: rgba(16, 185, 129, 0.1); color: #047857; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); width: fit-content;">
-                            <span style="font-weight: 800; font-size: 1.05rem;">{{ car.range }}</span>
+                            <span style="font-weight: 800; font-size: 1.05rem;">{{ formatRange(car.range) }}</span>
                           </div>
-                          <span style="font-size: 0.8rem; font-weight: 600; color: #64748B;">{{ car.batteryCapacity }}</span>
+                          <span style="font-size: 0.8rem; font-weight: 600; color: #64748B;">{{ formatBattery(car.batteryCapacity) }}</span>
                         </div>
                       </div>
                     </a>
@@ -692,6 +693,14 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
 
   onImgError(event: Event, modelName?: string): void {
     handleImageError(event, modelName);
+  }
+
+  formatRange(val: any): string {
+    return formatCardRange(val);
+  }
+
+  formatBattery(val: any): string {
+    return formatCardBattery(val);
   }
 
   // Top-range strip is derived inside loadVehiclesIndex() from the light
