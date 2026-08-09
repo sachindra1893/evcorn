@@ -17,7 +17,12 @@ describe('Release 5.0 (Phase 2) — Upcoming Vehicle Frontend Integration', () =
     range: '465 km (MIDC)',
     dcCharging: '50 kW',
     lifecycleStatus: 'Launched',
-    launchDate: 'July 2026'
+    launchDate: 'July 2026',
+    tyreSize: '',
+    bootFrunkSpace: '',
+    bhpTorque: '',
+    drivetrain: '',
+    safetyRating: ''
   };
 
   const upcomingVehicle: CarSpec = {
@@ -33,7 +38,12 @@ describe('Release 5.0 (Phase 2) — Upcoming Vehicle Frontend Integration', () =
     batteryCapacity: '60.0 kWh',
     range: '500 km (MIDC)',
     lifecycleStatus: 'Upcoming',
-    launchDate: 'Mid 2027'
+    launchDate: 'Mid 2027',
+    tyreSize: '',
+    bootFrunkSpace: '',
+    bhpTorque: '',
+    drivetrain: '',
+    safetyRating: ''
   };
 
   describe('Vehicle Overview Labels', () => {

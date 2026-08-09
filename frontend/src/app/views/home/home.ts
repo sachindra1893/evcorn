@@ -24,7 +24,8 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
 
       <div class="hero-content animate-premium-fade">
         <div class="hero-text-group">
-          <h1>Compare EVs & Drive the Carbon-Zero Future</h1>
+          <h1>Compare Electric Vehicles and Calculate EV Savings in India</h1>
+          <p class="hero-subtitle">EVCorn helps you <a routerLink="/search" class="hero-internal-link">research</a> and <a routerLink="/compare" class="hero-internal-link">compare electric vehicles</a> in India. Explore <a routerLink="/evs" class="hero-internal-link">EV prices, battery and range</a> information, compare models, and understand the real-world savings of switching from petrol to electric.</p>
         </div>
         
         <!-- Embedded Search Bar -->
@@ -769,7 +770,32 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       </div>
     </section>
 
+    <!-- SEO Substantive Content Section -->
+    <section class="section seo-content-section" style="background: #FAFAFA; padding: 6rem 0; border-top: 1px solid rgba(0,0,0,0.03); border-bottom: 1px solid rgba(0,0,0,0.03);">
+      <div class="seo-container animate-premium-fade" style="max-width: 1000px; margin: 0 auto; width: 92%; display: flex; flex-direction: column; gap: 3rem;">
+        
+        <div class="seo-block" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 10px 40px rgba(0,0,0,0.03); border-radius: 24px; padding: 3rem;">
+          <h2 style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-bottom: 1.2rem; letter-spacing: -0.03em;">Compare Electric Vehicles in India</h2>
+          <p style="font-size: 1.1rem; color: #475569; line-height: 1.7; margin: 0;">EVCorn provides a comprehensive platform to research the latest electric car models available in the Indian market. You can <a routerLink="/compare" style="color: #3B82F6; font-weight: 600; text-decoration: none;">compare important specifications</a> such as battery capacity, real-world range, performance, and current <a routerLink="/evs" style="color: #3B82F6; font-weight: 600; text-decoration: none;">EV prices</a> to make an informed purchasing decision.</p>
+        </div>
 
+        <div class="seo-block" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 10px 40px rgba(0,0,0,0.03); border-radius: 24px; padding: 3rem;">
+          <h2 style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-bottom: 1.2rem; letter-spacing: -0.03em;">Understand EV Savings</h2>
+          <p style="font-size: 1.1rem; color: #475569; line-height: 1.7; margin: 0;">Evaluating an electric vehicle goes beyond the showroom price; running-cost comparisons are crucial. Our interactive savings calculator helps you visualize your monthly and annual fuel savings by directly comparing your daily petrol commute costs against local electric <a routerLink="/energy" style="color: #3B82F6; font-weight: 600; text-decoration: none;">energy</a> tariffs.</p>
+        </div>
+
+        <div class="seo-block" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 10px 40px rgba(0,0,0,0.03); border-radius: 24px; padding: 3rem;">
+          <h2 style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-bottom: 1.2rem; letter-spacing: -0.03em;">Explore EV Charging and Ownership</h2>
+          <p style="font-size: 1.1rem; color: #475569; line-height: 1.7; margin: 0;">Understanding charging times and infrastructure is essential for new EV owners. We provide an advanced <a routerLink="/charging" style="color: #3B82F6; font-weight: 600; text-decoration: none;">EV charging</a> simulator to estimate exact charging durations across different charger types—from standard AC home wallboxes to ultra-fast DC public chargers—and measure the equivalent environmental impact.</p>
+        </div>
+
+        <div class="seo-block" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 10px 40px rgba(0,0,0,0.03); border-radius: 24px; padding: 3rem;">
+          <h2 style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-bottom: 1.2rem; letter-spacing: -0.03em;">Find the Right Electric Vehicle</h2>
+          <p style="font-size: 1.1rem; color: #475569; line-height: 1.7; margin: 0;">If you're unsure where to start, our guided discovery experience matches you with the ideal EV based on your budget and preferred body style. Whether you need a compact city hatchback or a premium long-range SUV, explore our curated <a routerLink="/articles" style="color: #3B82F6; font-weight: 600; text-decoration: none;">articles</a> and recommendations to find your perfect fit.</p>
+        </div>
+
+      </div>
+    </section>
 
     <section class="section articles" id="articles">
       <h2>Latest Insights</h2>
@@ -907,6 +933,28 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       color: #334155;
       font-weight: 600;
       letter-spacing: 0.05rem;
+    }
+    .hero .hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.15rem);
+      color: rgba(255, 255, 255, 0.95);
+      margin-top: 1rem;
+      line-height: 1.6;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      font-weight: 400;
+      letter-spacing: normal;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .hero .hero-internal-link {
+      color: #ffffff;
+      text-decoration: underline;
+      text-decoration-color: rgba(255, 255, 255, 0.4);
+      text-underline-offset: 4px;
+      transition: text-decoration-color 0.2s ease;
+    }
+    .hero .hero-internal-link:hover {
+      text-decoration-color: #ffffff;
     }
     @keyframes kenBurns {
       0% {
@@ -1680,17 +1728,17 @@ export class HomeComponent implements OnInit {
 
   ngOnInit() {
     this.seoService.updateSeo({
-      title: 'Compare EVs, Charging & EV News India',
+      title: 'Compare Electric Vehicles & Calculate Savings in India',
       description:
-        'Compare electric cars in India, estimate solar EV charging savings, and read the latest EV news and reviews on EVCorn — specs, range, and prices.'
+        'Compare electric cars in India, calculate EV savings against petrol, explore charging times, and discover the right EV on EVCorn — specs, range, and prices.'
     });
 
     this.schemaService.setSchema([
       this.schemaService.buildOrganization(),
       this.schemaService.buildWebSite(),
       this.schemaService.buildWebPage(
-        'EVCorn — Electric Vehicles in India',
-        'Compare electric cars in India, estimate solar EV charging savings, and read the latest EV news and reviews on EVCorn.',
+        'EVCorn — Compare Electric Vehicles in India',
+        'Compare electric cars in India, calculate EV savings against petrol, explore charging times, and discover the right EV on EVCorn — specs, range, and prices.',
         '/'
       )
     ]);
