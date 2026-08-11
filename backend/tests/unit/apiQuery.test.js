@@ -1,4 +1,4 @@
-const { parseQueryParams, buildVehicleFilterQuery, buildArticleFilterQuery, publishedVehicleStatusFilter, formatResponse } = require('../../utils/apiQuery');
+const { parseQueryParams, buildVehicleFilterQuery, buildArticleFilterQuery, formatResponse } = require('../../utils/apiQuery');
 
 describe('API Query Utilities (Unit Tests)', () => {
   describe('parseQueryParams()', () => {

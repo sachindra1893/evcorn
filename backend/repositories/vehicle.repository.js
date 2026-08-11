@@ -86,6 +86,37 @@ class VehicleRepository {
       return await Vehicle.findOneAndDelete({ id: slugId }).lean();
     }, { slugId });
   }
+
+  async updateMany(filterQuery, updateData) {
+    if (isLocalFileDb()) {
+      let vehicles = fileDb.getVehicles().slice();
+      let updatedCount = 0;
+      // Basic implementation for fileDb that matches typical filter queries
+      // Only implements exact matches for simplicity (which is all we need here)
+      for (let i = 0; i < vehicles.length; i++) {
+        let match = true;
+        for (const key in filterQuery) {
+          if (vehicles[i][key] !== filterQuery[key]) {
+            match = false;
+            break;
+          }
+        }
+        if (match) {
+          vehicles[i] = { ...vehicles[i] };
+          for (const key in updateData.$set || {}) {
+            vehicles[i][key] = updateData.$set[key];
+          }
+          updatedCount++;
+        }
+      }
+      if (updatedCount > 0) fileDb.saveVehicles(vehicles);
+      return { modifiedCount: updatedCount };
+    }
+
+    return await measureQuery('Vehicle.updateMany', async () => {
+      return await Vehicle.updateMany(filterQuery, updateData);
+    }, { filterQuery });
+  }
 }
 
 module.exports = new VehicleRepository();

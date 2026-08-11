@@ -18,7 +18,7 @@ describe('EVCorn Production API Schema Contracts (Phase 8)', () => {
       expect(typeof v.categoryId).toBe('string');
       expect(v).toHaveProperty('imageUrl');
       expect(v).toHaveProperty('status');
-      expect(['Published', 'Upcoming', 'Discontinued']).toContain(v.status);
+      expect(['Launched', 'Upcoming']).toContain(v.status);
     }
   });
 
@@ -83,6 +83,7 @@ describe('EVCorn Production API Schema Contracts (Phase 8)', () => {
 
   test('Contract 7: GET /api/search/unified returns expected unified search contract schema', async () => {
     const res = await request(app).get('/api/search/unified?q=tata');
+    if (res.statusCode !== 200) console.log(res.body);
     expect(res.statusCode).toBe(200);
     const data = res.body.data || res.body;
     expect(data).toHaveProperty('query', 'tata');

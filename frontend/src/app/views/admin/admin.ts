@@ -340,6 +340,12 @@ import { firstValueFrom } from 'rxjs';
                         <option value="2030">2030</option>
                       </select>
                     </div>
+                    <div style="margin-top: 8px;">
+                      <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 14px; cursor: pointer;">
+                        <input type="checkbox" name="launch-date-override" [(ngModel)]="vehLaunchDateOverride">
+                        Variant-specific exception (do not inherit model date)
+                      </label>
+                    </div>
                   </div>
 
                   <!-- Price -->
@@ -1157,6 +1163,7 @@ export class AdminComponent implements OnInit {
   vehLaunchPeriod: 'Early' | 'Mid' | 'Late' = 'Mid';
   vehLaunchMonth = 'July';
   vehLaunchYear = '2026';
+  vehLaunchDateOverride = false;
 
   // 3. Admin Form Section Accordions
   adminSecOverview = true;
@@ -1655,7 +1662,8 @@ export class AdminComponent implements OnInit {
       torque: torqueStr,
       lifecycleStatus: this.vehLifecycleStatus,
       status: this.vehLifecycleStatus,
-      launchDate: this.getFormattedLaunchDate()
+      launchDate: this.getFormattedLaunchDate(),
+      isLaunchDateOverride: this.vehLaunchDateOverride
     };
 
     if (this.editingVehicleId) {
@@ -1713,6 +1721,8 @@ export class AdminComponent implements OnInit {
     }
 
     const launchStr = veh.launchDate || '';
+    this.vehLaunchDateOverride = veh.isLaunchDateOverride || false;
+
     if (launchStr) {
       const parts = launchStr.split(' ');
       if (parts.length >= 2) {
@@ -1724,9 +1734,23 @@ export class AdminComponent implements OnInit {
         this.vehLaunchYear = parts[1];
       }
     } else {
-      this.vehLaunchPeriod = 'Mid';
-      this.vehLaunchMonth = 'July';
-      this.vehLaunchYear = '2026';
+      // Find model default from siblings
+      const sibling = this.vehicles.find(v => v.parentModel === veh.parentModel && v.launchDate && v.id !== veh.id);
+      if (sibling && sibling.launchDate) {
+        const parts = sibling.launchDate.split(' ');
+        if (parts.length >= 2) {
+          if (['Early', 'Mid', 'Late'].includes(parts[0])) {
+            this.vehLaunchPeriod = parts[0] as any;
+          } else {
+            this.vehLaunchMonth = parts[0];
+          }
+          this.vehLaunchYear = parts[1];
+        }
+      } else {
+        this.vehLaunchPeriod = 'Mid';
+        this.vehLaunchMonth = 'July';
+        this.vehLaunchYear = '2026';
+      }
     }
 
     // Parse weights
@@ -1973,6 +1997,7 @@ export class AdminComponent implements OnInit {
     this.vehLaunchPeriod = 'Mid';
     this.vehLaunchMonth = 'July';
     this.vehLaunchYear = '2026';
+    this.vehLaunchDateOverride = false;
     this.vehName = '';
     this.vehParentModel = '';
     this.vehVariantName = '';

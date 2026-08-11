@@ -7,7 +7,7 @@ const vehicleRepository = require('../repositories/vehicle.repository');
 const articleRepository = require('../repositories/article.repository');
 const { toVehicleListDTO } = require('../dto/vehicle.dto');
 const { toArticleListDTO } = require('../dto/article.dto');
-const { publishedVehicleStatusFilter } = require('../utils/apiQuery');
+const { articleHref, modelHref } = require('../utils/entity-href');
 const appCache = require('../utils/cache');
 
 /** Fields needed for ranking + list DTO (keeps memory/payload down vs full docs). */
@@ -37,7 +37,7 @@ class RecommendationService {
     // top-N slate — scoped query, not a full catalog load.
     if (!currentVehicleId && !categoryId) {
       const top = await vehicleRepository.findAll(
-        publishedVehicleStatusFilter('Published'),
+        { status: { $in: ['Launched', 'Upcoming'] } },
         RECOMMENDATION_VEHICLE_PROJECTION,
         { name: 1 },
         0,
@@ -55,7 +55,7 @@ class RecommendationService {
 
     // Prefer category-scoped reads. File-DB ignores $or and returns the catalog
     // (small); Mongo uses the categoryId index and caps candidates.
-    const statusFilter = publishedVehicleStatusFilter('Published');
+    const statusFilter = { status: { $in: ['Launched', 'Upcoming'] } };
     const filterQuery = categoryId
       ? { $and: [statusFilter, { categoryId: String(categoryId).toLowerCase() }] }
       : statusFilter;

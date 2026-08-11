@@ -71,7 +71,7 @@
       "airbagsCount": 6,
       "hasADAS": true
     },
-    "status": "Published",
+    "status": "Launched",
     "bodyStyle": "SUV"
   },
   {
@@ -145,7 +145,7 @@
       "airbagsCount": 2,
       "hasADAS": false
     },
-    "status": "Published",
+    "status": "Launched",
     "bodyStyle": "Hatchback"
   },
   {
@@ -220,7 +220,7 @@
       "airbagsCount": 6,
       "hasADAS": false
     },
-    "status": "Published",
+    "status": "Launched",
     "bodyStyle": "SUV"
   },
   {
@@ -294,7 +294,7 @@
       "airbagsCount": 6,
       "hasADAS": false
     },
-    "status": "Published",
+    "status": "Launched",
     "bodyStyle": "SUV"
   },
   {
@@ -368,7 +368,7 @@
       "airbagsCount": 6,
       "hasADAS": false
     },
-    "status": "Published",
+    "status": "Launched",
     "bodyStyle": "SUV"
   },
   {
@@ -442,7 +442,7 @@
       "airbagsCount": 7,
       "hasADAS": true
     },
-    "status": "Published",
+    "status": "Launched",
     "bodyStyle": "SUV"
   },
   {
@@ -517,7 +517,7 @@
       "airbagsCount": 6,
       "hasADAS": true
     },
-    "status": "Published",
+    "status": "Launched",
     "bodyStyle": "SUV"
   }
 ]

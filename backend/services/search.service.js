@@ -7,7 +7,7 @@ const articleRepository = require('../repositories/article.repository');
 const categoryRepository = require('../repositories/category.repository');
 const { toVehicleLightListDTO } = require('../dto/vehicle.dto');
 const { toArticleLightListDTO } = require('../dto/article.dto');
-const { publishedVehicleStatusFilter, escapeRegex } = require('../utils/apiQuery');
+const { escapeRegex } = require('../utils/apiQuery');
 const appCache = require('../utils/cache');
 const {
   articleHref,
@@ -59,7 +59,7 @@ class SearchService {
     const [vehicles, articles, categories] = await Promise.all([
       vehicleRepository.findAll({
         $and: [
-          publishedVehicleStatusFilter('Published'),
+          { status: { $in: ['Launched', 'Upcoming'] } },
           { $or: [{ name: containsRegex }, { parentModel: containsRegex }] }
         ]
       }, 'id name categoryId parentModel imageUrl', { name: 1 }, 0, 5),
@@ -136,7 +136,7 @@ class SearchService {
 
     const regex = searchTerm ? new RegExp(escapeRegex(searchTerm), 'i') : null;
 
-    const vehicleAndConditions = [publishedVehicleStatusFilter('Published')];
+    const vehicleAndConditions = [{ status: { $in: ['Launched', 'Upcoming'] } }];
     const vehicleQuery = {};
     if (filters.category || filters.categoryId) {
       vehicleQuery.categoryId = (filters.category || filters.categoryId).toLowerCase();

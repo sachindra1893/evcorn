@@ -127,6 +127,8 @@ const VehicleSchema = new mongoose.Schema({
   
   status: { type: String, enum: ['Launched', 'Upcoming'], default: 'Launched', index: true },
   publishedAt: { type: Date, default: Date.now, index: true },
+  launchDate: { type: String, default: '' },
+  isLaunchDateOverride: { type: Boolean, default: false },
 
   // Root-Cause Cluster E fix: Browse EV's category chips (SUV/Hatchback/Sedan/
   // MPV/Sports) filter on this field, and vehicle.service.js's LIGHT_PROJECTION

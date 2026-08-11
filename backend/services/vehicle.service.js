@@ -123,6 +123,14 @@ class VehicleService {
 
     const doc = await vehicleRepository.upsert(vehicleData);
 
+    // Synchronize launch date to non-overridden siblings
+    if (vehicleData.parentModel && !vehicleData.isLaunchDateOverride) {
+      await vehicleRepository.updateMany(
+        { parentModel: vehicleData.parentModel, isLaunchDateOverride: false },
+        { $set: { launchDate: vehicleData.launchDate || '' } }
+      );
+    }
+
     // ── Invalidate all vehicle cache keys on write ────────────────────────────
     invalidateVehicleCaches(vehicleData.id);
 
