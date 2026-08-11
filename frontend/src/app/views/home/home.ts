@@ -24,7 +24,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
 
       <div class="hero-content animate-premium-fade">
         <div class="hero-text-group">
-          <h1>Compare Electric Vehicles and Calculate EV Savings in India</h1>
+          <h1>Compare Electric Vehicles and Calculate EV Savings </h1>
           <p class="hero-subtitle">EVCorn helps you <a routerLink="/search" class="hero-internal-link">research</a> and <a routerLink="/compare" class="hero-internal-link">compare electric vehicles</a> in India. Explore <a routerLink="/evs" class="hero-internal-link">EV prices, battery and range</a> information, compare models, and understand the real-world savings of switching from petrol to electric.</p>
         </div>
         
@@ -95,11 +95,11 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
     <section class="section calculator-section" style="position: relative; overflow: hidden; background: #FFFFFF; padding: 5rem 0;">
       
       <!-- Premium Ambient Background -->
-      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.6; z-index: 0;">
+      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 1; z-index: 0;">
         <svg viewBox="0 0 1440 600" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;">
-          <path d="M-100 150 C 300 50, 500 350, 900 150 C 1200 50, 1300 250, 1600 180" stroke="#10B981" stroke-width="1.5" stroke-opacity="0.12" stroke-linecap="round"/>
-          <path d="M-50 250 C 200 400, 600 100, 1000 300 C 1200 400, 1400 200, 1600 280" stroke="#0284C7" stroke-width="1" stroke-opacity="0.1" stroke-linecap="round"/>
-          <path d="M-200 350 C 400 250, 700 650, 1100 350 C 1400 200, 1500 350, 1800 300" stroke="#10B981" stroke-width="1" stroke-opacity="0.08" stroke-linecap="round"/>
+          <path d="M-100 150 C 300 50, 500 350, 900 150 C 1200 50, 1300 250, 1600 180" stroke="#10B981" stroke-width="1.5" stroke-opacity="0.22" stroke-linecap="round"/>
+          <path d="M-50 250 C 200 400, 600 100, 1000 300 C 1200 400, 1400 200, 1600 280" stroke="#0284C7" stroke-width="1" stroke-opacity="0.18" stroke-linecap="round"/>
+          <path d="M-200 350 C 400 250, 700 650, 1100 350 C 1400 200, 1500 350, 1800 300" stroke="#10B981" stroke-width="1" stroke-opacity="0.14" stroke-linecap="round"/>
         </svg>
       </div>
 
@@ -238,7 +238,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
         <!-- Floating Leaves -->
         <div style="position: absolute; top: 20%; left: 15%; font-size: 1.2rem; opacity: 0.4; transform: rotate(15deg);">🍃</div>
         <div style="position: absolute; top: 60%; left: 8%; font-size: 1rem; opacity: 0.3; transform: rotate(-25deg);">🍃</div>
-        <div style="position: absolute; top: 30%; right: 18%; font-size: 1.5rem; opacity: 0.35; transform: rotate(-10deg);">🍃</div>
+        <div style="position: absolute; top: 30%; right: 18%; font-size: 1.5rem; opacity: 1; transform: rotate(-10deg);">🍃</div>
         <div style="position: absolute; top: 75%; right: 10%; font-size: 1.1rem; opacity: 0.3; transform: rotate(45deg);">🍃</div>
       </div>
 
@@ -875,13 +875,14 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
     }
     .hero-bg-anim {
       position: absolute;
+      opacity: 0.70;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-image: url('/hero-bg.jpg');
+      background-image: url('/evcorn-hero-v2.png');
       background-size: cover;
-      background-position: center 38%; /* Focus on the car and sunset, ensuring they are not cropped */
+      background-position: center 42%; /* Focus on the car and sunset, ensuring they are not cropped */
       z-index: 1;
       transform-origin: center center;
       transform: scale(1.02) translate(var(--mx, 0px), var(--my, 0px));
@@ -895,13 +896,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       width: 100%;
       height: 100%;
       /* Narrow edge blending (5%) so the 8K photo details and sunset colors are 95% raw, bright, and untouched */
-      background: linear-gradient(to bottom, 
-                    #FFFFFF 0%, 
-                    rgba(255, 255, 255, 0.4) 1.5%, 
-                    rgba(255, 255, 255, 0) 5%, 
-                    rgba(255, 255, 255, 0) 95%, 
-                    rgba(255, 255, 255, 0.5) 98.5%, 
-                    #FFFFFF 100%);
+       background: none;
       z-index: 2;
       pointer-events: none;
     }
@@ -919,15 +914,14 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       margin-top: 10px;
     }
     .hero h1 {
-      font-size: clamp(2.4rem, 6vw, 3.8rem);
-      font-weight: 800;
-      margin-bottom: 0.5rem;
-      line-height: 1.25;
-      color: #FAF9F6;
-      letter-spacing: -0.05rem;
-      text-shadow: 0 4px 20px rgba(15, 23, 42, 0.25), 
-                   0 2px 6px rgba(15, 23, 42, 0.15);
-    }
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  line-height: 1.25;
+  color: #0F172A;
+  letter-spacing: -0.03rem;
+  text-shadow: none;
+}
     .hero p {
       font-size: clamp(1.1rem, 2.5vw, 1.4rem);
       color: #334155;
@@ -936,7 +930,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
     }
     .hero .hero-subtitle {
       font-size: clamp(1rem, 2vw, 1.15rem);
-      color: rgba(255, 255, 255, 0.95);
+      color: #0F172A;
       margin-top: 1rem;
       line-height: 1.6;
       max-width: 700px;
@@ -944,17 +938,17 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       margin-right: auto;
       font-weight: 400;
       letter-spacing: normal;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      text-shadow: none;
     }
     .hero .hero-internal-link {
-      color: #ffffff;
+      color: #0F172A;
       text-decoration: underline;
       text-decoration-color: rgba(255, 255, 255, 0.4);
       text-underline-offset: 4px;
       transition: text-decoration-color 0.2s ease;
     }
     .hero .hero-internal-link:hover {
-      text-decoration-color: #ffffff;
+      text-decoration-color: #0F172A;
     }
     @keyframes kenBurns {
       0% {
@@ -1103,11 +1097,12 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       margin: 1.1rem auto 0;
       padding: 10px 22px;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid #0088CC;
+      background: #0088CC;
+      box-shadow: 0 6px 18px rgba(0, 136, 204, 0.20);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      color: #FFFFFF;
+      color: #ffffff;
       font-weight: 700;
       font-size: 0.95rem;
       text-decoration: none;
@@ -1117,8 +1112,8 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       z-index: 100;
     }
     .hero-compare-cta:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.55);
+      background: #006FA6;
+      border-color: #006FA6;
       transform: translateY(-1px);
     }
     .input-wrapper {
@@ -1134,16 +1129,16 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       -webkit-backdrop-filter: blur(25px);
       border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: 30px;
-      color: #FFFFFF;
+      color: #0F172A;
       font-size: 1.1rem;
       outline: none;
-      box-shadow: 
-        0 15px 35px rgba(0, 0, 0, 0.2), 
-        inset 0 1px 0.5px rgba(255, 255, 255, 0.3);
+      box-shadow:
+  0 8px 24px rgba(15, 23, 42, 0.10),
+  inset 0 1px 0.5px rgba(255, 255, 255, 0.7);
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     .search-bar-container input::placeholder {
-      color: rgba(255, 255, 255, 0.65);
+      color: rgba(15, 23, 42, 0.60);
     }
     .search-bar-container input:focus {
       background: rgba(255, 255, 255, 0.18);
