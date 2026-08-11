@@ -10,7 +10,7 @@ describe('BuyingRecommendationGenerator', () => {
     const text = generateBuyingRecommendation(
       'Tata',
       'Nexon EV',
-      { status: 'Published', price: '₹12 Lakh', range: '400 km', bodyStyle: 'SUV' },
+      { status: 'Launched', price: '₹12 Lakh', range: '400 km', bodyStyle: 'SUV' },
       facts
     );
     expect(text).toBeTruthy();
@@ -19,7 +19,7 @@ describe('BuyingRecommendationGenerator', () => {
   });
 
   it('returns undefined without brand/model', () => {
-    expect(generateBuyingRecommendation('', '', { status: 'Published' }, facts)).toBeUndefined();
+    expect(generateBuyingRecommendation('', '', { status: 'Launched' }, facts)).toBeUndefined();
   });
 
   it('omits recommendation when published facts and audience signals are missing', () => {
@@ -27,7 +27,7 @@ describe('BuyingRecommendationGenerator', () => {
       generateBuyingRecommendation(
         'Brand',
         'Mystery EV',
-        { status: 'Published', price: 'N/A', range: 'N/A' },
+        { status: 'Launched', price: 'N/A', range: 'N/A' },
         { priceRange: 'TBA', batteryOptions: 'N/A', claimedRange: 'N/A', charging: 'N/A' }
       )
     ).toBeUndefined();

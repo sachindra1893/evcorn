@@ -16,7 +16,7 @@ module.exports = {
     publishedAt: 'publishedAt',
     createdAt: 'createdAt'
   },
-  VEHICLE_STATUS: ['Published', 'Upcoming', 'Discontinued'],
+  VEHICLE_STATUS: ['Launched', 'Upcoming'],
   IMAGE_FOLDER: 'evcorn',
   ERROR_CODES: {
     UNAUTHORIZED: 'UNAUTHORIZED_ACCESS',

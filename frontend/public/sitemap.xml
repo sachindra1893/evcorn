@@ -163,62 +163,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://evcorn.com/ev/byd/atto-3</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/tata-motors/curvvev</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/mg/cyberster</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://evcorn.com/ev/maruti-suzuki/e-vitara</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/mg/m9</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/tesla/model-y</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/tata-motors/punchev</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/byd/seal</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/byd/sealion-7</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/tata-motors/sierraev</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/kia/syros-ev</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://evcorn.com/ev/porsche/hu</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

@@ -14,7 +14,7 @@ describe('SpecSummaryGenerator', () => {
       safetyRating: 'N/A',
       adasLevel: '-',
       airbags: '',
-      status: 'Published'
+      status: 'Launched'
     });
     const labels = rows.map((r) => r.label);
     expect(labels).toContain('Price');

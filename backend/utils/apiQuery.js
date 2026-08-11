@@ -77,29 +77,7 @@ function parseQueryParams(query) {
   };
 }
 
-/**
- * P0 root cause (Vehicle Detail infinite spinner / Browse EVs empty / Search
- * returning zero vehicles): the Vehicle schema declares `status` with
- * `default: 'Published'`, but that default only applies when a document is
- * constructed *through Mongoose*. The production vehicle collection was
- * seeded via a script that bypassed the Mongoose model (same root cause
- * class as the `bodyStyle` field fixed in the Browse EV commit), so `status`
- * is genuinely absent — not the string `'Published'` — on every existing
- * document. An exact-match query for `{ status: 'Published' }` therefore
- * matches zero documents, even though the DTO's own read-side fallback
- * (`obj.status || 'Published'`) already treats a missing field as Published
- * for display. This helper makes the *query* side agree with the *display*
- * side: a request for the default "Published" status also matches documents
- * where the field was never persisted. Requests for the other explicit enum
- * values (Upcoming/Discontinued) are unaffected — those are genuine,
- * intentional states that a missing field should never satisfy.
- */
-function publishedVehicleStatusFilter(status) {
-  if (status === 'Published') {
-    return { $or: [{ status: 'Published' }, { status: { $exists: false } }] };
-  }
-  return { status };
-}
+
 
 /**
  * Build Mongoose Filter Query from HTTP Request Query
@@ -125,12 +103,7 @@ function buildVehicleFilterQuery(query) {
 
   // Status filter
   if (query.status) {
-    const statusFilter = publishedVehicleStatusFilter(query.status);
-    if (statusFilter.$or) {
-      andConditions.push(statusFilter);
-    } else {
-      Object.assign(mongoQuery, statusFilter);
-    }
+    mongoQuery.status = query.status;
   }
 
   // Price Min/Max Range ($gte, $lte)
@@ -264,7 +237,6 @@ module.exports = {
   parseQueryParams,
   buildVehicleFilterQuery,
   buildArticleFilterQuery,
-  publishedVehicleStatusFilter,
   escapeRegex,
   formatResponse,
   ALLOWED_SORT_FIELDS,

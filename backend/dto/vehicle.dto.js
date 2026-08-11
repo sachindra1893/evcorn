@@ -60,7 +60,7 @@ function toVehicleDTO(doc) {
     safety: obj.safety || {},
     seo: obj.seo || {},
 
-    status: obj.status || 'Published',
+    status: obj.status || 'Launched',
     bodyStyle: obj.bodyStyle || null,
     publishedAt: obj.publishedAt || obj.createdAt,
     createdAt: obj.createdAt,
@@ -96,7 +96,7 @@ function toVehicleLightDTO(doc) {
     batteryCapacity: batteryText,
     range: rangeText,
     imageUrl,
-    status: obj.status || 'Published',
+    status: obj.status || 'Launched',
     bodyStyle: obj.bodyStyle || null
   };
 

@@ -66,7 +66,7 @@ class VehicleRepository {
       return await Vehicle.findOneAndUpdate(
         { id: vehicleData.id },
         vehicleData,
-        { new: true, upsert: true }
+        { new: true, upsert: true, runValidators: true }
       ).lean();
     }, { slugId: vehicleData.id });
   }

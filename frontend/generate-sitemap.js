@@ -161,8 +161,10 @@ async function generateSitemap() {
     if (Array.isArray(vehicles)) {
       for (const vehicle of vehicles) {
         if (!vehicle) continue;
-        const status = String(vehicle.status || 'Published').toLowerCase();
-        if (status && status !== 'published' && status !== 'active') continue;
+        const status = String(vehicle.status || 'Launched').toLowerCase();
+        if (status && status !== 'launched' && status !== 'upcoming') {
+          continue;
+        }
 
         const brandName =
           categoryNameById.get(vehicle.categoryId) ||

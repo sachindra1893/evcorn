@@ -15,7 +15,7 @@ export function generateBuyingRecommendation(
   const model = (modelName || '').trim();
   if (!brand || !model || !selected) return undefined;
 
-  const status = (selected.status || 'Published').trim();
+  const status = (selected.status || 'Launched').trim();
   if (/upcoming/i.test(status)) {
     return `The ${brand} ${model} is upcoming — use published specs as guidance and confirm final price, range, and charging before booking.`;
   }

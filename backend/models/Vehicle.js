@@ -125,7 +125,7 @@ const VehicleSchema = new mongoose.Schema({
   safety: { type: SafetySchema, default: () => ({}) },
   seo: { type: SEOSchema, default: () => ({}) },
   
-  status: { type: String, enum: ['Published', 'Upcoming', 'Discontinued'], default: 'Published', index: true },
+  status: { type: String, enum: ['Launched', 'Upcoming'], default: 'Launched', index: true },
   publishedAt: { type: Date, default: Date.now, index: true },
 
   // Root-Cause Cluster E fix: Browse EV's category chips (SUV/Hatchback/Sedan/

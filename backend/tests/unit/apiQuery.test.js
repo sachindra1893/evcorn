@@ -37,56 +37,7 @@ describe('API Query Utilities (Unit Tests)', () => {
       expect(filter.$or.length).toBeGreaterThan(0);
     });
 
-    describe('status filter — P0 Vehicle Detail infinite spinner regression tests', () => {
-      // Root cause: the Vehicle schema's `status` field defaults to
-      // 'Published' only when a document is created *through Mongoose*.
-      // Production documents were seeded via a script that bypassed the
-      // model, so `status` is genuinely absent on every real document.
-      // `{ status: 'Published' }` (an exact match) therefore matched zero
-      // vehicles everywhere it was queried, which is what made
-      // GET /api/vehicles?status=Published return [] and made the frontend's
-      // combineLatest() guard ("if allVehicles.length === 0, wait") spin
-      // forever since no further emission would ever arrive.
-      it('should treat status=Published as matching a missing status field too', () => {
-        const filter = buildVehicleFilterQuery({ status: 'Published' });
-        expect(Array.isArray(filter.$or)).toBe(true);
-        expect(filter.$or).toContainEqual({ status: 'Published' });
-        expect(filter.$or).toContainEqual({ status: { $exists: false } });
-      });
 
-      it('should NOT apply the missing-field tolerance to other explicit status values', () => {
-        expect(buildVehicleFilterQuery({ status: 'Upcoming' })).toEqual({ status: 'Upcoming' });
-        expect(buildVehicleFilterQuery({ status: 'Discontinued' })).toEqual({ status: 'Discontinued' });
-      });
-
-      it('should combine status=Published tolerance with a search regex via $and (no clobbering)', () => {
-        const filter = buildVehicleFilterQuery({ status: 'Published', search: 'nexon' });
-        expect(filter.$or).toBeUndefined();
-        expect(Array.isArray(filter.$and)).toBe(true);
-        expect(filter.$and).toHaveLength(2);
-
-        const statusClause = filter.$and.find(c => c.$or.some(o => 'status' in o));
-        expect(statusClause.$or).toContainEqual({ status: 'Published' });
-        expect(statusClause.$or).toContainEqual({ status: { $exists: false } });
-
-        const searchClause = filter.$and.find(c => c.$or.some(o => 'name' in o));
-        expect(searchClause.$or.some(o => o.name instanceof RegExp)).toBe(true);
-      });
-
-      it('should combine status=Published tolerance with plain field filters at the top level', () => {
-        const filter = buildVehicleFilterQuery({ status: 'Published', brand: 'tata' });
-        expect(filter.categoryId).toBe('tata');
-        expect(filter.$or).toContainEqual({ status: 'Published' });
-        expect(filter.$or).toContainEqual({ status: { $exists: false } });
-      });
-
-      it('publishedVehicleStatusFilter() should be the single source of truth for this tolerance', () => {
-        expect(publishedVehicleStatusFilter('Published')).toEqual({
-          $or: [{ status: 'Published' }, { status: { $exists: false } }]
-        });
-        expect(publishedVehicleStatusFilter('Upcoming')).toEqual({ status: 'Upcoming' });
-      });
-    });
   });
 
   describe('buildArticleFilterQuery() — Root-Cause Cluster A regression tests', () => {

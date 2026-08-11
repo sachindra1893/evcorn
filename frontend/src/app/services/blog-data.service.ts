@@ -473,7 +473,7 @@ export class BlogDataService {
       const cached = this.loadCache('allVehicles') || [];
       const subject = new BehaviorSubject<CarSpec[]>(cached);
 
-      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?status=Published`).pipe(
+      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?status=Launched`).pipe(
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
@@ -544,7 +544,7 @@ export class BlogDataService {
       const cached = this.loadCache('vehiclesLight') || [];
       const subject = new BehaviorSubject<any[]>(cached);
 
-      this.http.get<any[]>(`${this.apiUrl}/vehicles?light=true&status=Published`).pipe(
+      this.http.get<any[]>(`${this.apiUrl}/vehicles?light=true&status=Launched`).pipe(
         map(vehicles => {
           const enriched = vehicles.map(v => this.enrichVehicle(v));
           return this.applyImageFallback(enriched);
