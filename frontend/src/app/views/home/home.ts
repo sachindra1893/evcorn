@@ -424,162 +424,174 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
           box-shadow: 0 0 0 1px #3B82F6 inset, 0 2px 4px rgba(0,0,0,0.1);
           cursor: pointer;
         }
+        .calc-divider {
+          display: none;
+        }
+        @media (min-width: 600px) {
+          .calc-divider {
+            display: block;
+          }
+        }
       </style>
 
-      <div class="calculator-container animate-premium-fade" style="position: relative; z-index: 1; max-width: 720px; margin: 0 auto; width: 92%;">
-        <div class="calc-header" style="margin-bottom: 4rem; text-align: center;">
-          <h2 style="font-size: 2.2rem; font-weight: 800; color: #0F172A; letter-spacing: -0.04em;">EV Charging Simulator</h2>
-          <p style="font-size: 1.1rem; color: #64748B; margin-top: 0.8rem;">Set your battery, choose a charger and see real charging time.</p>
+      <div class="calculator-container animate-premium-fade" style="position: relative; z-index: 1; max-width: 680px; margin: 0 auto; width: 92%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 15px 40px rgba(0,0,0,0.02); border-radius: 20px; padding: 2.5rem; overflow: hidden;">
+        <div class="calc-header" style="margin-bottom: 2rem; text-align: center;">
+          <h2 style="font-size: 2rem; font-weight: 800; color: #0F172A; letter-spacing: -0.04em; margin: 0;">EV Charging Simulator</h2>
+          <p style="font-size: 1rem; color: #64748B; margin-top: 0.5rem; margin-bottom: 0;">Calculate your real-world charging time.</p>
         </div>
 
-        <!-- Section 1: Battery Settings -->
-        <div style="margin-bottom: 3.5rem;">
-          <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 1.2rem;">
-            <div style="width: 32px; height: 32px; border-radius: 50%; background: #EFF6FF; color: #3B82F6; font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">1</div>
-            <h3 style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin: 0;">Battery Settings</h3>
-          </div>
-          
-          <div style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 15px 40px rgba(0,0,0,0.02); border-radius: 20px; padding: 2.5rem;">
-            
-            <!-- Battery Size Slider -->
-            <div style="margin-bottom: 2.5rem;">
-              <div style="font-size: 0.9rem; font-weight: 600; color: #64748B; margin-bottom: 1rem;">Battery Size</div>
-              <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
-                <div style="font-size: 1.6rem; font-weight: 800; color: #0F172A; width: 120px;">{{ chargeBatterySize }} kWh</div>
-                <div style="flex: 1; min-width: 200px;">
-                  <input type="range" min="10" max="110" step="1" [(ngModel)]="chargeBatterySize" (input)="onCustomBatteryChange()" class="blue-slider">
-                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748B; margin-top: 12px; font-weight: 500;">
-                    <span>10 kWh</span>
-                    <span>110 kWh</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div style="height: 1px; background: #F1F5F9; margin: 0 -2.5rem 2.5rem -2.5rem;"></div>
+        <div style="display: flex; flex-direction: column; gap: 1.75rem; margin-bottom: 2rem;">
 
-            <!-- Start & Target SoC Sliders -->
-            <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
-              <div style="flex: 1; border-right: 1px solid #F1F5F9; padding-right: 3rem; min-width: 200px; margin-bottom: 10px;">
-                <div style="font-size: 0.9rem; font-weight: 600; color: #64748B; margin-bottom: 0.8rem;">Start Level</div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #0F172A; margin-bottom: 1.5rem;">{{ startSoc }}%</div>
-                <input type="range" min="0" max="90" step="5" [(ngModel)]="startSoc" (input)="onStartSocChange()" class="blue-slider">
-              </div>
-              <div style="flex: 1; min-width: 200px; margin-bottom: 10px;">
-                <div style="font-size: 0.9rem; font-weight: 600; color: #64748B; margin-bottom: 0.8rem;">Target Level</div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #0F172A; margin-bottom: 1.5rem;">{{ targetSoc }}%</div>
-                <input type="range" min="10" max="100" step="5" [(ngModel)]="targetSoc" (input)="onTargetSocChange()" class="blue-slider">
-              </div>
-            </div>
-          </div>
+  <!-- Battery -->
+  <div>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem;">
+      <div style="font-size: 0.95rem; font-weight: 600; color: #64748B;">Battery</div>
+      <div style="font-size: 1.25rem; font-weight: 800; color: #0F172A;">
+        {{ chargeBatterySize }} kWh
+      </div>
+    </div>
+
+    <input
+      type="range"
+      min="10"
+      max="110"
+      step="1"
+      [(ngModel)]="chargeBatterySize"
+      (input)="onCustomBatteryChange()"
+      class="blue-slider"
+    >
+
+    <div style="display: flex; justify-content: space-between; margin-top: 0.35rem; font-size: 0.75rem; color: #64748B;">
+      <span>10 kWh</span>
+      <span>110 kWh</span>
+    </div>
+  </div>
+
+
+  <!-- Charging -->
+  <div>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="font-size: 0.95rem; font-weight: 600; color: #64748B;">
+          Charging
         </div>
 
-        <!-- Section 2: Choose Charger -->
-        <div style="margin-bottom: 3.5rem;">
-          <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 1.2rem;">
-            <div style="width: 32px; height: 32px; border-radius: 50%; background: #EFF6FF; color: #3B82F6; font-size: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center;">2</div>
-            <h3 style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin: 0;">Choose Charger</h3>
-          </div>
-          
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 1.5rem;">
-            <!-- AC Home -->
-            <button type="button" (click)="selectedChargerSpeed = 7.2; stopSimulation();" 
-                    [style.border]="selectedChargerSpeed === 7.2 ? '2px solid #3B82F6' : '1px solid transparent'" 
-                    style="background: rgba(255,255,255,0.95); border-radius: 16px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.03);">
-              @if (selectedChargerSpeed === 7.2) { <div style="position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; background: #3B82F6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">✓</div> }
-              <div style="margin-bottom: 1.2rem; color: #64748B; display: flex; justify-content: center;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="4" width="10" height="16" rx="4"/><circle cx="12" cy="12" r="2"/></svg>
-              </div>
-              <div style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">AC Home</div>
-              <div style="font-size: 0.85rem; color: #64748B; margin-top: 6px; font-weight: 500;">7.2 kW</div>
-            </button>
+        <div style="display: flex; background: #F1F5F9; border-radius: 7px; padding: 2px;">
+          <button
+            type="button"
+            (click)="onChargingModeChange('AC')"
+            [style.background]="chargingMode === 'AC' ? '#FFFFFF' : 'transparent'"
+            [style.color]="chargingMode === 'AC' ? '#0F172A' : '#64748B'"
+            style="border: 0; border-radius: 5px; padding: 4px 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer;"
+          >
+            AC
+          </button>
 
-            <!-- AC Fast -->
-            <button type="button" (click)="selectedChargerSpeed = 22; stopSimulation();" 
-                    [style.border]="selectedChargerSpeed === 22 ? '2px solid #3B82F6' : '1px solid transparent'" 
-                    style="background: rgba(255,255,255,0.95); border-radius: 16px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.03);">
-              @if (selectedChargerSpeed === 22) { <div style="position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; background: #3B82F6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">✓</div> }
-              <div style="margin-bottom: 1.2rem; color: #64748B; display: flex; justify-content: center;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="4" width="10" height="16" rx="4"/><circle cx="12" cy="10" r="1.5"/><circle cx="12" cy="14" r="1.5"/></svg>
-              </div>
-              <div style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">AC Fast</div>
-              <div style="font-size: 0.85rem; color: #64748B; margin-top: 6px; font-weight: 500;">22 kW</div>
-            </button>
-
-            <!-- DC Fast -->
-            <button type="button" (click)="selectedChargerSpeed = 50; stopSimulation();" 
-                    [style.border]="selectedChargerSpeed === 50 ? '2px solid #3B82F6' : '1px solid transparent'" 
-                    style="background: rgba(255,255,255,0.95); border-radius: 16px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.03);">
-              @if (selectedChargerSpeed === 50) { <div style="position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; background: #3B82F6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">✓</div> }
-              <div style="margin-bottom: 1.2rem; color: #64748B; display: flex; justify-content: center;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="12" cy="9" r="1.5"/><circle cx="12" cy="15" r="1.5"/></svg>
-              </div>
-              <div style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">DC Fast</div>
-              <div style="font-size: 0.85rem; color: #64748B; margin-top: 6px; font-weight: 500;">50 kW</div>
-            </button>
-
-            <!-- Super DC -->
-            <button type="button" (click)="selectedChargerSpeed = 120; stopSimulation();" 
-                    [style.border]="selectedChargerSpeed === 120 ? '2px solid #3B82F6' : '1px solid transparent'" 
-                    style="background: rgba(255,255,255,0.95); border-radius: 16px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.03);">
-              @if (selectedChargerSpeed === 120) { <div style="position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; background: #3B82F6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">✓</div> }
-              <div style="margin-bottom: 1.2rem; color: #64748B; display: flex; justify-content: center;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="12" height="12" rx="4"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/><circle cx="12" cy="12" r="1"/></svg>
-              </div>
-              <div style="font-weight: 700; color: #0F172A; font-size: 1.05rem;">Super DC</div>
-              <div style="font-size: 0.85rem; color: #64748B; margin-top: 6px; font-weight: 500;">120 kW</div>
-            </button>
-          </div>
-          
-          <!-- Charging Hint Box -->
-          <div style="display: flex; align-items: flex-start; gap: 8px; color: #64748B; font-size: 0.9rem; line-height: 1.4; padding: 0 8px;">
-            <div style="color: #3B82F6; font-size: 1.1rem; margin-top: -2px;">ℹ️</div> 
-            <div>
-              @if (selectedChargerSpeed === 7.2) { <span style="color: #3B82F6; font-weight: 500;">AC Home charger is ideal for</span> overnight charging at home. }
-              @else if (selectedChargerSpeed === 22) { <span style="color: #3B82F6; font-weight: 500;">AC Fast chargers are typically found</span> at workplaces or malls. }
-              @else if (selectedChargerSpeed === 50) { <span style="color: #3B82F6; font-weight: 500;">DC Fast chargers are standard</span> for highway rest stops. }
-              @else { <span style="color: #3B82F6; font-weight: 500;">Super DC chargers are ultra-fast</span> stations for long road trips. }
-            </div>
-          </div>
+          <button
+            type="button"
+            (click)="onChargingModeChange('DC')"
+            [style.background]="chargingMode === 'DC' ? '#FFFFFF' : 'transparent'"
+            [style.color]="chargingMode === 'DC' ? '#0F172A' : '#64748B'"
+            style="border: 0; border-radius: 5px; padding: 4px 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer;"
+          >
+            DC
+          </button>
         </div>
+      </div>
+
+      <div style="font-size: 1.25rem; font-weight: 800; color: #3B82F6;">
+        {{ selectedChargerSpeed }} kW
+      </div>
+    </div>
+
+    <input
+      type="range"
+      [min]="chargingMode === 'AC' ? 0 : 0"
+      [max]="chargingMode === 'AC' ? 22 : 400"
+      [step]="chargingMode === 'AC' ? 0.1 : 1"
+      [(ngModel)]="selectedChargerSpeed"
+      (input)="onChargerSpeedChange()"
+      class="blue-slider"
+    >
+
+    <div style="display: flex; justify-content: space-between; margin-top: 0.35rem; font-size: 0.75rem; color: #64748B;">
+      <span>0 kW</span>
+      <span>{{ chargingMode === 'AC' ? '22 kW' : '400 kW' }}</span>
+    </div>
+  </div>
+
+
+  <!-- Start + Target -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+
+    <!-- Start -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem;">
+        <div style="font-size: 0.95rem; font-weight: 600; color: #64748B;">Start</div>
+        <div style="font-size: 1.25rem; font-weight: 800; color: #0F172A;">
+          {{ startSoc }}%
+        </div>
+      </div>
+
+      <input
+        type="range"
+        min="0"
+        max="90"
+        step="5"
+        [(ngModel)]="startSoc"
+        (input)="onStartSocChange()"
+        class="blue-slider"
+      >
+    </div>
+
+
+    <!-- Target -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem;">
+        <div style="font-size: 0.95rem; font-weight: 600; color: #64748B;">Target</div>
+        <div style="font-size: 1.25rem; font-weight: 800; color: #0F172A;">
+          {{ targetSoc }}%
+        </div>
+      </div>
+
+      <input
+        type="range"
+        min="10"
+        max="100"
+        step="5"
+        [(ngModel)]="targetSoc"
+        (input)="onTargetSocChange()"
+        class="blue-slider"
+      >
+    </div>
+
+  </div>
+
+</div>
 
         <!-- Result Section -->
-        <div style="background: rgba(240, 253, 244, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(16, 185, 129, 0.08); border-radius: 20px; padding: 3rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 2.5rem; gap: 24px;">
-          
-          <!-- Col 1: Time -->
-          <div style="flex: 1; min-width: 180px; text-align: left; border-right: 1px solid rgba(16,185,129,0.1); padding-right: 2rem;">
-            <div style="width: 54px; height: 54px; border-radius: 50%; background: #D1FAE5; color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1.5rem;">⚡</div>
-            <div style="font-size: 0.9rem; font-weight: 600; color: #64748B; margin-bottom: 0.8rem;">Estimated Charging Time</div>
-            <div style="font-size: 2.4rem; font-weight: 800; color: #0F172A; margin-bottom: 1rem; line-height: 1; letter-spacing: -0.02em;">{{ calculatedChargeTime }}</div>
-            <div style="font-size: 0.95rem; color: #64748B; font-weight: 500;">from <span style="color: #EF4444; font-weight: 700;">{{ startSoc }}%</span> to <span style="color: #10B981; font-weight: 700;">{{ targetSoc }}%</span></div>
+        <div class="calc-result-box" style="background: rgba(240, 253, 244, 0.5); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 14px; padding: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1.5rem;">
+
+          <div style="text-align: center; flex: 1; min-width: 120px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #0F172A; line-height: 1.2;">{{ calculatedChargeTime }}</div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: #64748B; margin-top: 4px;">Estimated Time</div>
           </div>
 
-          <!-- Col 2: Range -->
-          <div style="flex: 1; min-width: 150px; text-align: center; border-right: 1px solid rgba(16,185,129,0.1); padding: 0 1rem;">
-            <div style="width: 54px; height: 54px; border-radius: 50%; background: #D1FAE5; color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">🛣️</div>
-            <div style="font-size: 0.9rem; font-weight: 600; color: #64748B; margin-bottom: 0.8rem;">Adds approx.</div>
-            <div style="font-size: 2.4rem; font-weight: 800; color: #10B981; margin-bottom: 0.8rem; line-height: 1; letter-spacing: -0.02em;">{{ rangeAdded }} <span style="font-size: 1.4rem;">km</span></div>
-            <div style="font-size: 0.95rem; color: #64748B; font-weight: 500;">of range</div>
+          <div class="calc-divider" style="width: 1px; height: 40px; background: rgba(16, 185, 129, 0.2);"></div>
+
+          <div style="text-align: center; flex: 1; min-width: 120px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #10B981; line-height: 1.2;">+{{ rangeAdded }} km</div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: #64748B; margin-top: 4px;">Range Added</div>
           </div>
 
-          <!-- Col 3: Trees -->
-          <div style="flex: 1; min-width: 150px; text-align: center; padding-left: 1rem;">
-            <div style="width: 54px; height: 54px; border-radius: 50%; background: #D1FAE5; color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.5rem auto;">🌲</div>
-            <div style="font-size: 2.4rem; font-weight: 800; color: #0F172A; margin-bottom: 0.8rem; line-height: 1; letter-spacing: -0.02em;">≈ 108</div>
-            <div style="font-size: 0.95rem; color: #64748B; font-weight: 500;">trees saved</div>
+          <div class="calc-divider" style="width: 1px; height: 40px; background: rgba(16, 185, 129, 0.2);"></div>
+
+          <div style="text-align: center; flex: 1; min-width: 120px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #0F172A; line-height: 1.2;">{{ startSoc }} <span style="color: #94A3B8; font-weight: 400;">&rarr;</span> {{ targetSoc }}%</div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: #64748B; margin-top: 4px;">Battery <span style="color: #10B981; font-weight: 500; font-size: 0.75rem;">(≈ 108 trees)</span></div>
           </div>
-          
+
         </div>
-
-        <!-- Footer Tags -->
-        <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2rem; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 1.5rem 2.5rem; border-radius: 20px; border: 1px solid rgba(0,0,0,0.03); font-size: 0.95rem; font-weight: 600; color: #64748B; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <span style="display: flex; align-items: center; gap: 10px;"><span style="color: #3B82F6; font-size: 1.2rem;">💨</span> Cleaner Air</span>
-          <div style="width: 1px; height: 18px; background: #E2E8F0;"></div>
-          <span style="display: flex; align-items: center; gap: 10px;"><span style="color: #3B82F6; font-size: 1.2rem;">⚡</span> Zero Tailpipe Emissions</span>
-          <div style="width: 1px; height: 18px; background: #E2E8F0;"></div>
-          <span style="display: flex; align-items: center; gap: 10px;"><span style="color: #3B82F6; font-size: 1.2rem;">🤍</span> Better Tomorrow</span>
-        </div>
-
       </div>
     </section>
 
@@ -1489,7 +1501,8 @@ export class HomeComponent implements OnInit {
   // CHARGING CALCULATOR LOGIC
   // ==========================================
   chargeBatterySize = 40;
-  selectedChargerSpeed = 7.2;
+  chargingMode: 'AC' | 'DC' = 'DC';
+  selectedChargerSpeed = 120;
   selectedPresetSize = 0;
   startSoc = 20;
   targetSoc = 80;
@@ -1533,6 +1546,26 @@ export class HomeComponent implements OnInit {
 
   onCustomBatteryChange() {
     this.selectedPresetSize = 0; // Set preset to Custom
+    this.stopSimulation();
+    this.cdr.detectChanges();
+  }
+
+  onChargingModeChange(mode: 'AC' | 'DC') {
+    this.chargingMode = mode;
+    if (mode === 'AC') {
+      if (this.selectedChargerSpeed > 22) {
+        this.selectedChargerSpeed = 7.2; // Default to a standard AC value
+      }
+    } else {
+      if (this.selectedChargerSpeed <= 22) {
+        this.selectedChargerSpeed = 120; // Default to a standard DC value
+      }
+    }
+    this.stopSimulation();
+    this.cdr.detectChanges();
+  }
+
+  onChargerSpeedChange() {
     this.stopSimulation();
     this.cdr.detectChanges();
   }
