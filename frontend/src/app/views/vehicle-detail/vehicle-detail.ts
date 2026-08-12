@@ -125,7 +125,7 @@ interface OverviewData {
                     <div class="highlight-item">
                       <span class="icon">📅</span>
                       <div class="highlight-text">
-                        <strong>{{ selectedVariant?.launchDate || '—' }}</strong>
+                        <strong>{{ selectedVariant?.launchDate || effectiveLaunchDate || '—' }}</strong>
                         <span>Launch</span>
                       </div>
                     </div>
@@ -140,7 +140,7 @@ interface OverviewData {
                     <div class="highlight-item">
                       <span class="icon">📅</span>
                       <div class="highlight-text">
-                        <strong>{{ selectedVariant?.launchDate || 'Mid 2027' }}</strong>
+                        <strong>{{ selectedVariant?.launchDate || effectiveLaunchDate || 'Mid 2027' }}</strong>
                         <span>Expected Launch</span>
                       </div>
                     </div>
@@ -1196,6 +1196,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
     }
   }
   siblingVariants: CarSpec[] = []; // All variants of the same model
+  effectiveLaunchDate = '';
   
   overview: OverviewData = {
     priceRange: '',
@@ -1439,6 +1440,10 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   private calculateOverview(variants: CarSpec[]) {
     // Shared pure helper — same facts feed Phase 7.1 SEO + AEO Quick Answer.
     this.overview = buildVehicleOverviewFacts(variants);
+
+    // Find the effective model launch date from siblings
+    const inherited = variants.find(v => v.launchDate && v.launchDate !== '—');
+    this.effectiveLaunchDate = inherited?.launchDate || '';
   }
 
   /** AEO failure must never break the vehicle page or SEO. */
