@@ -155,6 +155,7 @@ interface OverviewData {
                        [attr.srcset]="getHeroSrcSet()"
                        sizes="(max-width: 768px) 100vw, 60vw"
                        (error)="onImgError($event, modelName)" 
+                       (load)="onImgLoad($event)"
                        class="hero-image" 
                        fetchpriority="high"
                        decoding="async"
@@ -1256,6 +1257,13 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
   onImgError(event: Event, modelName?: string): void {
     handleImageError(event, modelName || this.modelName);
+  }
+
+  onImgLoad(event: Event): void {
+    const img = (event.target || event.srcElement) as HTMLImageElement;
+    if (img && img.style.opacity !== '1') {
+      img.style.opacity = '1';
+    }
   }
 
   ngOnDestroy() {
