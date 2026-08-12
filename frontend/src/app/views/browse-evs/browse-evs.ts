@@ -107,7 +107,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
                     <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card-link">
                       <div class="model-image-container">
                         <img [src]="getOptimizedUrl(car.imageUrl, 600, car.parentModel || car.name)" 
-                             (error)="onImgError($event, car.parentModel || car.name)"
+                             (error)="onImgError($event, car)"
                              loading="lazy"
                              decoding="async"
                              width="600"
@@ -162,7 +162,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
                     <a [routerLink]="['/ev', slugify(getBrandName(car.categoryId)), slugify(car.parentModel || car.name)]" class="model-card-link">
                       <div class="model-image-container">
                         <img [src]="getOptimizedUrl(car.imageUrl, 600, car.parentModel || car.name)" 
-                             (error)="onImgError($event, car.parentModel || car.name)"
+                             (error)="onImgError($event, car)"
                              loading="lazy"
                              decoding="async"
                              width="600"
@@ -697,8 +697,18 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
     return getOptimizedImageUrl(url, width, modelName);
   }
 
-  onImgError(event: Event, modelName?: string): void {
-    handleImageError(event, modelName);
+  onImgError(event: Event, car?: any): void {
+    if (car && car.galleryImages && car.galleryImages.length > 1) {
+      const idx = car.galleryImages.indexOf(car.imageUrl);
+      if (idx !== -1) {
+        car.galleryImages.splice(idx, 1);
+        if (car.galleryImages.length > 0) {
+          car.imageUrl = car.galleryImages[0];
+          return;
+        }
+      }
+    }
+    handleImageError(event, car?.parentModel || car?.name);
   }
 
   formatRange(val: any): string {

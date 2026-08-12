@@ -13,7 +13,7 @@ import { EmptyStateComponent } from '../../components/empty-state/empty-state.co
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 import { AsyncState } from '../../core/async-state/async-state';
 import { NetworkStatusService } from '../../core/network/network-status.service';
-import { getOptimizedImageUrl } from '../../utils/image.utils';
+import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
 import {
   COMPARE_MAX_VEHICLES,
   CompareSection,
@@ -147,7 +147,7 @@ type CompareLoadState = AsyncState<CarSpec[]>;
                       decoding="async"
                       width="120"
                       height="72"
-                      (error)="onImgError($event)"
+                      (error)="onImgError($event, vehicle)"
                     >
                     <div>
                       <strong>{{ vehicle.parentModel || vehicle.name }}</strong>
@@ -598,9 +598,18 @@ export class CompareComponent implements OnInit, OnDestroy {
     return getOptimizedImageUrl(url, width, modelName);
   }
 
-  onImgError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.style.visibility = 'hidden';
+  onImgError(event: Event, vehicle?: any): void {
+    if (vehicle && vehicle.galleryImages && vehicle.galleryImages.length > 1) {
+      const idx = vehicle.galleryImages.indexOf(vehicle.imageUrl);
+      if (idx !== -1) {
+        vehicle.galleryImages.splice(idx, 1);
+        if (vehicle.galleryImages.length > 0) {
+          vehicle.imageUrl = vehicle.galleryImages[0];
+          return;
+        }
+      }
+    }
+    handleImageError(event, vehicle?.parentModel || vehicle?.name);
   }
 
   brandName(categoryId: string): string {

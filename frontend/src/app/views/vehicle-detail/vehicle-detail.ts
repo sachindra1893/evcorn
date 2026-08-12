@@ -1256,6 +1256,14 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   }
 
   onImgError(event: Event, modelName?: string): void {
+    if (this.galleryImages && this.galleryImages.length > 1) {
+      this.galleryImages.splice(this.activeImageIndex, 1);
+      if (this.activeImageIndex >= this.galleryImages.length) {
+        this.activeImageIndex = this.galleryImages.length - 1;
+      }
+      this.cdr.detectChanges();
+      return;
+    }
     handleImageError(event, modelName || this.modelName);
   }
 
