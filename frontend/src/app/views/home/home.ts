@@ -1227,18 +1227,75 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       text-decoration: none;
     }
 
-    @media (max-width: 768px) {
-      .hero h1 {
-        font-size: 3rem;
+    @media (max-width: 1024px) and (min-width: 769px) {
+      .hero {
+        height: auto;
+        min-height: 650px;
+        padding: 110px 24px 60px;
       }
-      .hero p {
-        font-size: 1.3rem;
+      .hero-content {
+        height: auto;
+        gap: 24px;
+      }
+      .hero h1 {
+        font-size: clamp(2.2rem, 5vw, 2.8rem);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        height: auto;
+        min-height: auto;
+        padding: 95px 18px 90px 18px;
+        overflow-x: hidden;
+      }
+      .hero-bg-anim {
+        background-position: center 30%;
+        opacity: 0.65;
+      }
+      .hero-content {
+        height: auto;
+        gap: 20px;
+      }
+      .hero-text-group {
+        margin-top: 0;
+      }
+      .hero h1 {
+        font-size: clamp(1.65rem, 6.2vw, 2.2rem);
+        line-height: 1.25;
+        margin-bottom: 0.5rem;
+      }
+      .hero .hero-subtitle {
+        font-size: clamp(0.92rem, 3.4vw, 1.05rem);
+        line-height: 1.5;
+        margin-top: 0.5rem;
+      }
+      .search-bar-container input {
+        font-size: clamp(0.9rem, 3.5vw, 1.02rem);
+        padding: 13px 44px 13px 18px;
+      }
+      .hero-compare-cta {
+        margin-top: 14px;
+        padding: 10px 24px;
+        font-size: 0.9rem;
       }
       .section {
         padding: 4rem 2rem;
       }
       .trending h2, .articles h2 {
         font-size: 2.2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero {
+        padding: 85px 16px 85px 16px;
+      }
+      .hero-content {
+        gap: 16px;
+      }
+      .hero h1 {
+        font-size: clamp(1.5rem, 6vw, 1.85rem);
       }
     }
   `]
