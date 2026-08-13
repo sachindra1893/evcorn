@@ -626,12 +626,14 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
     <section class="section articles" id="articles">
       <h2>Latest Insights</h2>
       @if (articlesState === 'loading') {
-        <div class="grid animate-premium-fade">
-          @for (i of [1, 2, 3]; track i) {
-            <div class="card skeleton-card" aria-hidden="true">
-              <div class="skeleton-line" style="width: 70%; height: 20px;"></div>
-              <div class="skeleton-line" style="width: 100%; height: 14px; margin-top: 14px;"></div>
-              <div class="skeleton-line" style="width: 85%; height: 14px;"></div>
+        <div class="insights-grid animate-premium-fade">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="insight-card skeleton-card" aria-hidden="true">
+              <div class="insight-img-wrapper skeleton-img"></div>
+              <div class="skeleton-title-box">
+                <div class="skeleton-line" style="width: 85%; height: 14px;"></div>
+                <div class="skeleton-line" style="width: 60%; height: 14px; margin-top: 6px;"></div>
+              </div>
             </div>
           }
         </div>
@@ -641,16 +643,27 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
           (retry)="loadData()">
         </app-error-state>
       } @else {
-        <div class="grid animate-premium-fade">
+        <div class="insights-grid animate-premium-fade">
           @for (art of latestArticles; track art.id) {
-            <a class="card" [routerLink]="['/articles', art.id]" style="display: block; text-decoration: none; color: inherit; cursor: pointer;">
-              <h3>{{ art.title }}</h3>
-              <p>{{ art.description }}</p>
+            <a class="insight-card" [routerLink]="['/articles', art.id]">
+              <div class="insight-img-wrapper">
+                @if (art.imageUrl) {
+                  <img
+                    [src]="getOptimizedUrl(art.imageUrl, 400)"
+                    alt="{{ art.title }}"
+                    loading="lazy"
+                    decoding="async"
+                    class="insight-img"
+                    onerror="this.onerror=null; this.style.display='none'; const sibling = this.parentNode.querySelector('.insight-img-placeholder'); if(sibling) sibling.style.display='flex';"
+                  >
+                }
+                <div class="insight-img-placeholder" [style.display]="art.imageUrl ? 'none' : 'flex'">⚡</div>
+              </div>
+              <h3 class="insight-title">{{ art.title }}</h3>
             </a>
           } @empty {
-            <div class="card">
-              <h3>No Insights Yet</h3>
-              <p>Stay tuned for upcoming EV insights and comparisons!</p>
+            <div class="insight-card empty-card">
+              <h3 class="insight-title">No Insights Yet</h3>
             </div>
           }
         </div>
@@ -798,7 +811,116 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
     }
     .articles {
       background: #F8F9FA;
-      min-height: 600px;
+      min-height: auto;
+      padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 5vw, 4rem);
+    }
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .insight-card {
+      display: flex;
+      flex-direction: column;
+      background: #FFFFFF;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      cursor: pointer;
+    }
+    .insight-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(59, 130, 246, 0.3);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.06);
+    }
+    .insight-img-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #F1F5F9;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .insight-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .insight-card:hover .insight-img {
+      transform: scale(1.04);
+    }
+    .insight-img-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #94A3B8;
+      background: #F1F5F9;
+    }
+    .insight-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0F172A;
+      line-height: 1.4;
+      margin: 0;
+      padding: 14px 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .skeleton-card .skeleton-img {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #E2E8F0;
+    }
+    .skeleton-card .skeleton-title-box {
+      padding: 14px 16px;
+      flex: 1;
+    }
+    @media (max-width: 900px) and (min-width: 769px) {
+      .insights-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 768px) {
+      .insights-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .insight-card {
+        flex-direction: row;
+        align-items: center;
+        padding: 8px;
+        gap: 12px;
+      }
+      .insight-img-wrapper {
+        width: 84px;
+        height: 60px;
+        aspect-ratio: auto;
+        border-radius: 8px;
+      }
+      .insight-title {
+        padding: 0 4px;
+        font-size: 0.9rem;
+      }
+      .skeleton-card .skeleton-img {
+        width: 84px;
+        height: 60px;
+        aspect-ratio: auto;
+        border-radius: 8px;
+      }
     }
     .trending {
       min-height: 450px;
@@ -1630,7 +1752,7 @@ export class HomeComponent implements OnInit {
             const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return dateB - dateA;
           })
-          .slice(0, 3);
+          .slice(0, 4);
         this.articlesState = 'loaded';
         this.cdr.detectChanges();
       },
