@@ -875,9 +875,10 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       margin: 0;
       padding: 14px 16px;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      flex: 1;
     }
     .skeleton-card .skeleton-img {
       width: 100%;
@@ -914,6 +915,7 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
       .insight-title {
         padding: 0 4px;
         font-size: 0.9rem;
+        -webkit-line-clamp: 2;
       }
       .skeleton-card .skeleton-img {
         width: 84px;
