@@ -8,6 +8,7 @@ import { routes } from './app.routes';
 import { httpErrorInterceptor } from './core/http/http-error.interceptor';
 import { GlobalErrorHandler } from './core/error-handling/global-error-handler';
 import { handleNavigationError } from './core/error-handling/navigation-error-handler';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
 /**
  * Phase 4: Selective idle preloading.
@@ -37,6 +38,6 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withInterceptors([httpErrorInterceptor])),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
-    SelectiveIdlePreloadingStrategy
+    SelectiveIdlePreloadingStrategy, provideClientHydration(withEventReplay())
   ],
 };

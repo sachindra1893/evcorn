@@ -1326,10 +1326,10 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
     this.dataSub =
       combineLatest({
         categories: this.blogData.getCategoriesState(),
-        allVehicles: this.blogData.getVehiclesState()
-      }).subscribe(({ categories, allVehicles }) => {
+        brandVehicles: this.blogData.getVehiclesByBrandState(brandSlug)
+      }).subscribe(({ categories, brandVehicles }) => {
         // Still waiting on one or both sources to resolve for the first time.
-        if (categories.status === 'loading' || allVehicles.status === 'loading') return;
+        if (categories.status === 'loading' || brandVehicles.status === 'loading') return;
 
         // Either source confirmed a failure - show a network error state
         // with a retry action instead of waiting forever or misreporting it
@@ -1338,13 +1338,13 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
           this.handleError('network');
           return;
         }
-        if (allVehicles.status !== 'success' && allVehicles.status !== 'empty') {
+        if (brandVehicles.status !== 'success' && brandVehicles.status !== 'empty') {
           this.handleError('network');
           return;
         }
 
         const categoriesData = categories.status === 'success' ? categories.data : [];
-        const vehiclesData = allVehicles.status === 'success' ? allVehicles.data : [];
+        const vehiclesData = brandVehicles.status === 'success' ? brandVehicles.data : [];
         this.categoriesForAeo = categoriesData;
 
         // Accept name slug (canonical sitemap), category id, or stored brandSlug.
@@ -1362,7 +1362,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
         
         // Filter out the sibling variants belonging to this model
         const modelVariants = vehiclesData.filter(v => 
-          v.categoryId === this.brand!.id && 
+          (v.categoryId === this.brand!.id || this.slugify(v.brandSlug || '') === brandSlug) && 
           this.slugify(v.parentModel || v.name) === modelSlug
         );
         

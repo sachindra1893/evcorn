@@ -5,7 +5,7 @@
  */
 export function getApiBaseUrl(): string {
   if (typeof window === 'undefined') {
-    return 'http://localhost:3000/api';
+    return 'https://evcorn-backend.onrender.com/api';
   }
   const host = window.location.hostname;
   const isLocal = host === 'localhost' ||
