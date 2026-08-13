@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "framework": "angular",
   "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/dist/evera-app/browser",
   "functions": {
@@ -11,7 +12,7 @@
   },
   "rewrites": [
     {
-      "source": "/((?!.*\\.(?:js|css|json|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|txt|xml|webmanifest)$).*)",
+      "source": "/(.*)",
       "destination": "/api/index"
     }
   ],
