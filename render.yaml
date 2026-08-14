@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: evcorn-frontend-ssr
+    env: node
+    region: singapore
+    plan: free
+    branch: ssr-implementation
+    buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
+    startCommand: node frontend/dist/evera-app/server/server.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
