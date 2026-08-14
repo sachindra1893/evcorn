@@ -9,4 +9,4 @@ services:
     startCommand: node frontend/dist/evera-app/server/server.mjs
     envVars:
       - key: NODE_VERSION
-        value: 20.18.0
+        value: 22.12.0
