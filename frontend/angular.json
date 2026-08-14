@@ -56,7 +56,7 @@
                 "scripts": true,
                 "styles": true,
                 "fonts": {
-                  "inline": true
+                  "inline": false
                 }
               }
             },
