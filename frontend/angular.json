@@ -32,17 +32,14 @@
             "outputMode": "server",
             "security": {
               "allowedHosts": [
-                "localhost:4000",
-                "localhost",
-                "127.0.0.1",
+                "all",
+                "evcorn-frontend-ssr.onrender.com",
                 "evcorn.com",
                 "www.evcorn.com",
                 "evcorn.vercel.app",
-                "evcorn-frontend-ssr.onrender.com",
-                ".onrender.com",
-                "*.onrender.com",
-                ".vercel.app",
-                "*.vercel.app"
+                "localhost:4000",
+                "localhost",
+                "127.0.0.1"
               ]
             },
             "ssr": {
