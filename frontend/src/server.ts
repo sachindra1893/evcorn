@@ -41,10 +41,17 @@ app.use(
 app.use((req, res, next) => {
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
-    .catch(next);
+    .then((response) => {
+      if (!response) {
+        console.warn(`[Angular SSR] angularApp.handle(req) returned null for URL: ${req.url}`);
+        return next();
+      }
+      return writeResponseToNodeResponse(response, res);
+    })
+    .catch((err) => {
+      console.error(`[Angular SSR Error] Failed to render ${req.url}:`, err);
+      next(err);
+    });
 });
 
 /**
