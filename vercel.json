@@ -1,20 +1,15 @@
 {
   "version": 2,
-  "framework": null,
   "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/dist/evera-app/browser",
   "functions": {
     "api/index.js": {
-      "includeFiles": "frontend/dist/evera-app/**",
-      "memory": 1024,
-      "maxDuration": 15
+      "includeFiles": "frontend/dist/evera-app/**"
     }
   },
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index"
-    }
+    { "source": "/", "destination": "/api/index" },
+    { "source": "/(.*)", "destination": "/api/index" }
   ],
   "headers": [
     {

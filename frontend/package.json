@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "node generate-sitemap.js && ng build && node -e \"const fs=require('fs'); if(fs.existsSync('dist/evera-app/browser/index.html')) fs.renameSync('dist/evera-app/browser/index.html', 'dist/evera-app/browser/index.csr.html');\"",
+    "build": "node generate-sitemap.js && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false --coverage",
