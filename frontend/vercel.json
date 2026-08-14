@@ -1,9 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "dist/evera-app/browser",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "dist/evera-app/**",
+      "memory": 1024,
+      "maxDuration": 15
+    }
+  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
+    }
   ],
   "headers": [
     {
