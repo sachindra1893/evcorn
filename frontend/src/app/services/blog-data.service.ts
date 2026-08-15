@@ -512,6 +512,45 @@ export class BlogDataService {
     return this.toCachedAsyncState(this.getVehicles(), this.allVehiclesSettled$);
   }
 
+  private brandVehiclesCache = new Map<string, Observable<CarSpec[]>>();
+  private brandVehiclesSettled = new Map<string, BehaviorSubject<boolean>>();
+
+  getVehiclesByBrand(brandSlug: string): Observable<CarSpec[]> {
+    const slug = brandSlug.toLowerCase();
+    if (!this.brandVehiclesCache.has(slug)) {
+      const settled$ = new BehaviorSubject<boolean>(false);
+      this.brandVehiclesSettled.set(slug, settled$);
+
+      const subject = new BehaviorSubject<CarSpec[]>([]);
+      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?brand=${encodeURIComponent(slug)}&status=Launched`).pipe(
+        map(vehicles => {
+          const enriched = vehicles.map(v => this.enrichVehicle(v));
+          return this.applyImageFallback(enriched);
+        })
+      ).subscribe({
+        next: (data) => {
+          subject.next(data);
+          settled$.next(true);
+        },
+        error: (err) => {
+          settled$.next(true);
+          if (subject.value.length === 0) subject.error(err);
+        }
+      });
+
+      this.brandVehiclesCache.set(slug, subject.asObservable());
+    }
+    return this.brandVehiclesCache.get(slug)!;
+  }
+
+  /** AsyncState-aware version of getVehiclesByBrand() to load only vehicles for a specific brand. */
+  getVehiclesByBrandState(brandSlug: string): Observable<AsyncState<CarSpec[]>> {
+    const slug = brandSlug.toLowerCase();
+    const cache$ = this.getVehiclesByBrand(slug);
+    const settled$ = this.brandVehiclesSettled.get(slug) || of(true);
+    return this.toCachedAsyncState(cache$, settled$);
+  }
+
   /**
    * AsyncState-aware light catalog (picker / browse index). Prefer this over
    * getVehiclesState() when full nested specs are not needed — Phase 5.3
@@ -786,6 +825,8 @@ export class BlogDataService {
     this.allVehiclesCache$ = null;
     this.vehiclesLightCache$ = null;
     this.categoriesCache$ = null;
+    this.brandVehiclesCache.clear();
+    this.brandVehiclesSettled.clear();
     this.allVehiclesSettled$.next(false);
     this.vehiclesLightSettled$.next(false);
     this.categoriesSettled$.next(false);
