@@ -20,6 +20,7 @@ const config = {
         'https://evcorn.com',
         'https://www.evcorn.com',
         'https://evcorn.vercel.app',
+        'https://evcorn-frontend-ssr.onrender.com',
         'http://localhost:4200',
         'http://127.0.0.1:4200'
       ],

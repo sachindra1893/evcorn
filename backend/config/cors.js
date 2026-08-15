@@ -17,6 +17,7 @@ const corsOptions = {
     const isWhitelisted = config.ALLOWED_ORIGINS.some(allowed => {
       if (allowed === origin) return true;
       if (origin.endsWith('.vercel.app')) return true; // Vercel Preview Deployments
+      if (origin.endsWith('.onrender.com')) return true; // Render Deployments
       return false;
     });
 
