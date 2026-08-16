@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  openChargeMapApiKey: 'YOUR_OCM_API_KEY_HERE' // Replace with your key from https://openchargemap.org/site/developer
+  openChargeMapApiKey: 'YOUR_OCM_API_KEY_HERE',
+  googleClientId: '935009613254-emtajpo38c481aqi5r9d7g3i4ddal036.apps.googleusercontent.com'
 };

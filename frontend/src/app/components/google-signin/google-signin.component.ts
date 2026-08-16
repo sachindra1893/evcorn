@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { UserAuthService, EndUser } from '../../services/user-auth.service';
+import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 
 declare var google: any;
@@ -123,7 +124,7 @@ export class GoogleSignInComponent implements OnInit, AfterViewInit {
 
     if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
       google.accounts.id.initialize({
-        client_id: '712398472912-evcorn-app.apps.googleusercontent.com',
+        client_id: environment.googleClientId,
         callback: (response: any) => this.handleCredentialResponse(response),
         auto_select: false
       });

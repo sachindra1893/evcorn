@@ -29,7 +29,7 @@ const config = {
     API_KEY: process.env.CLOUDINARY_API_KEY || '',
     API_SECRET: process.env.CLOUDINARY_API_SECRET || ''
   },
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '935009613254-emtajpo38c481aqi5r9d7g3i4ddal036.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
   USER_JWT_SECRET: process.env.USER_JWT_SECRET || 'evcorn_user_jwt_secret_2026'
 };
