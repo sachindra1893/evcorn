@@ -8,6 +8,7 @@ import { BlogDataService, Article } from '../../services/blog-data.service';
 import { getOptimizedImageUrl } from '../../utils/image.utils';
 import { BlockRendererComponent } from '../../components/block-renderer/block-renderer.component';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
+import { CommentSectionComponent } from '../../components/comment-section/comment-section';
 import { CommonModule } from '@angular/common';
 import { classifyHttpError } from '../../core/http/app-http-error';
 import { NetworkStatusService } from '../../core/network/network-status.service';
@@ -46,7 +47,7 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
 @Component({
   selector: 'app-article-detail',
   standalone: true,
-  imports: [RouterLink, BlockRendererComponent, CommonModule, BreadcrumbComponent],
+  imports: [RouterLink, BlockRendererComponent, CommonModule, BreadcrumbComponent, CommentSectionComponent],
   template: `
     <div class="article-page animate-premium-fade">
       @if (state === 'loading') {
@@ -262,6 +263,13 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                   </span>
                 }
               </div>
+
+              <!-- Single Article Deployment: Comment Section Component -->
+              <app-comment-section
+                *ngIf="isTargetCommentArticle(article)"
+                [targetType]="'article'"
+                [targetId]="article.id || ''"
+              ></app-comment-section>
             </div>
           </div>
         }
@@ -816,6 +824,16 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   commentsLoaded: { [articleId: string]: boolean } = {};
   errorMessage = '';
   loadingNext = false;
+
+  isTargetCommentArticle(article: any): boolean {
+    if (!article) return false;
+    const firstArticleId = this.loadedArticles.length > 0 ? (this.loadedArticles[0].id || (this.loadedArticles[0] as any)._id) : null;
+    return (
+      article.id === 'top-evs-india-2026' ||
+      article.id === '1' ||
+      (firstArticleId !== null && firstArticleId === (article.id || article._id))
+    );
+  }
   private currentArticleId: string | null = null;
 
   readonly aeoEnabled = AEO_ANSWER_BLOCKS_ENABLED;

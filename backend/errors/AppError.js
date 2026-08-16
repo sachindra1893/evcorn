@@ -30,9 +30,16 @@ class UnauthorizedError extends AppError {
   }
 }
 
+class ForbiddenError extends AppError {
+  constructor(message = 'Forbidden access') {
+    super(message, 403, 'FORBIDDEN_ACCESS');
+  }
+}
+
 module.exports = {
   AppError,
   NotFoundError,
   BadRequestError,
-  UnauthorizedError
+  UnauthorizedError,
+  ForbiddenError
 };

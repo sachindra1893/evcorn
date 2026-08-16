@@ -14,6 +14,7 @@ const analyticsRoutes = require('./analytics.routes');
 const searchRoutes = require('./search.routes');
 const adminRoutes = require('./admin.routes');
 const evDomainRoutes = require('./evDomain.routes');
+const commentRoutes = require('./comment.routes');
 
 router.use('/', healthRoutes);
 router.use('/domain', evDomainRoutes);
@@ -24,6 +25,7 @@ router.use('/auth', authRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/articles', articleRoutes);
 router.use('/vehicles', vehicleRoutes);
+router.use('/comments', commentRoutes);
 router.use('/', uploadRoutes);
 
 module.exports = router;

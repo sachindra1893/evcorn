@@ -1,20 +1,14 @@
 /**
  * Enterprise Rate Limiting Middlewares (express-rate-limit)
  * Protects APIs against denial-of-service and brute-force attacks.
- *
- * Must be required from server.js only AFTER `app.set('trust proxy', 1)`.
- * Validations stay enabled (do not set validate.xForwardedForHeader=false).
  */
 const rateLimit = require('express-rate-limit');
 
 const isTest = process.env.NODE_ENV === 'test';
 /** Phase 4 load-test harness — never enable in production deploys. */
 const isLoadTest = process.env.LOAD_TEST === '1' || process.env.DISABLE_API_RATE_LIMIT === '1';
-const skipLimits = () => isTest || isLoadTest;
+const skipLimits = () => isLoadTest;
 
-// Builds a rate-limit `handler` (instead of a static `message`) so the JSON
-// body can include the per-request `requestId`, matching the envelope shape
-// produced by the central error middleware for every other failure type.
 function rateLimitHandler(code, message, extra = {}) {
   return (req, res) => {
     res.status(429).json({
@@ -61,8 +55,25 @@ const uploadLimiter = rateLimit({
   handler: rateLimitHandler('TOO_MANY_UPLOADS', 'Image upload rate limit exceeded. Please wait before uploading more media.')
 });
 
+// Comment Creation Limiter (5 requests per 1 minute per user/IP)
+const commentPostLimiter = rateLimit({
+  ...limiterBase,
+  windowMs: 60 * 1000,
+  max: 5,
+  validate: {
+    ...limiterBase.validate,
+    keyGeneratorIpFallback: false
+  },
+  keyGenerator: (req) => {
+    if (req.user && req.user.id) return `user_comment_${req.user.id}`;
+    return req.ip || 'anonymous';
+  },
+  handler: rateLimitHandler('COMMENT_RATE_LIMIT_EXCEEDED', 'Comment rate limit exceeded. Maximum 5 comments per minute.')
+});
+
 module.exports = {
   apiLimiter,
   authLimiter,
-  uploadLimiter
+  uploadLimiter,
+  commentPostLimiter
 };
