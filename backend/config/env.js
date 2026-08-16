@@ -28,7 +28,10 @@ const config = {
     CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
     API_KEY: process.env.CLOUDINARY_API_KEY || '',
     API_SECRET: process.env.CLOUDINARY_API_SECRET || ''
-  }
+  },
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+  USER_JWT_SECRET: process.env.USER_JWT_SECRET || 'evcorn_user_jwt_secret_2026'
 };
 
 /**

@@ -19,7 +19,24 @@ function verifyToken(token) {
   }
 }
 
+function generateUserToken(payload = {}) {
+  return jwt.sign({ ...payload, role: 'user' }, config.USER_JWT_SECRET, {
+    expiresIn: '7d',
+    algorithm: 'HS256'
+  });
+}
+
+function verifyUserToken(token) {
+  try {
+    return jwt.verify(token, config.USER_JWT_SECRET, { algorithms: ['HS256'] });
+  } catch (err) {
+    return null;
+  }
+}
+
 module.exports = {
   generateToken,
-  verifyToken
+  verifyToken,
+  generateUserToken,
+  verifyUserToken
 };

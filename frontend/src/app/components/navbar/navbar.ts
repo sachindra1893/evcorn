@@ -2,13 +2,14 @@ import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { GlobalLocationComponent } from '../global-location/global-location.component';
+import { GoogleSignInComponent } from '../google-signin/google-signin.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, GlobalLocationComponent],
+  imports: [RouterLink, RouterLinkActive, GlobalLocationComponent, GoogleSignInComponent],
   template: `
-    <!-- Top Header: Logo + Admin (if logged in) + Location Pill -->
+    <!-- Top Header: Logo + Admin (if logged in) + Google Sign-In + Location Pill -->
     <div class="header-top-bar">
       <div class="brand-logo-floating" routerLink="/">EVCorn</div>
       
@@ -20,6 +21,7 @@ import { GlobalLocationComponent } from '../global-location/global-location.comp
             <a href="#" (click)="onLogout($event)" class="admin-link logout-link">Logout</a>
           </div>
         }
+        <app-google-signin></app-google-signin>
         <app-global-location></app-global-location>
       </div>
     </div>

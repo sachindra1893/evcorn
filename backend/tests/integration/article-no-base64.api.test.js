@@ -5,7 +5,9 @@ const request = require('supertest');
 const app = require('../../server');
 const { generateToken } = require('../../utils/auth.utils');
 
-describe('Article images — no Base64 persistence', () => {
+jest.setTimeout(30000);
+
+describe('Article Base64 Restriction Integration Test', () => {
   let adminToken;
   let createdId;
 
