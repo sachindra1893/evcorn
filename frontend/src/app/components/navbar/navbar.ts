@@ -195,7 +195,7 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
       .header-actions {
         top: 20px;
         right: 15px;
-        gap: 8px;
+        gap: 14px;
       }
       .admin-links {
         padding: 4px 8px;

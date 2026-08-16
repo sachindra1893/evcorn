@@ -94,11 +94,21 @@ declare var google: any;
     </div>
   `,
   styles: [`
+    :host {
+      display: inline-block;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+
     .google-auth-widget {
       position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      aspect-ratio: 1 / 1;
     }
 
     /* Logged Out: 32px Circular Outlined Button */
@@ -106,15 +116,28 @@ declare var google: any;
       position: relative;
       width: 32px;
       height: 32px;
+      min-width: 32px;
+      max-width: 32px;
+      min-height: 32px;
+      max-height: 32px;
+      aspect-ratio: 1 / 1;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      box-sizing: border-box;
     }
 
     .circle-signin-btn {
       width: 32px;
       height: 32px;
+      min-width: 32px;
+      max-width: 32px;
+      min-height: 32px;
+      max-height: 32px;
+      aspect-ratio: 1 / 1;
+      flex-shrink: 0;
       border-radius: 50%;
       border: 1.5px solid #0088CC;
       background: transparent;
@@ -123,7 +146,9 @@ declare var google: any;
       align-items: center;
       justify-content: center;
       padding: 0;
+      margin: 0;
       cursor: pointer;
+      box-sizing: border-box;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       outline: none;
     }
@@ -170,20 +195,37 @@ declare var google: any;
       position: relative;
       display: flex;
       align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      max-width: 32px;
+      min-height: 32px;
+      max-height: 32px;
+      aspect-ratio: 1 / 1;
+      flex-shrink: 0;
     }
 
     .avatar-trigger-btn {
       width: 32px;
       height: 32px;
+      min-width: 32px;
+      max-width: 32px;
+      min-height: 32px;
+      max-height: 32px;
+      aspect-ratio: 1 / 1;
+      flex-shrink: 0;
       border-radius: 50%;
       border: 1.5px solid rgba(0, 136, 204, 0.4);
       background: transparent;
       padding: 0;
+      margin: 0;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      box-sizing: border-box;
       transition: all 0.2s ease;
       outline: none;
     }
@@ -197,13 +239,20 @@ declare var google: any;
     .avatar-img {
       width: 100%;
       height: 100%;
+      min-width: 100%;
+      min-height: 100%;
       object-fit: cover;
+      object-position: center;
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
+      display: block;
+      flex-shrink: 0;
     }
 
     .avatar-initial {
       width: 100%;
       height: 100%;
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
       background: linear-gradient(135deg, #0088CC 0%, #005580 100%);
       color: #FFFFFF;
@@ -213,6 +262,7 @@ declare var google: any;
       align-items: center;
       justify-content: center;
       user-select: none;
+      flex-shrink: 0;
     }
 
     /* Floating Right-Aligned Dropdown Panel */
@@ -253,8 +303,12 @@ declare var google: any;
     .header-avatar-img {
       width: 36px;
       height: 36px;
+      min-width: 36px;
+      min-height: 36px;
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
       object-fit: cover;
+      object-position: center;
       flex-shrink: 0;
       border: 1px solid rgba(0, 136, 204, 0.2);
     }
@@ -262,6 +316,9 @@ declare var google: any;
     .header-avatar-initial {
       width: 36px;
       height: 36px;
+      min-width: 36px;
+      min-height: 36px;
+      aspect-ratio: 1 / 1;
       border-radius: 50%;
       background: linear-gradient(135deg, #0088CC 0%, #005580 100%);
       color: #FFFFFF;
