@@ -20,7 +20,8 @@ if (!fs.existsSync(DATA_DIR)) {
 const mem = {
   vehicles: null,
   articles: null,
-  categories: null
+  categories: null,
+  comments: null
 };
 
 function readJsonArray(fileName) {
@@ -40,6 +41,15 @@ function writeJsonArray(fileName, data) {
 
 // Local File DB Helper
 const fileDb = {
+  getComments() {
+    if (mem.comments) return mem.comments;
+    mem.comments = readJsonArray('comments.json');
+    return mem.comments;
+  },
+  saveComments(comments) {
+    mem.comments = comments;
+    writeJsonArray('comments.json', comments);
+  },
   getArticles() {
     if (mem.articles) return mem.articles;
     mem.articles = readJsonArray('articles.json');
@@ -68,7 +78,7 @@ const fileDb = {
     writeJsonArray('vehicles.json', vehicles);
   },
   /** Test / scale-harness helper — drop memory cache without touching disk. */
-  invalidateCache(which = ['vehicles', 'articles', 'categories']) {
+  invalidateCache(which = ['vehicles', 'articles', 'categories', 'comments']) {
     for (const key of which) {
       mem[key] = null;
     }

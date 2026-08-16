@@ -13,12 +13,17 @@ const app = require('../../server');
 const Comment = require('../../models/Comment');
 const User = require('../../models/User');
 const { generateUserToken } = require('../../utils/auth.utils');
+const { fileDb } = require('../../config/database');
 
 jest.setTimeout(30000);
 
 describe('Comment System API Integration Suite (/api/comments)', () => {
   const targetId = 'test-article-comment-suite-99';
   const targetType = 'article';
+
+  beforeEach(() => {
+    fileDb.saveComments([]);
+  });
 
   // Helper to generate isolated user token for per-scenario test isolation
   function createTestUser(emailPrefix) {
