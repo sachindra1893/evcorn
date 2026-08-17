@@ -4,9 +4,11 @@
 const evDomainService = require('../services/evDomain.service');
 const vehicleRepository = require('../repositories/vehicle.repository');
 const { toVehicleListDTO } = require('../dto/vehicle.dto');
+const { logEvent } = require('../utils/eventLogger');
 
 class EVDomainController {
   async getEVScore(req, res) {
+    logEvent('calculator_used');
     const scoreData = evDomainService.calculateEVScore(req.body || {});
     res.status(200).json({
       success: true,
@@ -15,6 +17,7 @@ class EVDomainController {
   }
 
   async getTCO(req, res) {
+    logEvent('calculator_used');
     const tcoData = evDomainService.calculateTCO(req.body || {});
     res.status(200).json({
       success: true,
@@ -23,6 +26,7 @@ class EVDomainController {
   }
 
   async getChargingCost(req, res) {
+    logEvent('calculator_used');
     const costData = evDomainService.calculateChargingCost(req.body || {});
     res.status(200).json({
       success: true,
@@ -31,6 +35,7 @@ class EVDomainController {
   }
 
   async getRealWorldRange(req, res) {
+    logEvent('calculator_used');
     const rangeData = evDomainService.estimateRealWorldRange(req.body || {});
     res.status(200).json({
       success: true,

@@ -5,6 +5,7 @@
 const vehicleService = require('../services/vehicle.service');
 const { validateQuery } = require('../validators/query.validator');
 const { validateVehicleInput } = require('../validators/vehicle.validator');
+const { logEvent } = require('../utils/eventLogger');
 
 class VehicleController {
   async getVehicles(req, res, next) {
@@ -19,6 +20,7 @@ class VehicleController {
 
   async getVehicleById(req, res, next) {
     try {
+      logEvent('vehicle_viewed');
       const result = await vehicleService.getVehicleById(req.params.id);
       res.json(result);
     } catch (err) {

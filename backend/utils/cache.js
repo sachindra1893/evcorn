@@ -25,6 +25,7 @@ const TTL = {
   ARTICLE_SINGLE: 600,
   SEARCH: 60,
   RECOMMENDATIONS: 120,
+  STATS_SUMMARY: 300
 };
 
 // ─── Cache Key Namespaces ─────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ const KEYS = {
   SEARCH_AUTOCOMPLETE: (q) => `search:ac:${q}`,
   SEARCH_UNIFIED: (q) => `search:unified:${q}`,
   RECOMMENDATIONS: (q = '') => `recommendations:${q}`,
+  STATS_SUMMARY: () => 'stats:summary'
 };
 
 /**

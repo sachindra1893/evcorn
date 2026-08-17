@@ -9,11 +9,12 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
+import { UsageStatsComponent } from '../../components/usage-stats/usage-stats';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, FormsModule, CommonModule, ErrorStateComponent],
+  imports: [RouterLink, FormsModule, CommonModule, ErrorStateComponent, UsageStatsComponent],
   template: `
     <section class="hero">
       <!-- Animated Background and Vignette Overlay -->
@@ -90,6 +91,9 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
         </div>
       </div>
     </section>
+
+    <!-- Usage Stats Summary Card -->
+    <app-usage-stats></app-usage-stats>
 
     <!-- EV Savings Calculator Section -->
     <section class="section calculator-section" style="position: relative; overflow: hidden; background: #FFFFFF; padding: 5rem 0;">

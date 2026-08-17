@@ -5,6 +5,7 @@ const Article = require('../models/Article');
 const Vehicle = require('../models/Vehicle');
 const Category = require('../models/Category');
 const { isLocalFileDb, fileDb } = require('../config/database');
+const { logEvent } = require('../utils/eventLogger');
 const logger = require('../utils/logger');
 
 // In-Memory Telemetry Aggregator for Growth Analytics
@@ -35,9 +36,13 @@ class AnalyticsController {
       analyticsStore.topArticles[metadata.articleId] = (analyticsStore.topArticles[metadata.articleId] || 0) + 1;
     } else if (eventName === 'vehicle_view' && metadata?.vehicleId) {
       analyticsStore.topVehicles[metadata.vehicleId] = (analyticsStore.topVehicles[metadata.vehicleId] || 0) + 1;
+      logEvent('vehicle_viewed');
     } else if (eventName === 'vehicle_compare' && Array.isArray(metadata?.vehicleIds)) {
       const key = metadata.vehicleIds.sort().join(' vs ');
       analyticsStore.topComparisons[key] = (analyticsStore.topComparisons[key] || 0) + 1;
+      logEvent('compare_started');
+    } else if (eventName === 'calculator_usage') {
+      logEvent('calculator_used');
     } else if (eventName === 'search' && metadata?.searchTerm) {
       const term = metadata.searchTerm.toLowerCase().trim();
       analyticsStore.searches[term] = (analyticsStore.searches[term] || 0) + 1;
