@@ -81,12 +81,13 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
               <!-- Under title Share Bar -->
               <div class="article-meta-row">
                 <span class="post-date">
-                  {{ aeoTrustAuthor(article) }}
+                  By {{ aeoTrustAuthor(article) }}
+                  • Published {{ getFormattedPublishedDate(article) }}
+                  @if (getFormattedUpdatedDate(article); as updatedDate) {
+                    • Updated {{ updatedDate }}
+                  }
                   @if (aeoReadingMinutes(article); as mins) {
                     • ⏳ {{ mins }} min read
-                  }
-                  @if (aeoLastUpdatedLabel) {
-                    • Updated {{ aeoLastUpdatedLabel }}
                   }
                 </span>
                 <button (click)="shareArticle(article)" class="share-btn" title="Share this article">
@@ -836,6 +837,27 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
     return getOptimizedImageUrl(url, width);
   }
 
+  getFormattedPublishedDate(article: Article): string {
+    const rawDate = article.publishAt || article.createdAt || (article.audit && article.audit.publishedAt) || '2026-01-01T00:00:00.000Z';
+    const d = new Date(rawDate);
+    if (isNaN(d.getTime())) return 'Jan 1, 2026';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  getFormattedUpdatedDate(article: Article): string | null {
+    if (!article.updatedAt) return null;
+    const pubDate = new Date(article.publishAt || article.createdAt || (article.audit && article.audit.publishedAt) || '2026-01-01T00:00:00.000Z');
+    const updDate = new Date(article.updatedAt);
+    if (isNaN(pubDate.getTime()) || isNaN(updDate.getTime())) return null;
+
+    // Show Updated date only if updatedAt is MORE THAN 24 HOURS (86,400,000 ms) after published date
+    const diffMs = updDate.getTime() - pubDate.getTime();
+    if (diffMs > 86400000) {
+      return updDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    return null;
+  }
+
   ngOnInit() {
     this.sub.add(
       this.dataService.getCategories().subscribe({
@@ -1436,6 +1458,9 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
         art.description ||
         `Read ${art.title} on EVCorn — electric vehicle news, reviews, and buying guides for India.`;
 
+      const publishedIso = art.publishAt || art.createdAt || (art.audit && art.audit.publishedAt) || '2026-01-01T00:00:00.000Z';
+      const modifiedIso = art.updatedAt || publishedIso;
+
       this.seoService.updateSeo({
         title: metaTitle,
         description: metaDescription,
@@ -1444,8 +1469,8 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
         url: path,
         type: 'article',
         author: authorName,
-        publishDate: art.createdAt,
-        modifiedDate: art.updatedAt || art.createdAt
+        publishDate: publishedIso,
+        modifiedDate: modifiedIso
       });
 
       // Entity graph → schema inputs (optional). Failure → Phase 7.1 Article only.
@@ -1485,8 +1510,8 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
         headline: art.title,
         description: metaDescription,
         image: imageUrl,
-        datePublished: art.createdAt,
-        dateModified: art.updatedAt || art.createdAt,
+        datePublished: publishedIso,
+        dateModified: modifiedIso,
         author: graphSchema?.authorPerson || authorName,
         path,
         id: graphSchema?.path || path,

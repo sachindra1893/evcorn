@@ -75,6 +75,7 @@ const ArticleSchema = new mongoose.Schema({
   }],
 
   createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 
   // Cloudinary Image Metadata (Backward Compatibility)
   cloudinaryImage: {
@@ -85,6 +86,8 @@ const ArticleSchema = new mongoose.Schema({
     url: { type: String, default: '' },
     public_id: { type: String, default: '' }
   }]
+}, {
+  timestamps: true
 });
 
 // ─── Compound Indexes (Pillar III — Production Query Optimisation) ─────────────

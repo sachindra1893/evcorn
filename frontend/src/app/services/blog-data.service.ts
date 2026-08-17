@@ -132,6 +132,7 @@ export interface Article {
   publishAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  audit?: { publishedAt?: string; createdBy?: string; updatedBy?: string; publishedBy?: string };
   author?:
     | {
         name?: string;

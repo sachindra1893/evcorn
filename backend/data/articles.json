@@ -1,5 +1,37 @@
 [
   {
+    "createdAt": "2026-01-01T10:00:00.000Z",
+    "updatedAt": "2026-08-17T04:53:10.052Z",
+    "title": "Original Article Title",
+    "description": "Updated Description Content",
+    "paragraphs": [
+      "Paragraph 1"
+    ],
+    "publishAt": "2026-01-01T10:00:00.000Z",
+    "id": "local-art-1786942390051"
+  },
+  {
+    "createdAt": "2026-01-01T10:00:00.000Z",
+    "updatedAt": "2026-08-17T04:52:53.092Z",
+    "title": "Original Article Title",
+    "description": "Updated Description Content",
+    "paragraphs": [
+      "Paragraph 1"
+    ],
+    "publishAt": "2026-01-01T10:00:00.000Z",
+    "id": "local-art-1786942373091"
+  },
+  {
+    "title": "Original Article Title",
+    "description": "Original Description",
+    "paragraphs": [
+      "Paragraph 1"
+    ],
+    "publishAt": "2026-01-01T10:00:00.000Z",
+    "createdAt": "2026-08-17T04:52:39.391Z",
+    "id": "local-art-1786942359391"
+  },
+  {
     "id": "local-art-1783773145034",
     "title": "The Legend is Reborn Electric: Tata Sierra.ev Stuns with Ground-Up Skateboard Brilliance",
     "description": "Nostalgia has a brand-new current. Tata Motors has officially launched the highly anticipated production version of the Tata Sierra.ev, masterfully...",

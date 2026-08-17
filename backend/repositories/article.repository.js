@@ -58,10 +58,12 @@ class ArticleRepository {
   async create(articleData) {
     if (isLocalFileDb()) {
       const articles = fileDb.getArticles().slice();
+      const now = new Date().toISOString();
       const newArticle = {
+        createdAt: articleData.createdAt || articleData.publishAt || now,
+        updatedAt: articleData.updatedAt || now,
         ...articleData,
-        id: 'local-art-' + Date.now(),
-        createdAt: new Date().toISOString()
+        id: 'local-art-' + Date.now()
       };
       articles.unshift(newArticle);
       fileDb.saveArticles(articles);
@@ -74,16 +76,21 @@ class ArticleRepository {
   }
 
   async update(id, articleData) {
+    const updatedAt = new Date().toISOString();
     if (isLocalFileDb()) {
       const articles = fileDb.getArticles().slice();
       const index = articles.findIndex(a => a.id === id);
       if (index === -1) return null;
-      articles[index] = { ...articles[index], ...articleData };
+      articles[index] = { ...articles[index], ...articleData, updatedAt };
       fileDb.saveArticles(articles);
       return articles[index];
     }
 
-    return await Article.findByIdAndUpdate(id, articleData, { new: true }).lean();
+    return await Article.findByIdAndUpdate(
+      id,
+      { ...articleData, updatedAt: new Date() },
+      { new: true }
+    ).lean();
   }
 
   async delete(id) {
