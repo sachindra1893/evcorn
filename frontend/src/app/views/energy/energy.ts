@@ -33,10 +33,122 @@ import { RouterLink } from '@angular/router';
       <!-- Tab Navigation -->
       <div class="tabs-wrapper animate-premium-fade">
         <div class="tabs-container">
+          <button class="tab-btn" [class.active]="activeTab === 'savings'" (click)="activeTab = 'savings'">EV vs Petrol Savings</button>
           <button class="tab-btn" [class.active]="activeTab === 'solar'" (click)="activeTab = 'solar'; calculateSolarAndBattery()">Solar + EV</button>
           <button class="tab-btn" [class.active]="activeTab === 'battery'" (click)="activeTab = 'battery'; calculateBatteryHub()">Home Battery</button>
           <button class="tab-btn" [class.active]="activeTab === 'bill'" (click)="activeTab = 'bill'; calculateOptimizer()">Bill Optimizer</button>
           <button class="tab-btn" [class.active]="activeTab === 'subsidy'" (click)="activeTab = 'subsidy'; calculateSubsidy()">Subsidy & Incentives</button>
+        </div>
+      </div>
+
+      <!-- EV Savings Calculator Section -->
+      <div class="animate-premium-fade" *ngIf="activeTab === 'savings'" style="max-width: 640px; margin: 0 auto; width: 100%; box-sizing: border-box;">
+        <!-- Minimal Premium Card Container -->
+        <div class="calc-card-redesign" style="background: #FFFFFF; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 40px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 1.75rem;">
+          
+          <!-- Inputs Section -->
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- Daily Commute Slider -->
+            <div class="calc-input-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-weight: 600; color: #475569; font-size: 0.85rem;">Daily Commute</span>
+                <span style="font-weight: 700; color: #0088CC; font-size: 1rem; background: rgba(0, 136, 204, 0.08); padding: 2px 10px; border-radius: 12px;">{{ dailyCommute }} km</span>
+              </div>
+              <input type="range" min="5" max="200" step="5" [(ngModel)]="dailyCommute" class="thin-slider">
+            </div>
+
+            <!-- Two Column Grid: Petrol Price & Mileage -->
+            <div class="calc-input-grid">
+              <!-- Petrol Price Stepper -->
+              <div class="calc-input-group">
+                <div style="font-weight: 600; color: #475569; font-size: 0.825rem; margin-bottom: 0.4rem;">Petrol Price (per L)</div>
+                <div class="minimal-stepper-box">
+                  <button type="button" (click)="adjustPetrolPrice(-1)" class="stepper-btn-minimal" aria-label="Decrease petrol price">-</button>
+                  <span class="stepper-val-text">₹{{ petrolPrice }}</span>
+                  <button type="button" (click)="adjustPetrolPrice(1)" class="stepper-btn-minimal" aria-label="Increase petrol price">+</button>
+                </div>
+              </div>
+              
+              <!-- Petrol Mileage Stepper -->
+              <div class="calc-input-group">
+                <div style="font-weight: 600; color: #475569; font-size: 0.825rem; margin-bottom: 0.4rem;">Mileage (km/L)</div>
+                <div class="minimal-stepper-box">
+                  <button type="button" (click)="adjustPetrolMileage(-0.5)" class="stepper-btn-minimal" aria-label="Decrease mileage">-</button>
+                  <span class="stepper-val-text">{{ petrolMileage }}</span>
+                  <button type="button" (click)="adjustPetrolMileage(0.5)" class="stepper-btn-minimal" aria-label="Increase mileage">+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sliders Grid: Electricity Tariff & EV Efficiency -->
+            <div class="calc-input-grid">
+              <div class="calc-input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                  <span style="font-weight: 600; color: #475569; font-size: 0.825rem;">Electricity Tariff</span>
+                  <span style="font-weight: 700; color: #0088CC; font-size: 0.875rem;">₹{{ electricityRate }}/unit</span>
+                </div>
+                <input type="range" min="3" max="15" step="0.5" [(ngModel)]="electricityRate" class="thin-slider">
+              </div>
+
+              <div class="calc-input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                  <span style="font-weight: 600; color: #475569; font-size: 0.825rem;">EV Efficiency</span>
+                  <span style="font-weight: 700; color: #0088CC; font-size: 0.875rem;">{{ evEfficiency }} km/kWh</span>
+                </div>
+                <input type="range" min="4" max="10" step="0.2" [(ngModel)]="evEfficiency" class="thin-slider">
+              </div>
+            </div>
+          </div>
+
+          <!-- Single Results Block (No separate red/green boxes, no overlapping floating pill) -->
+          <div class="results-block-single">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Monthly Cost Breakdown</div>
+            
+            <div class="cost-breakdown-list">
+              <div class="cost-breakdown-item">
+                <span class="cost-item-label">Petrol Fuel Cost</span>
+                <span class="cost-item-val">₹{{ monthlyPetrolCost | number }}</span>
+              </div>
+              <div class="cost-breakdown-item">
+                <span class="cost-item-label">Electricity (EV) Cost</span>
+                <span class="cost-item-val">₹{{ monthlyEvCost | number }}</span>
+              </div>
+              <div class="cost-breakdown-item highlight-item">
+                <span class="cost-item-label">Maintenance Saved (est.)</span>
+                <span class="cost-item-val">+₹{{ monthlyMaintenanceSavings | number }}</span>
+              </div>
+            </div>
+
+            <!-- Single Prominent "You save every month" Summary Block Below -->
+            <div class="prominent-summary-accent-box">
+              <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.9;">You save every month</div>
+              <div style="font-size: 2.2rem; font-weight: 800; margin: 4px 0; line-height: 1;">₹{{ monthlyEvSavings | number }}</div>
+              <div style="font-size: 0.78rem; opacity: 0.88; font-weight: 500;">Includes fuel savings + ₹0.60/km maintenance savings</div>
+            </div>
+          </div>
+
+          <!-- Annual & 5-Year Savings Grid -->
+          <div class="longterm-grid">
+            <div class="longterm-box">
+              <div style="font-size: 0.78rem; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Annual Savings</div>
+              <div style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-top: 4px; line-height: 1;">₹{{ annualEvSavings | number }}</div>
+            </div>
+            <div class="longterm-box">
+              <div style="font-size: 0.78rem; font-weight: 600; color: #0088CC; text-transform: uppercase; letter-spacing: 0.03em;">5-Year Savings</div>
+              <div style="font-size: 1.8rem; font-weight: 800; color: #0088CC; margin-top: 4px; line-height: 1;">₹{{ (lifetimeEvSavings / 100000).toFixed(2) }} Lakh</div>
+            </div>
+          </div>
+
+          <!-- Lifestyle Impact -->
+          <div class="lifestyle-box">
+            <span style="font-size: 1.4rem;">💡</span>
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: #0088CC; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Lifestyle Impact</div>
+              <div style="font-size: 0.875rem; font-weight: 600; color: #1E293B; line-height: 1.4;">{{ evSavingsMilestoneText }}</div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -1285,12 +1397,63 @@ import { RouterLink } from '@angular/router';
   `]
 })
 export class EnergyComponent implements OnInit {
-  activeTab: 'solar' | 'battery' | 'bill' | 'subsidy' = 'solar';
+  activeTab: 'savings' | 'solar' | 'battery' | 'bill' | 'subsidy' = 'savings';
+
+  // EV Savings Tab Inputs
+  petrolPrice: number = 104;
+  petrolMileage: number = 14;
+  evEfficiency: number = 7.0;
 
   // Solar Tab Inputs
   electricityBill: number = 5000; 
   dailyCommute: number = 60; 
   electricityRate: number = 8.0; 
+
+  adjustPetrolPrice(val: number) {
+    this.petrolPrice = Math.max(70, Math.min(150, this.petrolPrice + val));
+  }
+
+  adjustPetrolMileage(val: number) {
+    this.petrolMileage = Math.max(5, Math.min(30, parseFloat((this.petrolMileage + val).toFixed(1))));
+  }
+
+  get monthlyPetrolCost(): number {
+    const totalKm = this.dailyCommute * 30;
+    return Math.round((totalKm / this.petrolMileage) * this.petrolPrice);
+  }
+
+  get monthlyEvCost(): number {
+    const totalKm = this.dailyCommute * 30;
+    return Math.round((totalKm / this.evEfficiency) * this.electricityRate);
+  }
+
+  get monthlyMaintenanceSavings(): number {
+    const totalKm = this.dailyCommute * 30;
+    // Sensible estimate for Indian market: ~₹0.60/km EV maintenance savings vs petrol ICE
+    return Math.round(totalKm * 0.60);
+  }
+
+  get monthlyEvSavings(): number {
+    const fuelSavings = Math.max(0, this.monthlyPetrolCost - this.monthlyEvCost);
+    return fuelSavings + this.monthlyMaintenanceSavings;
+  }
+
+  get annualEvSavings(): number {
+    return this.monthlyEvSavings * 12;
+  }
+
+  get lifetimeEvSavings(): number {
+    return this.annualEvSavings * 5;
+  }
+
+  get evSavingsMilestoneText(): string {
+    const savings = this.annualEvSavings;
+    if (savings >= 150000) return '✈️ Enough to fund a premium vacation in Southeast Asia!';
+    if (savings >= 100000) return '🏡 Enough to pay your entire household electricity bill for 2 years!';
+    if (savings >= 60000) return '🛵 Enough to buy a brand new electric scooter!';
+    if (savings >= 30000) return '🔋 Enough to pay for 15,000 km of free public fast charging!';
+    return '☕ Enough to buy 150 premium coffees!';
+  }
   
   // Solar Tab Outputs
   solarCapacity: number = 0; 

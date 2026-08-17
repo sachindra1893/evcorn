@@ -107,119 +107,115 @@ import { UsageStatsComponent } from '../../components/usage-stats/usage-stats';
         </svg>
       </div>
 
-      <div class="calculator-container animate-premium-fade" style="position: relative; z-index: 1; max-width: 600px; margin: 0 auto; width: 92%;">
-        <div class="calc-header" style="margin-bottom: 2.5rem; text-align: center;">
-          <h2 style="font-size: 2.2rem; font-weight: 800; color: #0F172A; letter-spacing: -0.04em;">EV Savings Calculator</h2>
-          <p style="font-size: 1.1rem; color: #64748B; margin-top: 0.8rem;">Configure details to calculate your exact fuel savings & see lifestyle rewards</p>
+      <div class="calculator-container animate-premium-fade" style="position: relative; z-index: 1; max-width: 640px; margin: 0 auto; width: 100%; box-sizing: border-box;">
+        <div class="calc-header" style="margin-bottom: 2rem; text-align: center;">
+          <h2 style="font-size: 2rem; font-weight: 800; color: #0F172A; letter-spacing: -0.03em; margin: 0;">EV Savings Calculator</h2>
+          <p style="font-size: 0.95rem; color: #64748B; margin-top: 0.5rem; line-height: 1.5;">Calculate your exact monthly running cost savings by switching from petrol to electric</p>
         </div>
         
-        <!-- Unified Premium Card -->
-        <div style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 15px 45px rgba(0,0,0,0.03); border-radius: 24px; padding: 2.5rem; display: flex; flex-direction: column; gap: 2rem;">
+        <!-- Minimal Premium Card Container -->
+        <div class="calc-card-redesign" style="background: #FFFFFF; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 40px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 1.75rem;">
           
-          <!-- Inputs Group -->
-          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- Inputs Section -->
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
             
-            <!-- Daily Commute -->
-            <div>
+            <!-- Daily Commute Slider -->
+            <div class="calc-input-group">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-weight: 600; color: #475569; font-size: 0.9rem;">Daily Commute</span>
-                <span style="font-weight: 800; color: #10B981; font-size: 1.1rem;">{{ dailyCommute }} km</span>
+                <span style="font-weight: 600; color: #475569; font-size: 0.85rem;">Daily Commute</span>
+                <span style="font-weight: 700; color: #0088CC; font-size: 1rem; background: rgba(0, 136, 204, 0.08); padding: 2px 10px; border-radius: 12px;">{{ dailyCommute }} km</span>
               </div>
-              <input type="range" min="5" max="200" step="5" [value]="dailyCommute" (input)="onCommuteChange($event)" class="blue-slider">
+              <input type="range" min="5" max="200" step="5" [value]="dailyCommute" (input)="onCommuteChange($event)" class="thin-slider">
             </div>
 
-            <!-- Two Column Grid for secondary inputs -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; align-items: end;">
-              <!-- Petrol Price -->
-              <div>
-                <div style="font-weight: 600; color: #475569; font-size: 0.85rem; margin-bottom: 0.5rem;">Petrol Price (per L)</div>
-                <div style="display: flex; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-                  <button type="button" (click)="adjustPrice(-1)" style="flex: 1; padding: 10px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #475569; border-right: 1px solid #E2E8F0; transition: background 0.2s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='none'">-</button>
-                  <span style="padding: 10px 15px; font-weight: 700; color: #0F172A; font-size: 1rem; text-align: center; min-width: 70px;">₹{{ petrolPrice }}</span>
-                  <button type="button" (click)="adjustPrice(1)" style="flex: 1; padding: 10px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #475569; border-left: 1px solid #E2E8F0; transition: background 0.2s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='none'">+</button>
+            <!-- Two Column Grid: Petrol Price & Mileage -->
+            <div class="calc-input-grid">
+              <!-- Petrol Price Stepper -->
+              <div class="calc-input-group">
+                <div style="font-weight: 600; color: #475569; font-size: 0.825rem; margin-bottom: 0.4rem;">Petrol Price (per L)</div>
+                <div class="minimal-stepper-box">
+                  <button type="button" (click)="adjustPrice(-1)" class="stepper-btn-minimal" aria-label="Decrease petrol price">-</button>
+                  <span class="stepper-val-text">₹{{ petrolPrice }}</span>
+                  <button type="button" (click)="adjustPrice(1)" class="stepper-btn-minimal" aria-label="Increase petrol price">+</button>
                 </div>
               </div>
               
-              <!-- Petrol Mileage -->
-              <div>
-                <div style="font-weight: 600; color: #475569; font-size: 0.85rem; margin-bottom: 0.5rem;">Mileage (km/L)</div>
-                <div style="display: flex; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-                  <button type="button" (click)="adjustMileage(-0.5)" style="flex: 1; padding: 10px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #475569; border-right: 1px solid #E2E8F0; transition: background 0.2s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='none'">-</button>
-                  <span style="padding: 10px 15px; font-weight: 700; color: #0F172A; font-size: 1rem; text-align: center; min-width: 60px;">{{ petrolMileage }}</span>
-                  <button type="button" (click)="adjustMileage(0.5)" style="flex: 1; padding: 10px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #475569; border-left: 1px solid #E2E8F0; transition: background 0.2s;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='none'">+</button>
+              <!-- Petrol Mileage Stepper -->
+              <div class="calc-input-group">
+                <div style="font-weight: 600; color: #475569; font-size: 0.825rem; margin-bottom: 0.4rem;">Mileage (km/L)</div>
+                <div class="minimal-stepper-box">
+                  <button type="button" (click)="adjustMileage(-0.5)" class="stepper-btn-minimal" aria-label="Decrease mileage">-</button>
+                  <span class="stepper-val-text">{{ petrolMileage }}</span>
+                  <button type="button" (click)="adjustMileage(0.5)" class="stepper-btn-minimal" aria-label="Increase mileage">+</button>
                 </div>
               </div>
             </div>
 
-            <!-- EVs Efficiency & Tariff Sliders -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                  <span style="font-weight: 600; color: #475569; font-size: 0.85rem;">Electricity Tariff</span>
-                  <span style="font-weight: 700; color: #0284C7; font-size: 0.95rem;">₹{{ electricityRate }}/unit</span>
+            <!-- Sliders Grid: Electricity Tariff & EV Efficiency -->
+            <div class="calc-input-grid">
+              <div class="calc-input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                  <span style="font-weight: 600; color: #475569; font-size: 0.825rem;">Electricity Tariff</span>
+                  <span style="font-weight: 700; color: #0088CC; font-size: 0.875rem;">₹{{ electricityRate }}/unit</span>
                 </div>
-                <input type="range" min="3" max="15" step="0.5" [value]="electricityRate" (input)="onElectricityRateChange($event)" class="blue-slider">
+                <input type="range" min="3" max="15" step="0.5" [value]="electricityRate" (input)="onElectricityRateChange($event)" class="thin-slider">
               </div>
 
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                  <span style="font-weight: 600; color: #475569; font-size: 0.85rem;">EV Efficiency</span>
-                  <span style="font-weight: 700; color: #047857; font-size: 0.95rem;">{{ evEfficiency }} km/kWh</span>
+              <div class="calc-input-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                  <span style="font-weight: 600; color: #475569; font-size: 0.825rem;">EV Efficiency</span>
+                  <span style="font-weight: 700; color: #0088CC; font-size: 0.875rem;">{{ evEfficiency }} km/kWh</span>
                 </div>
-                <input type="range" min="4" max="10" step="0.2" [value]="evEfficiency" (input)="onEvEfficiencyChange($event)" class="blue-slider">
+                <input type="range" min="4" max="10" step="0.2" [value]="evEfficiency" (input)="onEvEfficiencyChange($event)" class="thin-slider">
               </div>
             </div>
           </div>
-          
-          <div style="height: 1px; background: #F1F5F9; margin: 0 -2.5rem;"></div>
 
-          <!-- Monthly Fuel Cost Comparison -->
-          <div style="display: flex; flex-direction: column; align-items: center;">
-            <div style="font-size: 0.85rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Monthly Fuel Cost</div>
+          <!-- Single Results Block (No separate red/green boxes, no overlapping floating pill) -->
+          <div class="results-block-single">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Monthly Cost Breakdown</div>
             
-            <div style="display: flex; align-items: center; justify-content: center; width: 100%; gap: 1rem;">
-              <div style="flex: 1; text-align: right; background: #FFF1F2; padding: 1.2rem; border-radius: 16px; border: 1px solid rgba(225, 29, 72, 0.1);">
-                <div style="font-size: 0.8rem; font-weight: 600; color: #9F1239; margin-bottom: 0.3rem;">Petrol</div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #BE123C; line-height: 1; letter-spacing: -0.02em;">₹{{ monthlyPetrolCost }}</div>
+            <div class="cost-breakdown-list">
+              <div class="cost-breakdown-item">
+                <span class="cost-item-label">Petrol Fuel Cost</span>
+                <span class="cost-item-val">₹{{ monthlyPetrolCost | number }}</span>
               </div>
-              
-              <div style="color: #94A3B8; font-size: 1.5rem; font-weight: 800;">→</div>
-              
-              <div style="flex: 1; text-align: left; background: #ECFDF5; padding: 1.2rem; border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.1);">
-                <div style="font-size: 0.8rem; font-weight: 600; color: #065F46; margin-bottom: 0.3rem;">EV</div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #047857; line-height: 1; letter-spacing: -0.02em;">₹{{ monthlyEvCost }}</div>
+              <div class="cost-breakdown-item">
+                <span class="cost-item-label">Electricity (EV) Cost</span>
+                <span class="cost-item-val">₹{{ monthlyEvCost | number }}</span>
+              </div>
+              <div class="cost-breakdown-item highlight-item">
+                <span class="cost-item-label">Maintenance Saved (est.)</span>
+                <span class="cost-item-val">+₹{{ monthlyMaintenanceSavings | number }}</span>
               </div>
             </div>
-            
-            <!-- Monthly Savings highlight inside comparison block -->
-            <div style="margin-top: -14px; z-index: 2; background: #10B981; color: white; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 700; box-shadow: 0 4px 15px rgba(16,185,129,0.3); display: flex; align-items: center; gap: 8px;">
-              <span>You Save</span>
-              <span style="font-size: 1.3rem;">₹{{ monthlySavings }}/mo</span>
+
+            <!-- Single Prominent "You save every month" Summary Block Below -->
+            <div class="prominent-summary-accent-box">
+              <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.9;">You save every month</div>
+              <div style="font-size: 2.2rem; font-weight: 800; margin: 4px 0; line-height: 1;">₹{{ monthlySavings | number }}</div>
+              <div style="font-size: 0.78rem; opacity: 0.88; font-weight: 500;">Includes fuel savings + ₹0.60/km maintenance savings</div>
             </div>
           </div>
 
-          <div style="height: 1px; background: #F1F5F9; margin: 0 -2.5rem;"></div>
-
-          <!-- Savings Summary Row (Annual & 5-Year) -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; text-align: center;">
-            <div style="background: rgba(248, 250, 252, 0.6); border: 1px solid #E2E8F0; padding: 1.5rem; border-radius: 16px;">
-              <div style="font-size: 0.85rem; font-weight: 600; color: #64748B; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em;">Annual Savings</div>
-              <div style="font-size: 2.2rem; font-weight: 800; color: #0F172A; line-height: 1; letter-spacing: -0.02em;">₹{{ annualSavings }}</div>
+          <!-- Annual & 5-Year Savings Grid -->
+          <div class="longterm-grid">
+            <div class="longterm-box">
+              <div style="font-size: 0.78rem; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.03em;">Annual Savings</div>
+              <div style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-top: 4px; line-height: 1;">₹{{ annualSavings | number }}</div>
             </div>
-            <div style="background: rgba(240, 253, 244, 0.4); border: 1px solid rgba(16,185,129,0.2); padding: 1.5rem; border-radius: 16px;">
-              <div style="font-size: 0.85rem; font-weight: 600; color: #047857; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em;">5-Year Savings</div>
-              <div style="font-size: 2.2rem; font-weight: 800; color: #10B981; line-height: 1; letter-spacing: -0.02em;">₹{{ (lifetimeSavings / 100000).toFixed(2) }} L</div>
+            <div class="longterm-box">
+              <div style="font-size: 0.78rem; font-weight: 600; color: #0088CC; text-transform: uppercase; letter-spacing: 0.03em;">5-Year Savings</div>
+              <div style="font-size: 1.8rem; font-weight: 800; color: #0088CC; margin-top: 4px; line-height: 1;">₹{{ (lifetimeSavings / 100000).toFixed(2) }} Lakh</div>
             </div>
           </div>
 
-          <div style="height: 1px; background: #F1F5F9; margin: 0 -2.5rem;"></div>
-
-          <!-- Reward / Lifestyle Impact -->
-          <div style="background: #F0F9FF; border: 1px solid #BAE6FD; padding: 1.2rem 1.5rem; border-radius: 16px; display: flex; align-items: center; gap: 16px;">
-            <div style="font-size: 2rem;">💡</div>
+          <!-- Lifestyle Impact -->
+          <div class="lifestyle-box">
+            <span style="font-size: 1.4rem;">💡</span>
             <div>
-              <div style="font-size: 0.8rem; font-weight: 700; color: #0284C7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Lifestyle Impact</div>
-              <div style="font-size: 0.95rem; font-weight: 600; color: #0F172A; line-height: 1.4;">{{ savingsMilestoneText }}</div>
+              <div style="font-size: 0.75rem; font-weight: 700; color: #0088CC; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Lifestyle Impact</div>
+              <div style="font-size: 0.875rem; font-weight: 600; color: #1E293B; line-height: 1.4;">{{ savingsMilestoneText }}</div>
             </div>
           </div>
 
@@ -1440,8 +1436,18 @@ export class HomeComponent implements OnInit {
     return Math.round(kwhNeeded * this.electricityRate);
   }
 
-  get monthlySavings(): number {
+  get monthlyMaintenanceSavings(): number {
+    const totalKm = this.dailyCommute * 30;
+    // Sensible estimate for Indian market: ~₹0.60/km EV maintenance savings vs petrol ICE
+    return Math.round(totalKm * 0.60);
+  }
+
+  get monthlyFuelSavings(): number {
     return Math.max(0, this.monthlyPetrolCost - this.monthlyEvCost);
+  }
+
+  get monthlySavings(): number {
+    return this.monthlyFuelSavings + this.monthlyMaintenanceSavings;
   }
 
   get annualSavings(): number {
