@@ -22,6 +22,7 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
           </div>
         }
         <app-global-location></app-global-location>
+        <div class="nav-divider"></div>
         <app-google-signin></app-google-signin>
       </div>
     </div>
@@ -89,7 +90,14 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
       z-index: 1001;
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 8px;
+    }
+    .nav-divider {
+      width: 1px;
+      height: 16px;
+      background-color: #CBD5E1;
+      flex-shrink: 0;
+      align-self: center;
     }
     .admin-links {
       display: flex;

@@ -10,11 +10,16 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <!-- The Pill (Global Context) -->
-    <div class="premium-pill" (click)="openModal()" *ngIf="context === 'global'">
-      <span class="pill-icon">📍</span>
+    <!-- The Minimal Location Trigger (Global Context) -->
+    <div class="premium-pill" (click)="openModal()" *ngIf="context === 'global'" title="Select Location">
+      <svg class="pill-icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+      </svg>
       <span class="pill-text">{{ isDetecting ? 'Detecting location...' : (currentLocation?.displayName || 'Location') }}</span>
-      <span class="pill-chevron">▼</span>
+      <svg class="pill-chevron-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
     </div>
 
     <!-- The Override Badge (Page Context) -->
@@ -133,42 +138,55 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     </div>
   `,
   styles: [`
-    /* Pill Design */
+    :host {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* Minimal Location Trigger Design */
     .premium-pill {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      padding: 8px 16px;
-      border-radius: 30px;
+      gap: 4px;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      padding: 4px 2px;
+      border-radius: 0;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: none;
+      border: none;
+      transition: opacity 0.2s ease;
+      height: 32px;
+      box-sizing: border-radius;
     }
     .premium-pill:hover {
-      box-shadow: 0 6px 20px rgba(0,0,0,0.06), 0 2px 5px rgba(0,0,0,0.04);
-      transform: translateY(-1px);
-      background: rgba(255, 255, 255, 0.95);
+      box-shadow: none;
+      transform: none;
+      background: transparent;
+      opacity: 0.75;
     }
-    .pill-icon {
-      font-size: 1.1rem;
+    .pill-icon-svg {
+      color: #64748B;
+      flex-shrink: 0;
+      display: inline-block;
     }
     .pill-text {
-      font-weight: 600;
-      color: #0F172A;
-      font-size: 0.95rem;
-      max-width: 140px;
+      font-weight: 400;
+      color: #475569;
+      font-size: 0.85rem;
+      max-width: 120px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      line-height: 1;
     }
-    .pill-chevron {
-      font-size: 0.7rem;
-      color: #64748B;
-      margin-left: 2px;
+    .pill-chevron-svg {
+      color: #94A3B8;
+      flex-shrink: 0;
+      margin-left: 1px;
+      display: inline-block;
     }
 
     /* Override Badge */
