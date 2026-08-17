@@ -64,11 +64,11 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                 <span class="gps-icon success-icon" *ngIf="gpsState === 'success'">✓</span>
               </div>
               <div class="gps-text">
-                <div class="gps-title" *ngIf="gpsState === 'idle'">Use Current Location</div>
-                <div class="gps-title" *ngIf="gpsState === 'detecting'">Detecting...</div>
-                <div class="gps-title" *ngIf="gpsState === 'success'">Location Found</div>
+                <div class="gps-title" *ngIf="gpsState === 'idle'">Auto-Detect My City</div>
+                <div class="gps-title" *ngIf="gpsState === 'detecting'">Detecting city...</div>
+                <div class="gps-title" *ngIf="gpsState === 'success'">City Found</div>
                 
-                <div class="gps-sub" *ngIf="gpsState === 'idle'">Detect using GPS</div>
+                <div class="gps-sub" *ngIf="gpsState === 'idle'">Detect automatically via IP</div>
                 <div class="gps-sub error-text" *ngIf="errorMsg">{{ errorMsg }}</div>
                 <div class="gps-sub success-text" *ngIf="gpsState === 'success'">{{ currentLocation?.displayName }}</div>
               </div>

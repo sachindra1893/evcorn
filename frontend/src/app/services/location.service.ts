@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { getApiBaseUrl } from '../core/http/api-base-url';
 
 export interface LocationData {
   city: string;
@@ -9,7 +10,7 @@ export interface LocationData {
   lat: number;
   lon: number;
   timestamp: number;
-  source: 'gps' | 'ip' | 'manual';
+  source: 'ip' | 'manual';
   displayName: string;
 }
 
@@ -27,6 +28,7 @@ export class LocationService {
   private readonly GLOBAL_STORAGE_KEY = 'evcorn_smart_location_v2';
   private readonly RECENT_STORAGE_KEY = 'evcorn_recent_locations';
   private readonly PERMISSION_STORAGE_KEY = 'evcorn_location_permission_status';
+  private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 Hours Session/Local Storage TTL
 
   private stateSubject = new BehaviorSubject<LocationState>({
     global: null,
@@ -40,11 +42,10 @@ export class LocationService {
   }
 
   /**
-   * Main Smart Location Initialization Sequence:
-   * 1. If cached location exists -> emit immediately for instant startup.
-   * 2. If permission is granted -> silently check fresh GPS position on every load.
-   * 3. If position changed >1 km -> update cache & UI immediately.
-   * 4. If no cache -> trigger full auto-detection (GPS first -> IP fallback).
+   * Main City Location Initialization Sequence:
+   * 1. Check cached city location in localStorage. If valid & unexpired (<24h), emit immediately for instant startup.
+   * 2. If no valid cache -> auto-detect city via server-side IP geolocation (with client-side IP fallback).
+   * 3. GPS & reverse-geocoding are completely disabled to guarantee clean city-level names (no colony/society names).
    */
   private async initSmartLocation() {
     const localStore = this.getStorage('local');
@@ -73,60 +74,18 @@ export class LocationService {
     }
 
     const cachedGlobal = this.getCachedGlobalLocation();
-    if (cachedGlobal) {
+    const isCacheFresh = cachedGlobal && cachedGlobal.timestamp && (Date.now() - cachedGlobal.timestamp < this.CACHE_TTL_MS);
+
+    if (cachedGlobal && isCacheFresh && cachedGlobal.displayName && cachedGlobal.displayName !== 'Select city') {
       initialState.global = cachedGlobal;
       initialState.isDetecting = false;
       this.stateSubject.next(initialState);
-
-      // Silent fresh GPS check on every load if permission is granted
-      this.silentGpsCheckAndUpdate(cachedGlobal);
       return;
     }
 
-    // No cache -> Auto-detect location
+    // No cache or expired cache -> Auto-detect location via IP
     this.stateSubject.next(initialState);
     await this.autoDetectLocation('global', true);
-  }
-
-  private async silentGpsCheckAndUpdate(cached: LocationData) {
-    if (typeof window === 'undefined' || !navigator || !navigator.geolocation) return;
-
-    if (navigator.permissions && navigator.permissions.query) {
-      try {
-        const perm = await navigator.permissions.query({ name: 'geolocation' });
-        if (perm.state !== 'granted') return;
-      } catch {}
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const newLat = position.coords.latitude;
-        const newLon = position.coords.longitude;
-        const distKm = this.calculateDistanceKm(cached.lat, cached.lon, newLat, newLon);
-
-        // If user traveled >1 km from cached position, update immediately
-        if (distKm > 1.0) {
-          const freshLoc = await this.reverseGeocode(newLat, newLon, 'gps');
-          if (freshLoc) {
-            this.setLocation(freshLoc, 'global', true);
-          }
-        }
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-    );
-  }
-
-  private calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371; // Earth radius in km
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
   }
 
   private getStorage(type: 'local' | 'session'): Storage | null {
@@ -166,10 +125,13 @@ export class LocationService {
   }
 
   public setLocation(loc: LocationData, moduleContext: string, setAsGlobal: boolean = false) {
-    const sanitizedLoc = {
+    const sanitizedCity = this.sanitizeEnglishCityName(loc.city);
+    const sanitizedDisplay = this.sanitizeEnglishCityName(loc.displayName || loc.city);
+
+    const sanitizedLoc: LocationData = {
       ...loc,
-      city: this.sanitizeEnglishCityName(loc.city),
-      displayName: this.sanitizeEnglishCityName(loc.displayName || loc.city)
+      city: sanitizedCity,
+      displayName: sanitizedDisplay
     };
 
     const currentState = this.stateSubject.value;
@@ -194,39 +156,58 @@ export class LocationService {
       newState.overrides[moduleContext] = sanitizedLoc;
     }
 
-    this.addRecentLocation(sanitizedLoc);
+    if (sanitizedDisplay !== 'Select city') {
+      this.addRecentLocation(sanitizedLoc);
+    }
     this.stateSubject.next(newState);
   }
 
   /**
-   * Automatic Location Resolution (GPS First -> IP Fallback)
+   * Automatic Location Resolution (Server-Side IP Geolocation -> Client-Side IP Fallback)
+   * NO GPS / browser geolocation API is used.
    */
   public async autoDetectLocation(moduleContext: string = 'global', setAsGlobal: boolean = true): Promise<boolean> {
     this.setDetectingState(true);
 
-    // Step 1: Try GPS Browser Geolocation
-    const gpsSuccess = await this.tryGpsLocation(moduleContext, setAsGlobal);
-    if (gpsSuccess) {
-      this.setPermissionStatus('granted');
-      return true;
-    }
+    // Step 1: Try Server-Side IP Geolocation endpoint
+    try {
+      const res = await this.fetchWithTimeout(`${getApiBaseUrl()}/location/detect`, { timeout: 4500 });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.city && data.city !== 'Select city') {
+          const city = this.sanitizeEnglishCityName(data.city);
+          const loc: LocationData = {
+            city: city,
+            state: this.sanitizeEnglishCityName(data.state || ''),
+            country: data.country || 'India',
+            lat: 20.5937,
+            lon: 78.9629,
+            timestamp: Date.now(),
+            source: 'ip',
+            displayName: city
+          };
+          this.setLocation(loc, moduleContext, setAsGlobal);
+          return true;
+        }
+      }
+    } catch (e) {}
 
-    // Step 2: Fallback to IP-based Location if GPS fails/denied
-    const ipSuccess = await this.tryIpLocation(moduleContext, setAsGlobal);
+    // Step 2: Client-side IP Geolocation Fallback
+    const ipSuccess = await this.tryClientIpLocation(moduleContext, setAsGlobal);
     if (ipSuccess) {
       return true;
     }
 
-    // Step 3: Default Fallback if both fail
+    // Step 3: Default Fallback State ("Select city" placeholder)
     const defaultLocation: LocationData = {
-      city: 'India',
+      city: 'Select city',
       state: '',
       country: 'India',
       lat: 20.5937,
       lon: 78.9629,
       timestamp: Date.now(),
-      source: 'ip',
-      displayName: 'India'
+      source: 'manual',
+      displayName: 'Select city'
     };
     this.setLocation(defaultLocation, moduleContext, setAsGlobal);
     return false;
@@ -241,157 +222,69 @@ export class LocationService {
     this.stateSubject.next({ ...cur, isDetecting });
   }
 
-  private setPermissionStatus(status: 'granted' | 'denied' | 'prompt') {
-    const store = this.getStorage('local');
-    if (store) store.setItem(this.PERMISSION_STORAGE_KEY, status);
-    const cur = this.stateSubject.value;
-    this.stateSubject.next({ ...cur, permissionStatus: status });
-  }
-
-  private async tryGpsLocation(moduleContext: string, setAsGlobal: boolean): Promise<boolean> {
-    if (typeof window === 'undefined' || !navigator || !navigator.geolocation) {
-      return false;
-    }
-
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const loc = await this.reverseGeocode(position.coords.latitude, position.coords.longitude, 'gps');
-          if (loc) {
-            this.setLocation(loc, moduleContext, setAsGlobal);
-            resolve(true);
-          } else {
-            resolve(false);
-          }
-        },
-        (error) => {
-          if (error.code === error.PERMISSION_DENIED) {
-            this.setPermissionStatus('denied');
-          }
-          resolve(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 6000,
-          maximumAge: 0
-        }
-      );
-    });
-  }
-
-  private async tryIpLocation(moduleContext: string, setAsGlobal: boolean): Promise<boolean> {
+  private async tryClientIpLocation(moduleContext: string, setAsGlobal: boolean): Promise<boolean> {
+    // Provider 1: freeipapi.com
     try {
-      // Primary IP Location API: BigDataCloud Client IP
-      const res = await this.fetchWithTimeout(
-        'https://api.bigdatacloud.net/data/client-ip',
-        { timeout: 4000 }
-      );
+      const res = await this.fetchWithTimeout('https://freeipapi.com/api/json', { timeout: 3500 });
       if (res.ok) {
         const data = await res.json();
-        const lat = data.latitude || data.location?.latitude;
-        const lon = data.longitude || data.location?.longitude;
-        if (lat && lon) {
-          const loc = await this.reverseGeocode(lat, lon, 'ip');
-          if (loc) {
+        if (data && data.cityName) {
+          const city = this.sanitizeEnglishCityName(data.cityName);
+          if (city && city !== 'Select city') {
+            const loc: LocationData = {
+              city: city,
+              state: this.sanitizeEnglishCityName(data.regionName || ''),
+              country: data.countryName || 'India',
+              lat: data.latitude || 20.5937,
+              lon: data.longitude || 78.9629,
+              timestamp: Date.now(),
+              source: 'ip',
+              displayName: city
+            };
             this.setLocation(loc, moduleContext, setAsGlobal);
             return true;
           }
         }
       }
-    } catch {}
+    } catch (e) {}
 
+    // Provider 2: ipapi.co
     try {
-      // Secondary IP Location API: ipapi.co
-      const res = await this.fetchWithTimeout(
-        'https://ipapi.co/json/',
-        { timeout: 4000 }
-      );
+      const res = await this.fetchWithTimeout('https://ipapi.co/json/', { timeout: 3500 });
       if (res.ok) {
         const data = await res.json();
-        if (data.city) {
+        if (data && data.city) {
           const city = this.sanitizeEnglishCityName(data.city);
-          const loc: LocationData = {
-            city: city,
-            state: this.sanitizeEnglishCityName(data.region || ''),
-            country: data.country_name || 'India',
-            lat: data.latitude || 20.5937,
-            lon: data.longitude || 78.9629,
-            timestamp: Date.now(),
-            source: 'ip',
-            displayName: city
-          };
-          this.setLocation(loc, moduleContext, setAsGlobal);
-          return true;
+          if (city && city !== 'Select city') {
+            const loc: LocationData = {
+              city: city,
+              state: this.sanitizeEnglishCityName(data.region || ''),
+              country: data.country_name || 'India',
+              lat: data.latitude || 20.5937,
+              lon: data.longitude || 78.9629,
+              timestamp: Date.now(),
+              source: 'ip',
+              displayName: city
+            };
+            this.setLocation(loc, moduleContext, setAsGlobal);
+            return true;
+          }
         }
       }
-    } catch {}
+    } catch (e) {}
 
     return false;
   }
 
-  private async reverseGeocode(lat: number, lon: number, source: 'gps' | 'ip'): Promise<LocationData | null> {
-    // Attempt 1: BigDataCloud Reverse Geocoding with English locale
-    try {
-      const res = await this.fetchWithTimeout(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
-        { timeout: 4000 }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const rawCity = data.city || data.locality || data.principalSubdivision || 'India';
-        const city = this.sanitizeEnglishCityName(rawCity);
-        const state = this.sanitizeEnglishCityName(data.principalSubdivision || '');
-        const country = data.countryName || 'India';
-        return {
-          city,
-          state,
-          country,
-          lat,
-          lon,
-          timestamp: Date.now(),
-          source,
-          displayName: city
-        };
-      }
-    } catch {}
-
-    // Attempt 2: Nominatim Reverse Geocoding with explicit English headers
-    try {
-      const res = await this.fetchWithTimeout(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1&accept-language=en`,
-        { headers: { 'Accept-Language': 'en-US,en', 'User-Agent': 'EVCorn-App/2.0' }, timeout: 4000 }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const address = data.address || {};
-        const rawCity = address.city || address.town || address.village || address.state_district || address.county || 'India';
-        const city = this.sanitizeEnglishCityName(rawCity);
-        const state = this.sanitizeEnglishCityName(address.state || '');
-        const country = address.country || 'India';
-        return {
-          city,
-          state,
-          country,
-          lat,
-          lon,
-          timestamp: Date.now(),
-          source,
-          displayName: city
-        };
-      }
-    } catch {}
-
-    return null;
-  }
-
   /**
-   * Generic English-Only Sanitizer
-   * Relies on provider-native English locale query params.
-   * Strips Devanagari/non-Latin scripts automatically for any city worldwide without a hardcoded dictionary.
+   * Generic English-Only City Name Sanitizer
+   * Returns strictly a clean city name — no colony, neighborhood, street, or society names.
    */
   public sanitizeEnglishCityName(input: string | undefined | null): string {
-    if (!input) return 'India';
+    if (!input) return 'Select city';
     let str = String(input).trim();
+
+    if (str === 'Select city' || str === 'Detecting location...') return str;
 
     // Strip Devanagari character ranges [\u0900-\u097F]
     str = str.replace(/[\u0900-\u097F]+/g, '').trim();
@@ -402,7 +295,13 @@ export class LocationService {
     // Strip non-alphanumeric except spaces and hyphens
     str = str.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
 
-    if (!str || str.length < 2) return 'India';
+    // Specific city alias normalizations
+    if (/^noida/i.test(str) || /greater noida/i.test(str)) return 'Noida';
+    if (/new delhi/i.test(str)) return 'Delhi';
+    if (/gurgaon/i.test(str)) return 'Gurugram';
+    if (/bangalore/i.test(str)) return 'Bengaluru';
+
+    if (!str || str.length < 2) return 'Select city';
     return str;
   }
 
@@ -456,13 +355,13 @@ export class LocationService {
         const data = await res.json();
         return data.features.map((f: any) => {
           const props = f.properties;
-          const rawCity = props.city || props.name || props.town || props.village || props.county || 'Unknown';
+          const rawCity = props.city || props.name || props.town || props.village || props.county || 'Select city';
           const city = this.sanitizeEnglishCityName(rawCity);
           const state = this.sanitizeEnglishCityName(props.state || '');
           const country = props.country || '';
           
           let displayName = city;
-          if (state && state !== city) displayName += `, ${state}`;
+          if (state && state !== city && city !== 'Select city') displayName += `, ${state}`;
           
           return {
             city,

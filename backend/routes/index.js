@@ -16,6 +16,7 @@ const adminRoutes = require('./admin.routes');
 const evDomainRoutes = require('./evDomain.routes');
 const commentRoutes = require('./comment.routes');
 const statsRoutes = require('./stats.routes');
+const locationRoutes = require('./location.routes');
 
 router.use('/', healthRoutes);
 router.use('/domain', evDomainRoutes);
@@ -28,6 +29,7 @@ router.use('/articles', articleRoutes);
 router.use('/vehicles', vehicleRoutes);
 router.use('/comments', commentRoutes);
 router.use('/stats', statsRoutes);
+router.use('/location', locationRoutes);
 router.use('/', uploadRoutes);
 
 module.exports = router;
