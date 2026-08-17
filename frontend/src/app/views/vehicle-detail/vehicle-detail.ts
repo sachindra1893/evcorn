@@ -6,6 +6,7 @@ import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
+import { CommentSectionComponent } from '../../components/comment-section/comment-section';
 import { getOptimizedImageUrl, getResponsiveSrcSet, handleImageError } from '../../utils/image.utils';
 import { combineLatest, Subscription } from 'rxjs';
 import {
@@ -48,7 +49,7 @@ interface OverviewData {
 @Component({
   selector: 'app-vehicle-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, BreadcrumbComponent],
+  imports: [CommonModule, RouterLink, BreadcrumbComponent, CommentSectionComponent],
   template: `
     <div class="vehicle-page animate-premium-fade">
       
@@ -503,6 +504,12 @@ interface OverviewData {
                   </div>
                 </div>
                 
+                <!-- Vehicle Comment Section -->
+                <app-comment-section
+                  *ngIf="getVehicleTargetId()"
+                  [targetType]="'vehicle'"
+                  [targetId]="getVehicleTargetId()"
+                ></app-comment-section>
               </div>
             }
           }
@@ -1139,6 +1146,16 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
   get isUpcoming(): boolean {
     return this.selectedVariant?.lifecycleStatus === 'Upcoming' || this.selectedVariant?.status === 'Upcoming';
+  }
+
+  getVehicleTargetId(): string {
+    if (this.selectedVariant) {
+      return this.selectedVariant.id || this.selectedVariant.modelId || (this.selectedVariant as any)._id || (this.currentBrandSlug && this.currentModelSlug ? `${this.currentBrandSlug}-${this.currentModelSlug}` : '');
+    }
+    if (this.currentBrandSlug && this.currentModelSlug) {
+      return `${this.currentBrandSlug}-${this.currentModelSlug}`;
+    }
+    return this.modelName || '';
   }
   private currentBrandSlug: string | null = null;
   private currentModelSlug: string | null = null;

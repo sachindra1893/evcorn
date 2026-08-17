@@ -148,22 +148,6 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                   <p *ngIf="!paragraph.startsWith('__EVBLOCKS__')" [innerHTML]="autoLinkOld(paragraph)"></p>
                 }
               </ng-container>
-              
-              <!-- Door 1: Join the Discussion Button -->
-              @if (!commentsLoaded[article.id!]) {
-                <div class="comments-trigger-container">
-                  <button (click)="loadComments(article)" class="comments-trigger-btn">
-                    💬 Join the Discussion
-                  </button>
-                </div>
-              }
-
-              <!-- Door 2: Native Disqus Comments -->
-              @if (commentsLoaded[article.id!]) {
-                <div [id]="'comments-placeholder-' + article.id" class="comments-section">
-                  <!-- Disqus thread will mount here -->
-                </div>
-              }
 
               <!-- Automated Related Cars (in-article mentions) — skip when AEO related EVs present -->
               <div *ngIf="!(aeoEnabled && aeoById[article.id!]?.relatedVehicles?.length) && getRelatedCars(article).length > 0" class="related-cars-section">
@@ -264,9 +248,8 @@ type ArticleLoadState = 'loading' | 'loaded' | 'notFound';
                 }
               </div>
 
-              <!-- Single Article Deployment: Comment Section Component -->
+              <!-- Article Comment Section -->
               <app-comment-section
-                *ngIf="isTargetCommentArticle(article)"
                 [targetType]="'article'"
                 [targetId]="article.id || ''"
               ></app-comment-section>
@@ -821,19 +804,8 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
   loadedArticles: Article[] = [];
   articlesQueue: Article[] = [];
   vehicles: any[] = [];
-  commentsLoaded: { [articleId: string]: boolean } = {};
   errorMessage = '';
   loadingNext = false;
-
-  isTargetCommentArticle(article: any): boolean {
-    if (!article) return false;
-    const firstArticleId = this.loadedArticles.length > 0 ? (this.loadedArticles[0].id || (this.loadedArticles[0] as any)._id) : null;
-    return (
-      article.id === 'top-evs-india-2026' ||
-      article.id === '1' ||
-      (firstArticleId !== null && firstArticleId === (article.id || article._id))
-    );
-  }
   private currentArticleId: string | null = null;
 
   readonly aeoEnabled = AEO_ANSWER_BLOCKS_ENABLED;
@@ -1387,63 +1359,6 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Load comments when user triggers "Join the Discussion" button
-  loadComments(article: Article) {
-    if (!article.id) return;
-    this.commentsLoaded[article.id] = true;
-    this.cdr.detectChanges();
-
-    // Give Angular a brief microtask to render the placeholder DOM node
-    setTimeout(() => {
-      this.initDisqus(article.id!, article.title);
-    }, 50);
-  }
-
-  // Dynamic DOM Shifting and Loading Disqus
-  initDisqus(articleId: string, title: string) {
-    if (typeof document === 'undefined') return;
-
-    // 1. Get or create the unified disqus thread container
-    let thread = document.getElementById('disqus_thread');
-    if (!thread) {
-      thread = document.createElement('div');
-      thread.id = 'disqus_thread';
-      thread.style.marginTop = '20px';
-    }
-
-    // 2. Find the placeholder for the active article
-    const placeholder = document.getElementById(`comments-placeholder-${articleId}`);
-    if (placeholder && thread) {
-      placeholder.appendChild(thread); // Physically moves the element in the DOM!
-
-      // 3. Reset Disqus or Load script
-      if ((window as any).DISQUS) {
-        (window as any).DISQUS.reset({
-          reload: true,
-          config: function() {
-            this.page.identifier = articleId;
-            this.page.url = `${SITE_ORIGIN}${articleHref(articleId) || `/articles/${articleId}`}`;
-            this.page.title = title;
-            this.page.developer = 1;
-          }
-        });
-      } else {
-        // Load disqus config and script for the first time
-        (window as any).disqus_config = function() {
-          this.page.identifier = articleId;
-          this.page.url = `${SITE_ORIGIN}${articleHref(articleId) || `/articles/${articleId}`}`;
-          this.page.title = title;
-          this.page.developer = 1;
-        };
-
-        const s = document.createElement('script');
-        s.src = 'https://evcorn.disqus.com/embed.js';
-        s.setAttribute('data-timestamp', (+new Date()).toString());
-        document.body.appendChild(s);
-      }
-    }
-  }
-
   // Monitor page scroll to load next article & update browser state URL
   @HostListener('window:scroll', [])
   onWindowScroll() {
@@ -1504,11 +1419,6 @@ export class ArticleDetailComponent implements OnInit, OnDestroy {
       
       // Update SEO settings dynamically
       this.updateSEOMetadata(activeArticle);
-
-      // If comments were already loaded for this article, shift the DOM node back into place!
-      if (this.commentsLoaded[activeId]) {
-        this.initDisqus(activeId, activeArticle.title);
-      }
     }
   }
 
