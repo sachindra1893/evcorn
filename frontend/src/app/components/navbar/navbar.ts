@@ -21,8 +21,8 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
             <a href="#" (click)="onLogout($event)" class="admin-link logout-link">Logout</a>
           </div>
         }
-        <app-google-signin></app-google-signin>
         <app-global-location></app-global-location>
+        <app-google-signin></app-google-signin>
       </div>
     </div>
 
