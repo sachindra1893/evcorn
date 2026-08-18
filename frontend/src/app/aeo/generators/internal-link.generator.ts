@@ -78,9 +78,6 @@ export function generateInternalLinks(ctx: InternalLinkContext): AeoInternalLink
   if (ctx.includeFaqs !== false) {
     push('EVCorn FAQs', faqsHref());
   }
-  if (ctx.includeEnergy) {
-    push('Energy & charging', energyHref());
-  }
 
   for (const v of ctx.relatedVehicles || []) {
     if (links.length >= MAX_LINKS) break;

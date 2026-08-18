@@ -1,6 +1,17 @@
 [
   {
     "createdAt": "2026-01-01T10:00:00.000Z",
+    "updatedAt": "2026-08-18T05:50:21.930Z",
+    "title": "Original Article Title",
+    "description": "Updated Description Content",
+    "paragraphs": [
+      "Paragraph 1"
+    ],
+    "publishAt": "2026-01-01T10:00:00.000Z",
+    "id": "local-art-1787032221929"
+  },
+  {
+    "createdAt": "2026-01-01T10:00:00.000Z",
     "updatedAt": "2026-08-17T09:32:22.780Z",
     "title": "Original Article Title",
     "description": "Updated Description Content",

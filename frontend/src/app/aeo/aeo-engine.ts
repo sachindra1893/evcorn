@@ -155,8 +155,7 @@ function applyArticleRelatedSections(model: AeoPageModel, ctx: AeoArticleContext
       generateInternalLinks({
         brandSlug: ctx.brandSlug,
         modelSlug: ctx.modelSlug,
-        includeFaqs: true,
-        includeEnergy: true
+        includeFaqs: true
       }),
     []
   );
@@ -300,8 +299,7 @@ export function buildArticleAeo(ctx: AeoArticleContext): AeoPageModel {
       generateInternalLinks({
         brandSlug: ctx.brandSlug,
         modelSlug: ctx.modelSlug,
-        includeFaqs: true,
-        includeEnergy: true
+        includeFaqs: true
       }),
     []
   );

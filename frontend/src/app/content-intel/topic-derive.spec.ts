@@ -101,52 +101,7 @@ describe('topic-derive', () => {
     expect(topics.some((t) => t.topic.id === 'topic:brand:missing-brand')).toBe(false);
   });
 
-  it('adds energy hub only when charging/chemistry facet evidence exists', () => {
-    const withPort = buildArticlePageGraph({
-      article: {
-        id: 'art1',
-        title: 'Charging guide',
-        relationships: { relatedVehicleIds: ['v1'] }
-      },
-      editorialVehicles: [
-        {
-          id: 'v1',
-          brandName: 'Tata Motors',
-          parentModel: 'Nexon EV',
-          charging: { portType: 'CCS2' }
-        } as never
-      ]
-    });
-    // Facets attach on vehicle graph hosts; article graph may not attach facets from editorial vehicles.
-    // Seed a facet node + edge to prove the rule without inventing from title.
-    withPort.nodes.push({
-      type: 'facet',
-      id: 'facet:portType:ccs2',
-      name: 'CCS2',
-      attrs: { facetKind: 'portType', value: 'CCS2' }
-    });
-    withPort.edges.push({
-      type: 'has_facet',
-      from: { type: 'variant', id: 'variant:v1' },
-      to: { type: 'facet', id: 'facet:portType:ccs2' },
-      source: 'derived'
-    });
 
-    const topics = deriveTopicsFromGraph(withPort, {
-      pageKind: 'article',
-      article: { id: 'art1', title: 'Charging guide' }
-    });
-    expect(topics.some((t) => t.topic.id === 'topic:site_hub:energy')).toBe(true);
-
-    const plain = buildArticlePageGraph({
-      article: { id: 'art2', title: 'News', relationships: {} }
-    });
-    const plainTopics = deriveTopicsFromGraph(plain, {
-      pageKind: 'article',
-      article: { id: 'art2', title: 'News' }
-    });
-    expect(plainTopics.some((t) => t.topic.id === 'topic:site_hub:energy')).toBe(false);
-  });
 
   it('caps topics at ≤8', () => {
     const graph = buildVehiclePageGraph({

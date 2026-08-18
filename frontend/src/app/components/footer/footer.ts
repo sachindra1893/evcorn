@@ -81,8 +81,7 @@ import { RouterLink } from '@angular/router';
               <span class="accordion-toggle-btn">{{ isSectionOpen('calculators') ? '−' : '+' }}</span>
             </div>
             <ul class="col-links-list">
-              <li><a routerLink="/energy">EV Savings Calculator</a></li>
-              <li><a routerLink="/energy">Charging & Solar ROI</a></li>
+              <li><a routerLink="/" fragment="calculator">EV Savings Calculator</a></li>
               <li><a routerLink="/home" fragment="emissions">Clean Air CO₂ Impact</a></li>
               <li><a routerLink="/articles">Latest EV News & Insights</a></li>
             </ul>

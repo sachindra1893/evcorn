@@ -33,13 +33,6 @@ describe('page-nav (Phase 7.4 M2)', () => {
       evidence: { source: 'structural_entity', refs: ['entity:brand'] }
     },
     {
-      label: 'Energy & charging',
-      href: '/energy',
-      targetEntityId: 'site_hub:energy',
-      relKind: 'hub',
-      evidence: { source: 'hub_taxonomy', refs: ['site_hub:energy'] }
-    },
-    {
       label: 'Related EV dup',
       href: '/ev/mg/zs-ev',
       targetEntityId: 'model:mg:zs-ev',
@@ -70,8 +63,7 @@ describe('page-nav (Phase 7.4 M2)', () => {
       '/evs?category=tata-motors',
       '/compare?ids=v1',
       '/articles',
-      '/faqs',
-      '/energy'
+      '/faqs'
     ]);
     expect(new Set(merged.map((l) => l.href.split('?')[0])).size).toBe(
       new Set(merged.map((l) => l.href.split('?')[0])).size

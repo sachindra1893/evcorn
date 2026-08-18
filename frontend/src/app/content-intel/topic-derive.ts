@@ -9,7 +9,6 @@ import {
   articlesIndexHref,
   brandBrowseHref,
   compareHref,
-  energyHref,
   evsIndexHref,
   faqsHref,
   modelHref
@@ -297,9 +296,6 @@ export function deriveTopicsFromGraph(
   } else {
     pushTopic(out, seen, siteHub('articles', 'Articles', articlesIndexHref()));
     pushTopic(out, seen, siteHub('faqs', 'FAQs', faqsHref()));
-    if (hasEnergyOrChargingEvidence(out, graph)) {
-      pushTopic(out, seen, siteHub('energy', 'Energy & charging', energyHref()));
-    }
   }
 
   void facetHosts; // used for grounding; topics already emitted from facet nodes

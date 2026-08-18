@@ -32,7 +32,6 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
       <nav class="nav-links">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
         <a routerLink="/evs" routerLinkActive="active">Browse EVs</a>
-        <a routerLink="/energy" routerLinkActive="active">Energy</a>
         <a routerLink="/articles" routerLinkActive="active">Articles</a>
       </nav>
     </header>
@@ -46,10 +45,6 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
       <a routerLink="/evs" routerLinkActive="active" class="bottom-nav-item">
         <span class="nav-icon">🔍</span>
         <span class="nav-label">Browse</span>
-      </a>
-      <a routerLink="/energy" routerLinkActive="active" class="bottom-nav-item">
-        <span class="nav-icon">⚡</span>
-        <span class="nav-label">Energy</span>
       </a>
       <a routerLink="/articles" routerLinkActive="active" class="bottom-nav-item">
         <span class="nav-icon">📖</span>

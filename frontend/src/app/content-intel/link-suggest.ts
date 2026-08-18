@@ -8,7 +8,6 @@ import {
   articlesIndexHref,
   brandBrowseHref,
   compareHref,
-  energyHref,
   evsIndexHref,
   faqsHref
 } from '../entity/entity-href';
@@ -177,23 +176,6 @@ export function suggestHubLinks(
       'site_hub:faqs'
     )
   );
-
-  if (
-    opts?.includeEnergy ||
-    memberships.some((m) => m.topic.id === 'topic:site_hub:energy')
-  ) {
-    raw.push(
-      hubSuggestion(
-        'Energy & charging',
-        energyHref(),
-        {
-          source: 'hub_taxonomy',
-          refs: ['site_hub:energy', 'facet_membership']
-        },
-        'site_hub:energy'
-      )
-    );
-  }
 
   return canonicalLinkSuggestions(raw);
 }

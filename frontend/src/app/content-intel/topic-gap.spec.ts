@@ -109,71 +109,9 @@ describe('topic-gap (Phase 7.4 M3)', () => {
     expect(ownership?.evidenceRefs).toContain('article_about_brand=0');
   });
 
-  it('flags a charging topic gap only when charging facets exist', () => {
-    const chargingGraph = graphWith({
-      nodes: [
-        {
-          type: 'facet',
-          id: 'facet:portType:ccs2',
-          name: 'CCS2',
-          attrs: { facetKind: 'portType', value: 'CCS2' }
-        }
-      ]
-    });
 
-    const withFacet = detectMissingTopics({
-      pageKind: 'vehicle',
-      entityId: 'model:tata:nexon-ev',
-      graph: chargingGraph,
-      topics: [modelTopic],
-      relatedReading: fullPlan()
-    });
-    const charging = withFacet.gaps.find((g) => g.kind === 'charging_topic');
-    expect(charging?.evidenceRefs).toContain('has_facet:porttype');
 
-    const withoutFacet = detectMissingTopics({
-      pageKind: 'vehicle',
-      entityId: 'model:tata:nexon-ev',
-      graph: graphWith(),
-      topics: [modelTopic],
-      relatedReading: fullPlan()
-    });
-    expect(withoutFacet.gaps.some((g) => g.kind === 'charging_topic')).toBe(false);
-  });
 
-  it('does not flag charging when the energy topic is already linked', () => {
-    const { gaps } = detectMissingTopics({
-      pageKind: 'article',
-      entityId: 'article:a1',
-      graph: graphWith({
-        nodes: [
-          {
-            type: 'facet',
-            id: 'facet:chemistry:lfp',
-            name: 'LFP',
-            attrs: { facetKind: 'chemistry', value: 'LFP' }
-          }
-        ]
-      }),
-      topics: [
-        modelTopic,
-        {
-          topic: {
-            id: 'topic:site_hub:energy',
-            kind: 'site_hub',
-            label: 'Energy & charging',
-            href: '/energy',
-            entityIds: []
-          },
-          confidence: 'hub',
-          evidenceRefs: ['hub_taxonomy']
-        }
-      ],
-      relatedReading: fullPlan(),
-      relationships: { relatedVehicleIds: ['v1'] }
-    });
-    expect(gaps.some((g) => g.kind === 'charging_topic')).toBe(false);
-  });
 
   it('flags an article with no editorial links and no grounded topic', () => {
     const { gaps } = detectMissingTopics({

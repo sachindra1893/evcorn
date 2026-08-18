@@ -607,7 +607,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
   `]
 })
 export class GlobalLocationComponent implements OnInit, OnDestroy, AfterViewChecked {
-  @Input() context: 'global' | 'charging' | 'energy' | 'planner' = 'global';
+  @Input() context: 'global' | 'charging' | 'planner' = 'global';
   @ViewChild('searchInput') searchInputElement!: ElementRef;
   
   currentLocation: LocationData | null = null;

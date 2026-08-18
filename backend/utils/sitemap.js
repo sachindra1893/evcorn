@@ -73,7 +73,6 @@ function buildSitemapXml(data = {}) {
     { path: '/', priority: '1.0', changefreq: 'daily' },
     { path: '/evs', priority: '0.9', changefreq: 'daily' },
     { path: '/compare', priority: '0.8', changefreq: 'weekly' },
-    { path: '/energy', priority: '0.8', changefreq: 'weekly' },
     { path: '/articles', priority: '0.9', changefreq: 'daily' },
     { path: '/about', priority: '0.6', changefreq: 'monthly' },
     { path: '/search', priority: '0.5', changefreq: 'weekly' },

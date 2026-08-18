@@ -24,10 +24,10 @@ describe('LocationService (Release 4.0 Refined Smart Location)', () => {
       expect(service.sanitizeEnglishCityName('Noida नोएडा')).toBe('Noida');
     });
 
-    it('returns India if input is empty or null', () => {
-      expect(service.sanitizeEnglishCityName(null)).toBe('India');
-      expect(service.sanitizeEnglishCityName(undefined)).toBe('India');
-      expect(service.sanitizeEnglishCityName('')).toBe('India');
+    it('returns Select city if input is empty or null', () => {
+      expect(service.sanitizeEnglishCityName(null)).toBe('Select city');
+      expect(service.sanitizeEnglishCityName(undefined)).toBe('Select city');
+      expect(service.sanitizeEnglishCityName('')).toBe('Select city');
     });
   });
 
@@ -40,7 +40,7 @@ describe('LocationService (Release 4.0 Refined Smart Location)', () => {
         lat: 28.5355,
         lon: 77.391,
         timestamp: Date.now(),
-        source: 'gps' as const,
+        source: 'ip' as const,
         displayName: 'Noida'
       };
 

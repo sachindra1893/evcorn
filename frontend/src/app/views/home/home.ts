@@ -96,7 +96,7 @@ import { UsageStatsComponent } from '../../components/usage-stats/usage-stats';
     <app-usage-stats></app-usage-stats>
 
     <!-- EV Savings Calculator Section -->
-    <section class="section calculator-section" style="position: relative; overflow: hidden; background: #FFFFFF; padding: 5rem 0;">
+    <section id="calculator" class="section calculator-section" style="position: relative; overflow: hidden; background: #FFFFFF; padding: 5rem 0;">
       
       <!-- Premium Ambient Background -->
       <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 1; z-index: 0;">
@@ -607,7 +607,7 @@ import { UsageStatsComponent } from '../../components/usage-stats/usage-stats';
 
         <div class="seo-block" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 10px 40px rgba(0,0,0,0.03); border-radius: 24px; padding: 3rem;">
           <h2 style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-bottom: 1.2rem; letter-spacing: -0.03em;">Understand EV Savings</h2>
-          <p style="font-size: 1.1rem; color: #475569; line-height: 1.7; margin: 0;">Evaluating an electric vehicle goes beyond the showroom price; running-cost comparisons are crucial. Our interactive savings calculator helps you visualize your monthly and annual fuel savings by directly comparing your daily petrol commute costs against local electric <a routerLink="/energy" style="color: #3B82F6; font-weight: 600; text-decoration: none;">energy</a> tariffs.</p>
+          <p style="font-size: 1.1rem; color: #475569; line-height: 1.7; margin: 0;">Evaluating an electric vehicle goes beyond the showroom price; running-cost comparisons are crucial. Our interactive savings calculator helps you visualize your monthly and annual fuel savings by directly comparing your daily petrol commute costs against local electric <a routerLink="/" fragment="calculator" style="color: #3B82F6; font-weight: 600; text-decoration: none;">energy</a> tariffs.</p>
         </div>
 
         <div class="seo-block" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 10px 40px rgba(0,0,0,0.03); border-radius: 24px; padding: 3rem;">

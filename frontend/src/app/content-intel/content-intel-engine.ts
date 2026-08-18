@@ -220,10 +220,8 @@ function buildArticleContentIntelUnsafe(ctx: ArticleContentIntelContext): Conten
     excludeArticleId: (ctx.article.id || '').trim()
   });
 
-  const includeEnergy = topics.some((t) => t.topic.id === 'topic:site_hub:energy');
   const hubLinks = suggestHubLinks(topics, {
-    pillar,
-    includeEnergy
+    pillar
   });
 
   const contextualLinks = suggestContextualLinks(relatedReading, {

@@ -113,20 +113,7 @@ export function detectMissingTopics(
     }
   }
 
-  const chargingRefs = hasChargingFacetEvidence(input.graph);
-  const hasEnergyTopic = topics.some((t) => t.topic.id === 'topic:site_hub:energy');
-  if (chargingRefs.length && !hasEnergyTopic) {
-    push(gaps, seen, {
-      topicId: 'topic:site_hub:energy',
-      kind: 'charging_topic',
-      label: 'Energy & charging',
-      affectedEntityId: entityId,
-      severity: 'info',
-      suggestedAction:
-        'Charging facets exist but no energy/charging topic is linked — consider a charging guide.',
-      evidenceRefs: [...new Set(chargingRefs)]
-    });
-  }
+
 
   if (input.pageKind === 'article') {
     const rel = normalizeArticleRelationships(input.relationships);

@@ -62,5 +62,5 @@ export function faqsHref(): string {
 }
 
 export function energyHref(): string {
-  return '/energy';
+  return '/#calculator';
 }
