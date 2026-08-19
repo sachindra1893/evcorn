@@ -20,9 +20,11 @@ export interface CompareVehicle {
   providedIn: 'root'
 })
 export class CompareStateService {
-  private readonly STORAGE_KEY = 'evcorn_compare_tray';
+  private readonly CAR_STORAGE_KEY = 'evcorn_compare_tray';
+  private readonly TW_STORAGE_KEY = 'evcorn_compare_tray_two_wheeler';
   private readonly maxCompareSlots = COMPARE_MAX_VEHICLES;
 
+  private currentType: 'car' | 'two-wheeler' = 'car';
   private selectedVehiclesSubject = new BehaviorSubject<string[]>([]);
   public selectedVehicles$: Observable<string[]> = this.selectedVehiclesSubject.asObservable();
 
@@ -34,26 +36,43 @@ export class CompareStateService {
     this.loadInitialState();
   }
 
+  public setVehicleType(type: 'car' | 'two-wheeler'): void {
+    if (this.currentType !== type) {
+      this.currentType = type;
+      this.loadInitialState();
+    }
+  }
+
+  public getVehicleType(): 'car' | 'two-wheeler' {
+    return this.currentType;
+  }
+
+  private getStorageKey(): string {
+    return this.currentType === 'two-wheeler' ? this.TW_STORAGE_KEY : this.CAR_STORAGE_KEY;
+  }
+
   private loadInitialState(): void {
     if (isPlatformBrowser(this.platformId)) {
       try {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
+        const stored = localStorage.getItem(this.getStorageKey());
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
             this.selectedVehiclesSubject.next(clampCompareIds(parsed, this.maxCompareSlots));
+            return;
           }
         }
       } catch {
         // Corrupt storage — start empty; do not break the site.
       }
     }
+    this.selectedVehiclesSubject.next([]);
   }
 
   private saveState(ids: string[]): void {
     if (isPlatformBrowser(this.platformId)) {
       try {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(ids));
+        localStorage.setItem(this.getStorageKey(), JSON.stringify(ids));
       } catch {
         // Quota / private mode — selection still works in-memory.
       }
@@ -72,18 +91,22 @@ export class CompareStateService {
     this.noticeSubject.next(null);
   }
 
-  addVehicle(carId: string): boolean {
-    const result = this.addVehicleDetailed(carId);
+  addVehicle(vehicleId: string, type?: 'car' | 'two-wheeler'): boolean {
+    if (type && type !== this.currentType) {
+      this.setVehicleType(type);
+    }
+    const result = this.addVehicleDetailed(vehicleId);
     return result.ok;
   }
 
-  addVehicleDetailed(carId: string): CompareSelectionResult {
-    const result = tryAddCompareId(this.currentSelectedIds, carId, this.maxCompareSlots);
+  addVehicleDetailed(vehicleId: string): CompareSelectionResult {
+    const result = tryAddCompareId(this.currentSelectedIds, vehicleId, this.maxCompareSlots);
     if (!result.ok) {
       if (result.reason === 'full') {
-        this.noticeSubject.next(`You can compare up to ${this.maxCompareSlots} EVs. Remove one to add another.`);
+        const itemLabel = this.currentType === 'two-wheeler' ? 'two-wheelers' : 'EVs';
+        this.noticeSubject.next(`You can compare up to ${this.maxCompareSlots} ${itemLabel}. Remove one to add another.`);
       } else if (result.reason === 'duplicate') {
-        this.noticeSubject.next('This EV is already in your comparison.');
+        this.noticeSubject.next('This vehicle is already in your comparison.');
       }
       return result;
     }
@@ -93,34 +116,37 @@ export class CompareStateService {
     return result;
   }
 
-  toggleVehicle(carId: string): boolean {
-    if (this.isSelected(carId)) {
-      this.removeVehicle(carId);
+  toggleVehicle(vehicleId: string, type?: 'car' | 'two-wheeler'): boolean {
+    if (type && type !== this.currentType) {
+      this.setVehicleType(type);
+    }
+    if (this.isSelected(vehicleId)) {
+      this.removeVehicle(vehicleId);
       return false;
     }
-    return this.addVehicle(carId);
+    return this.addVehicle(vehicleId, type);
   }
 
-  removeVehicle(carId: string): void {
-    const updated = this.currentSelectedIds.filter((id) => id !== carId);
+  removeVehicle(vehicleId: string): void {
+    const updated = this.currentSelectedIds.filter((id) => id !== vehicleId);
     this.selectedVehiclesSubject.next(updated);
     this.saveState(updated);
     this.noticeSubject.next(null);
   }
 
-  isSelected(carId: string): boolean {
-    return this.currentSelectedIds.includes(carId);
+  isSelected(vehicleId: string): boolean {
+    return this.currentSelectedIds.includes(vehicleId);
+  }
+
+  setVehicles(ids: string[]): void {
+    const clamped = clampCompareIds(ids, this.maxCompareSlots);
+    this.selectedVehiclesSubject.next(clamped);
+    this.saveState(clamped);
   }
 
   clear(): void {
     this.selectedVehiclesSubject.next([]);
     this.saveState([]);
     this.noticeSubject.next(null);
-  }
-
-  setVehicles(carIds: string[]): void {
-    const clamped = clampCompareIds(carIds, this.maxCompareSlots);
-    this.selectedVehiclesSubject.next(clamped);
-    this.saveState(clamped);
   }
 }

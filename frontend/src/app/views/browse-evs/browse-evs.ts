@@ -564,6 +564,7 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    this.compareState.setVehicleType('car');
     const title = 'Browse Electric Vehicles in India';
     const description =
       'Discover and compare electric cars available in India. Browse EV models by brand including Tata, MG, Mahindra, BYD, Hyundai, and Kia with prices, range, and battery specs.';

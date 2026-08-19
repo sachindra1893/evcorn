@@ -24,6 +24,7 @@ import {
   hydrateCompareSlot,
   parseCompareQueryIds
 } from '../../compare/compare-engine';
+import { COMPARE_CATALOG, COMPARE_TWO_WHEELER_CATALOG } from '../../compare/compare-catalog';
 
 type CompareLoadState = AsyncState<CarSpec[]>;
 
@@ -43,9 +44,9 @@ type CompareLoadState = AsyncState<CarSpec[]>;
       <div class="glow-bg glow-purple"></div>
 
       <div class="compare-header-box">
-        <app-breadcrumb [paths]="[{label: 'Compare EVs', url: '/compare'}]"></app-breadcrumb>
+        <app-breadcrumb [paths]="vehicleType === 'two-wheeler' ? [{label: 'Two-Wheelers', url: '/two-wheelers'}, {label: 'Compare Two-Wheelers', url: '/compare?type=two-wheeler'}] : [{label: 'Browse EVs', url: '/evs'}, {label: 'Compare EVs', url: '/compare'}]"></app-breadcrumb>
         <div class="compare-title-row">
-          <h1>Compare Electric Vehicles</h1>
+          <h1>{{ vehicleType === 'two-wheeler' ? 'Compare Electric Two-Wheelers' : 'Compare Electric Vehicles' }}</h1>
           @if (selectedVehicles.length >= 2) {
             <button type="button" (click)="shareCompare()" class="share-btn" title="Share this comparison">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
@@ -55,7 +56,7 @@ type CompareLoadState = AsyncState<CarSpec[]>;
             </button>
           }
         </div>
-        <p class="subtitle">Side-by-side buying specs for up to {{ maxSlots }} EVs — range, charging, safety, and more.</p>
+        <p class="subtitle">{{ vehicleType === 'two-wheeler' ? 'Side-by-side specs for up to ' + maxSlots + ' electric scooters & bikes — range, top speed, battery, boot space, and more.' : 'Side-by-side buying specs for up to ' + maxSlots + ' EVs — range, charging, safety, and more.' }}</p>
       </div>
 
       @switch (loadState.status) {
@@ -111,7 +112,7 @@ type CompareLoadState = AsyncState<CarSpec[]>;
                 <label class="sr-only" [attr.for]="'brand-' + slot">Brand</label>
                 <select [id]="'brand-' + slot" (change)="onBrandChange(slot, $event)">
                   <option value="" [selected]="!brandIds[slot]">Select brand</option>
-                  @for (cat of categories; track cat.id) {
+                  @for (cat of filteredCategories; track cat.id) {
                     <option [value]="cat.id" [selected]="brandIds[slot] === cat.id">{{ cat.name }}</option>
                   }
                 </select>
@@ -496,6 +497,7 @@ type CompareLoadState = AsyncState<CarSpec[]>;
 export class CompareComponent implements OnInit, OnDestroy {
   readonly maxSlots = COMPARE_MAX_VEHICLES;
   readonly slots = [0, 1] as const;
+  vehicleType: 'car' | 'two-wheeler' = 'car';
 
   loadState: CompareLoadState = { status: 'loading' };
   categories: Category[] = [];
@@ -507,14 +509,12 @@ export class CompareComponent implements OnInit, OnDestroy {
   selectedVehicles: Array<CarSpec | null> = [null, null];
   removedNotices: Array<string | null> = [null, null];
   sections: CompareSection[] = [];
-  /** Bumps when preselected IDs hydrate so native selects re-render with [selected]. */
   pickerSyncKey = 0;
 
   private routeSub?: Subscription;
   private loadSub?: Subscription;
   private detailSub?: Subscription;
   private trackedCompareKey = '';
-  /** Dedupes by-id detail fetches when light AsyncState re-emits success. */
   private lastDetailFetchKey = '';
 
   constructor(
@@ -528,6 +528,11 @@ export class CompareComponent implements OnInit, OnDestroy {
     private network: NetworkStatusService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  get filteredCategories(): Category[] {
+    const brandIdsWithVehicles = new Set(this.catalog.map((c) => c.categoryId));
+    return this.categories.filter((cat) => brandIdsWithVehicles.has(cat.id));
+  }
 
   get selectedCount(): number {
     return this.selectedVehicles.filter(Boolean).length;
@@ -545,10 +550,13 @@ export class CompareComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.updateSEOMetadata();
-    this.loadCatalog();
-
     this.routeSub = this.route.queryParams.subscribe((params) => {
+      const is2W = params['type'] === 'two-wheeler' || params['vehicleType'] === 'two-wheeler';
+      this.vehicleType = is2W ? 'two-wheeler' : 'car';
+      this.compareState.setVehicleType(this.vehicleType);
+      this.updateSEOMetadata();
+      this.loadCatalog();
+
       const fromQuery = parseCompareQueryIds({
         ids: params['ids'] ?? null,
         cars: params['cars'] ?? null
@@ -559,7 +567,6 @@ export class CompareComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Prefer tray when no shareable ids in URL.
       const trayIds = this.compareState.currentSelectedIds;
       if (trayIds.length > 0) {
         this.applyIdSelection(trayIds);
@@ -567,7 +574,6 @@ export class CompareComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Optional brand preselect from quiz / deep links.
       const brand = params['brand'];
       if (brand) {
         this.brandIds[0] = brand;
@@ -583,15 +589,13 @@ export class CompareComponent implements OnInit, OnDestroy {
   }
 
   retryLoad(): void {
-    // Only clear vehicle caches — categories/articles are unrelated and
-    // clearing them forced duplicate redundant GETs on retry (Phase 5.3).
     this.blogData.clearVehicleCache();
     this.lastDetailFetchKey = '';
     this.loadCatalog();
   }
 
   goBrowse(): void {
-    this.router.navigate(['/evs']);
+    this.router.navigate([this.vehicleType === 'two-wheeler' ? '/two-wheelers' : '/evs']);
   }
 
   getOptimizedUrl(url: string | undefined | null, width?: number, modelName?: string): string {
@@ -638,8 +642,18 @@ export class CompareComponent implements OnInit, OnDestroy {
     return `${slot}-${this.pickerSyncKey}-${this.selectedIds[slot] || 'empty'}`;
   }
 
+  slugify(text: string): string {
+    return (text || '').toString().toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  }
+
   detailLink(vehicle: CarSpec): string[] {
-    return ['/ev', this.slugify(this.brandName(vehicle.categoryId)), this.slugify(vehicle.parentModel || vehicle.name)];
+    const routePrefix = (vehicle.vehicleType || this.vehicleType) === 'two-wheeler' ? '/two-wheelers' : '/ev';
+    return [routePrefix, this.slugify(this.brandName(vehicle.categoryId)), this.slugify(vehicle.parentModel || vehicle.name)];
   }
 
   onBrandChange(slot: number, event: Event): void {
@@ -670,7 +684,6 @@ export class CompareComponent implements OnInit, OnDestroy {
       this.afterSelectionChange();
       return;
     }
-    // Picker catalog is light — fetch full specs for the compare matrix only.
     this.detailSub?.unsubscribe();
     this.detailSub = this.blogData.getVehicleById(id).pipe(take(1)).subscribe({
       next: (full) => {
@@ -680,7 +693,7 @@ export class CompareComponent implements OnInit, OnDestroy {
       error: () => {
         this.selectedVehicles[slot] = null;
         this.selectedIds[slot] = null;
-        this.removedNotices[slot] = 'This vehicle is no longer available. Choose another EV.';
+        this.removedNotices[slot] = 'This vehicle is no longer available. Choose another vehicle.';
         this.afterSelectionChange();
       }
     });
@@ -699,13 +712,16 @@ export class CompareComponent implements OnInit, OnDestroy {
     if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
     const ids = clampCompareIds(this.selectedIds);
     const qs = buildCompareQueryString(ids);
-    const shareUrl = qs ? `https://evcorn.com/compare?${qs}` : 'https://evcorn.com/compare';
+    const typeParam = this.vehicleType === 'two-wheeler' ? (qs ? '&type=two-wheeler' : 'type=two-wheeler') : '';
+    const fullQs = qs ? `${qs}${typeParam ? '&' + typeParam : ''}` : typeParam;
+    const shareUrl = fullQs ? `https://evcorn.com/compare?${fullQs}` : `https://evcorn.com/compare${typeParam ? '?' + typeParam : ''}`;
     const names = this.selectedVehicles.filter(Boolean).map((v) => displayVehicleLabel(v));
+    const is2W = this.vehicleType === 'two-wheeler';
     const shareData = {
-      title: names.length ? `Compare ${names.join(' vs ')} | EVCorn` : 'Compare EVs | EVCorn',
+      title: names.length ? `Compare ${names.join(' vs ')} | EVCorn` : (is2W ? 'Compare Two-Wheelers | EVCorn' : 'Compare EVs | EVCorn'),
       text: names.length
         ? `Compare ${names.join(' and ')} side-by-side on EVCorn.`
-        : 'Compare electric vehicles side-by-side on EVCorn.',
+        : (is2W ? 'Compare electric two-wheelers side-by-side on EVCorn.' : 'Compare electric vehicles side-by-side on EVCorn.'),
       url: shareUrl
     };
 
@@ -721,15 +737,11 @@ export class CompareComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     this.blogData.getCategories().pipe(
-      // BehaviorSubject seeds with [] before HTTP resolves — take(1) alone
-      // left Compare with zero brand options on cold deep links (tray flows
-      // worked only because Browse had already warmed the cache).
       filter((cats) => Array.isArray(cats) && cats.length > 0),
       take(1)
     ).subscribe({
       next: (cats) => {
         this.categories = cats || [];
-        // Remount pickers so Brand options reflect preselected categoryId.
         if (clampCompareIds(this.selectedIds).length > 0) {
           this.pickerSyncKey += 1;
         }
@@ -742,13 +754,13 @@ export class CompareComponent implements OnInit, OnDestroy {
     });
 
     this.loadSub?.unsubscribe();
-    // Phase 5.3: light catalog for brand/model/variant pickers (bounded payload
-    // at 2k–10k variants). Full nested specs load only for selected slots.
     this.loadSub = this.blogData.getVehiclesLightState().subscribe((state) => {
       this.loadState = state as CompareLoadState;
       if (state.status === 'success') {
-        this.catalog = ((state.data as CarSpec[]) || []).filter(
-          (c) => c.lifecycleStatus !== 'Upcoming' && c.status !== 'Upcoming'
+        const rawVehicles = (state.data as CarSpec[]) || [];
+        this.catalog = rawVehicles.filter(
+          (c) => (c.vehicleType || 'car') === this.vehicleType &&
+                 c.lifecycleStatus !== 'Upcoming' && c.status !== 'Upcoming'
         );
         const pending =
           clampCompareIds(this.selectedIds).length > 0
@@ -769,7 +781,6 @@ export class CompareComponent implements OnInit, OnDestroy {
     const notices: Array<string | null> = [null, null];
     const resolveIds: Array<string | undefined> = [];
 
-    // Catalog not ready — keep pending ids; do not wipe picker hydration mid-load.
     if (this.catalog.length === 0 && clamped.length > 0) {
       clamped.forEach((id, index) => {
         if (index < this.maxSlots) nextIds[index] = id;
@@ -789,7 +800,7 @@ export class CompareComponent implements OnInit, OnDestroy {
         nextIds[index] = hydrated.variantId || id;
         resolveIds[index] = nextIds[index] as string;
       } else if (this.catalog.length > 0) {
-        notices[index] = 'This vehicle is no longer available. Choose another EV.';
+        notices[index] = 'This vehicle is no longer available. Choose another vehicle.';
         nextIds[index] = null;
       } else {
         nextIds[index] = id;
@@ -816,8 +827,6 @@ export class CompareComponent implements OnInit, OnDestroy {
     }
 
     const detailKey = [0, 1].map((slot) => resolveIds[slot] || '').join('|');
-    // Skip when the same pair is already in-flight or loaded (light AsyncState
-    // often emits success twice: localStorage seed then network).
     if (detailKey && detailKey === this.lastDetailFetchKey) {
       this.rebuildSections();
       this.syncTrayFromSelection();
@@ -836,7 +845,7 @@ export class CompareComponent implements OnInit, OnDestroy {
         return this.blogData.getVehicleById(id).pipe(
           take(1),
           catchError(() => {
-            notices[slot] = 'This vehicle is no longer available. Choose another EV.';
+            notices[slot] = 'This vehicle is no longer available. Choose another vehicle.';
             nextIds[slot] = null;
             nextBrands[slot] = null;
             nextModels[slot] = null;
@@ -848,8 +857,6 @@ export class CompareComponent implements OnInit, OnDestroy {
       this.selectedIds = nextIds;
       this.selectedVehicles = fulls as Array<CarSpec | null>;
       this.removedNotices = notices;
-      // Re-hydrate pickers from full docs (authoritative categoryId/parentModel)
-      // and remount native <select> so [selected] sticks after async resolve.
       fulls.forEach((full, slot) => {
         if (!full) return;
         const hydrated = hydrateCompareSlot(full as unknown as Record<string, unknown>);
@@ -884,7 +891,8 @@ export class CompareComponent implements OnInit, OnDestroy {
       this.sections = [];
       return;
     }
-    this.sections = buildCompareSections(vehicles);
+    const catalogDef = this.vehicleType === 'two-wheeler' ? COMPARE_TWO_WHEELER_CATALOG : COMPARE_CATALOG;
+    this.sections = buildCompareSections(vehicles, catalogDef);
   }
 
   private syncTrayFromSelection(): void {
@@ -892,7 +900,9 @@ export class CompareComponent implements OnInit, OnDestroy {
   }
 
   private syncUrl(ids: string[], replaceUrl: boolean): void {
-    const queryParams = ids.length > 0 ? { ids: ids.join(',') } : {};
+    const queryParams: Record<string, string> = {};
+    if (ids.length > 0) queryParams['ids'] = ids.join(',');
+    if (this.vehicleType === 'two-wheeler') queryParams['type'] = 'two-wheeler';
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams,
@@ -914,23 +924,37 @@ export class CompareComponent implements OnInit, OnDestroy {
   }
 
   private updateSEOMetadata(): void {
+    const is2W = this.vehicleType === 'two-wheeler';
     const active = this.selectedVehicles.filter(Boolean) as CarSpec[];
     const schemas: any[] = [
-      this.schemaService.buildBreadcrumbs([
-        { name: 'Home', url: '/' },
-        { name: 'Compare', url: '/compare' }
-      ])
+      this.schemaService.buildBreadcrumbs(
+        is2W
+          ? [
+              { name: 'Home', url: '/' },
+              { name: 'Two-Wheelers', url: '/two-wheelers' },
+              { name: 'Compare', url: '/compare?type=two-wheeler' }
+            ]
+          : [
+              { name: 'Home', url: '/' },
+              { name: 'Browse EVs', url: '/evs' },
+              { name: 'Compare', url: '/compare' }
+            ]
+      )
     ];
 
     if (active.length >= 2) {
       const names = active.map((c) => c.parentModel || c.name);
       const titleText = `Compare ${names.join(' vs ')}: Price, Specs, Range`;
-      const descText = `Side-by-side comparison of ${names.join(' and ')}. Compare price, battery, range, charging, safety, and key buying specs on EVCorn.`;
+      const descText = is2W
+        ? `Side-by-side comparison of ${names.join(' and ')}. Compare price, battery, range, top speed, boot space, and specs on EVCorn.`
+        : `Side-by-side comparison of ${names.join(' and ')}. Compare price, battery, range, charging, safety, and key buying specs on EVCorn.`;
       const ids = clampCompareIds(active.map((c) => c.id || ''));
+      const queryStr = buildCompareQueryString(ids);
+      const fullQuery = is2W ? (queryStr ? `${queryStr}&type=two-wheeler` : 'type=two-wheeler') : queryStr;
       this.seoService.updateSeo({
         title: titleText,
         description: descText,
-        url: `/compare?${buildCompareQueryString(ids)}`,
+        url: `/compare?${fullQuery}`,
         keepQuery: true
       });
       for (const car of active) {
@@ -947,29 +971,22 @@ export class CompareComponent implements OnInit, OnDestroy {
       }
     } else {
       this.seoService.updateSeo({
-        title: 'Compare Electric Vehicles (EVs) - Specs, Price, Range',
-        description:
-          'Compare electric cars in India side-by-side. Compare battery capacity, claimed range, charging speed, dimensions, and prices to choose the right EV.',
-        url: '/compare'
+        title: is2W ? 'Compare Electric Two-Wheelers — Side-by-Side Specs | EVCorn' : 'Compare Electric Vehicles — Side-by-Side Buying Specs | EVCorn',
+        description: is2W
+          ? 'Compare electric scooters and motorcycles side-by-side. Analyze battery capacity, real-world range, top speed, acceleration, boot storage, and ex-showroom price.'
+          : 'Compare electric cars side-by-side. Analyze real-world range, battery capacity, fast charging speed, safety ratings, and ex-showroom prices.',
+        url: is2W ? '/compare?type=two-wheeler' : '/compare',
+        keepQuery: true
       });
       schemas.push(
         this.schemaService.buildCollectionPage(
-          'Compare Electric Vehicles',
-          'Compare electric car specifications side-by-side.',
-          '/compare'
+          is2W ? 'Compare Electric Two-Wheelers' : 'Compare Electric Vehicles',
+          is2W ? 'Compare electric two-wheeler specifications side-by-side.' : 'Compare electric car specifications side-by-side.',
+          is2W ? '/compare?type=two-wheeler' : '/compare'
         )
       );
     }
 
     this.schemaService.setSchema(schemas);
-  }
-
-  private slugify(text: string): string {
-    return (text || '')
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
   }
 }

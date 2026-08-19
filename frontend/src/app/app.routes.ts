@@ -6,6 +6,7 @@ export const routes: Routes = [
   { path: 'about', loadComponent: () => import('./views/about/about').then(m => m.AboutComponent) },
   { path: 'evs', loadComponent: () => import('./views/browse-evs/browse-evs').then(m => m.BrowseEvsComponent) },
   { path: 'two-wheelers', loadComponent: () => import('./views/browse-two-wheelers/browse-two-wheelers').then(m => m.BrowseTwoWheelersComponent) },
+  { path: 'two-wheelers/:brandSlug/:modelSlug', loadComponent: () => import('./views/vehicle-detail/vehicle-detail').then(m => m.VehicleDetailComponent) },
   { path: 'bikes', redirectTo: 'two-wheelers', pathMatch: 'full' },
   { path: 'ev/:brandSlug/:modelSlug', loadComponent: () => import('./views/vehicle-detail/vehicle-detail').then(m => m.VehicleDetailComponent) },
   { path: 'articles', loadComponent: () => import('./views/articles/articles').then(m => m.ArticlesComponent) },

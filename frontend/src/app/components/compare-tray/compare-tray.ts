@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -8,7 +8,7 @@ import { COMPARE_MAX_VEHICLES, buildCompareQueryString } from '../../compare/com
 
 /**
  * Floating compare tray — MVP max 2.
- * Mounted only on Browse EVs. Isolated: failures must not affect Browse.
+ * Mounted on Browse pages. Isolated: failures must not affect Browse.
  */
 @Component({
   selector: 'app-compare-tray',
@@ -32,7 +32,7 @@ import { COMPARE_MAX_VEHICLES, buildCompareQueryString } from '../../compare/com
             }
             @if (selectedIds.length < maxSlots) {
               <div class="tray-slot empty">
-                <span class="slot-placeholder">+ Add another EV</span>
+                <span class="slot-placeholder">{{ vehicleType === 'two-wheeler' ? '+ Add another 2W' : '+ Add another EV' }}</span>
               </div>
             }
           </div>
@@ -44,7 +44,7 @@ import { COMPARE_MAX_VEHICLES, buildCompareQueryString } from '../../compare/com
             [disabled]="!canCompare"
             [attr.aria-disabled]="!canCompare"
             (click)="goToCompare()">
-            {{ canCompare ? ('Compare (' + selectedIds.length + ')') : 'Select one more EV to compare.' }}
+            {{ canCompare ? ('Compare (' + selectedIds.length + ')') : (vehicleType === 'two-wheeler' ? 'Select one more two-wheeler to compare.' : 'Select one more EV to compare.') }}
           </button>
         </div>
 
@@ -224,6 +224,7 @@ import { COMPARE_MAX_VEHICLES, buildCompareQueryString } from '../../compare/com
   `]
 })
 export class CompareTrayComponent implements OnInit, OnDestroy {
+  @Input() vehicleType: 'car' | 'two-wheeler' = 'car';
   selectedIds: string[] = [];
   notice: string | null = null;
   readonly maxSlots = COMPARE_MAX_VEHICLES;
@@ -264,7 +265,7 @@ export class CompareTrayComponent implements OnInit, OnDestroy {
   }
 
   getVehicleName(id: string): string {
-    return this.nameCache.get(id) || 'EV';
+    return this.nameCache.get(id) || (this.vehicleType === 'two-wheeler' ? 'Two-Wheeler' : 'EV');
   }
 
   removeVehicle(id: string): void {
@@ -278,7 +279,12 @@ export class CompareTrayComponent implements OnInit, OnDestroy {
   goToCompare(): void {
     if (!this.canCompare) return;
     const qs = buildCompareQueryString(this.selectedIds);
-    this.router.navigateByUrl(qs ? `/compare?${qs}` : '/compare');
+    if (this.vehicleType === 'two-wheeler') {
+      const full = qs ? `${qs}&type=two-wheeler` : 'type=two-wheeler';
+      this.router.navigateByUrl(`/compare?${full}`);
+    } else {
+      this.router.navigateByUrl(qs ? `/compare?${qs}` : '/compare');
+    }
   }
 
   private prefetchNames(ids: string[]): void {

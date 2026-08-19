@@ -373,7 +373,223 @@ export const COMPARE_CATALOG: CompareCategoryDef[] = [
   }
 ];
 
-export function getOrderedCategories(catalog: CompareCategoryDef[] = COMPARE_CATALOG): CompareCategoryDef[] {
+export const COMPARE_TWO_WHEELER_CATALOG: CompareCategoryDef[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    order: 0,
+    fields: [
+      {
+        id: 'price',
+        label: 'Ex-Showroom Price',
+        source: {
+          nested: ['pricing', 'priceText'],
+          flat: ['price']
+        }
+      },
+      {
+        id: 'status',
+        label: 'Status / Launch',
+        source: {
+          flat: ['status', 'lifecycleStatus', 'launchDate'],
+          extract: (v) => {
+            const status = (v['status'] || v['lifecycleStatus'] || 'Launched') as string;
+            const launch = v['launchDate'] as string;
+            return launch ? `${status} (${launch})` : status;
+          }
+        }
+      }
+    ]
+  },
+  {
+    id: 'battery-charging',
+    label: 'Battery & Charging',
+    order: 1,
+    fields: [
+      {
+        id: 'battery',
+        label: 'Battery Capacity',
+        source: {
+          nested: ['battery', 'capacityText'],
+          flat: ['batteryCapacity'],
+          extract: (v) => {
+            const raw = (nestedGet(v, ['battery', 'capacityText']) || v['batteryCapacity']) as string;
+            return formatCardBattery(raw);
+          }
+        }
+      },
+      {
+        id: 'range',
+        label: 'Claimed Range',
+        source: {
+          nested: ['performance', 'rangeText'],
+          flat: ['range'],
+          extract: (v) => {
+            const raw = (nestedGet(v, ['performance', 'rangeText']) || v['range']) as string;
+            return formatCardRange(raw);
+          }
+        }
+      },
+      {
+        id: 'ac-charging',
+        label: 'Home / AC Charging',
+        source: {
+          nested: ['charging', 'acChargingText'],
+          flat: ['acCharging'],
+          extract: (v) => {
+            const nested = nestedGet(v, ['charging', 'acChargingKW']);
+            if (typeof nested === 'number' && nested > 0) return `${nested} kW`;
+            return (v['acCharging'] as string) || undefined;
+          }
+        },
+        hideWhenAllMissing: true
+      },
+      {
+        id: 'dc-charging',
+        label: 'Fast Charging',
+        source: {
+          nested: ['charging', 'dcFastChargingKW'],
+          flat: ['dcCharging'],
+          extract: (v) => {
+            const nested = nestedGet(v, ['charging', 'dcFastChargingKW']);
+            if (typeof nested === 'number' && nested > 0) return `${nested} kW`;
+            return (v['dcCharging'] as string) || undefined;
+          }
+        },
+        hideWhenAllMissing: true
+      }
+    ]
+  },
+  {
+    id: 'performance',
+    label: 'Motor & Performance',
+    order: 2,
+    fields: [
+      {
+        id: 'power',
+        label: 'Max Power',
+        source: {
+          nested: ['performance', 'maxPowerBHP'],
+          flat: ['bhp', 'maxPower', 'bhpTorque'],
+          extract: (v) => {
+            const bhp = nestedGet(v, ['performance', 'maxPowerBHP']);
+            if (typeof bhp === 'number' && bhp > 0) return `${bhp} bhp`;
+            return (v['bhp'] as string) || (v['maxPower'] as string) || undefined;
+          }
+        }
+      },
+      {
+        id: 'torque',
+        label: 'Peak Torque',
+        source: {
+          nested: ['performance', 'maxTorqueNM'],
+          flat: ['torque'],
+          extract: (v) => {
+            const nm = nestedGet(v, ['performance', 'maxTorqueNM']);
+            if (typeof nm === 'number' && nm > 0) return `${nm} Nm`;
+            return (v['torque'] as string) || undefined;
+          }
+        }
+      },
+      {
+        id: 'top-speed',
+        label: 'Top Speed',
+        source: {
+          nested: ['performance', 'topSpeedKMH'],
+          flat: ['topSpeed'],
+          extract: (v) => {
+            const speed = nestedGet(v, ['performance', 'topSpeedKMH']);
+            if (typeof speed === 'number' && speed > 0) return `${speed} km/h`;
+            return (v['topSpeed'] as string) || undefined;
+          }
+        }
+      },
+      {
+        id: 'acceleration',
+        label: 'Acceleration (0–40 km/h)',
+        source: {
+          nested: ['performance', 'acceleration0to40Sec'],
+          flat: ['acceleration0to40', 'acceleration'],
+          extract: (v) => {
+            const sec = nestedGet(v, ['performance', 'acceleration0to40Sec']);
+            if (typeof sec === 'number' && sec > 0) return `${sec}s (0-40)`;
+            return (v['acceleration0to40'] as string) || (v['acceleration'] as string) || undefined;
+          }
+        }
+      }
+    ]
+  },
+  {
+    id: 'storage-chassis',
+    label: 'Storage & Chassis',
+    order: 3,
+    fields: [
+      {
+        id: 'boot',
+        label: 'Under-seat Boot Storage',
+        source: {
+          nested: ['dimensionsObj', 'bootSpaceLiters'],
+          flat: ['bootSpace', 'bootFrunkSpace'],
+          extract: (v) => {
+            const boot = nestedGet(v, ['dimensionsObj', 'bootSpaceLiters']);
+            if (typeof boot === 'number' && boot > 0) return `${boot} L`;
+            return (v['bootSpace'] as string) || (v['bootFrunkSpace'] as string) || undefined;
+          }
+        }
+      },
+      {
+        id: 'wheel-size',
+        label: 'Wheel / Rim Size',
+        source: {
+          nested: ['dimensionsObj', 'wheelSize'],
+          flat: ['wheelSize', 'tyreSize']
+        }
+      },
+      {
+        id: 'kerb-weight',
+        label: 'Kerb Weight',
+        source: {
+          nested: ['dimensionsObj', 'kerbWeightKG'],
+          flat: ['kerbWeight', 'weight'],
+          extract: (v) => {
+            const kw = nestedGet(v, ['dimensionsObj', 'kerbWeightKG']);
+            if (typeof kw === 'number' && kw > 0) return `${kw} kg`;
+            return (v['kerbWeight'] as string) || (v['weight'] as string) || undefined;
+          }
+        },
+        hideWhenAllMissing: true
+      },
+      {
+        id: 'seating',
+        label: 'Seating Capacity',
+        source: {
+          flat: ['seating'],
+          extract: () => '2 Seater'
+        }
+      }
+    ]
+  },
+  {
+    id: 'features',
+    label: 'Key Highlights',
+    order: 4,
+    fields: [
+      {
+        id: 'highlights',
+        label: 'Highlights',
+        source: {
+          flat: ['keyHighlights'],
+          extract: (v) => (v['keyHighlights'] as string) || undefined
+        },
+        hideWhenAllMissing: true
+      }
+    ]
+  }
+];
+
+export function getOrderedCategories(
+  catalog: CompareCategoryDef[] = COMPARE_CATALOG
+): CompareCategoryDef[] {
   return [...catalog].sort((a, b) => a.order - b.order);
 }
 

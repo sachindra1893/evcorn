@@ -7,6 +7,7 @@ const vehicleController = require('../controllers/vehicle.controller');
 const { checkAdminAuth } = require('../middlewares/auth.middleware');
 
 router.get('/', vehicleController.getVehicles);
+router.get('/compare', vehicleController.compareVehicles);
 router.get('/:id', vehicleController.getVehicleById);
 router.post('/', checkAdminAuth, vehicleController.saveVehicle);
 router.delete('/:id', checkAdminAuth, vehicleController.deleteVehicle);

@@ -28,6 +28,18 @@ class VehicleController {
     }
   }
 
+  async compareVehicles(req, res, next) {
+    try {
+      logEvent('compare_started');
+      const ids = req.query.ids || req.query.id;
+      const vehicleType = req.query.vehicleType || req.query.type;
+      const result = await vehicleService.compareVehicles(ids, vehicleType);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async saveVehicle(req, res, next) {
     try {
       validateVehicleInput(req.body);

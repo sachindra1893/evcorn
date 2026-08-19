@@ -519,5 +519,86 @@
     },
     "status": "Launched",
     "bodyStyle": "SUV"
+  },
+  {
+    "name": "Ather 450X::Gen 3 Pro",
+    "categoryId": "ather",
+    "vehicleType": "two-wheeler",
+    "parentModel": "450X",
+    "variantName": "Gen 3 Pro",
+    "price": "₹1,45,000",
+    "range": "150 km",
+    "batteryCapacity": "3.7 kWh",
+    "bhp": "8.6 bhp",
+    "torque": "26 Nm",
+    "topSpeed": "90 km/h",
+    "acceleration0to40": "3.3s (0-40)",
+    "bootSpace": "22 L",
+    "wheelSize": "12-inch Alloys",
+    "status": "Launched",
+    "id": "ather-450x-gen-3-pro",
+    "pricing": {
+      "exShowroomPriceINR": 1,
+      "priceText": "₹1,45,000"
+    },
+    "battery": {
+      "capacityKWh": 3.7,
+      "capacityText": "3.7 kWh"
+    },
+    "performance": {
+      "claimedRangeKM": 150,
+      "rangeText": "150 km",
+      "maxPowerBHP": 8.6,
+      "maxTorqueNM": 26,
+      "topSpeedKMH": 90,
+      "acceleration0to40Sec": 3.3
+    },
+    "dimensionsObj": {
+      "kerbWeightKG": 0,
+      "grossWeightKG": 0,
+      "bootSpaceLiters": 22,
+      "wheelSize": "12-inch Alloys"
+    },
+    "imageUrl": "",
+    "galleryImages": [],
+    "media": {
+      "mainImage": "",
+      "gallery": []
+    }
+  },
+  {
+    "id": "test-car-for-compare",
+    "name": "Tata Nexon EV::Creative",
+    "categoryId": "tata",
+    "vehicleType": "car",
+    "price": "₹14.49 Lakh",
+    "pricing": {
+      "exShowroomPriceINR": 1449000,
+      "priceText": "₹14.49 Lakh"
+    },
+    "battery": {
+      "capacityKWh": 0,
+      "capacityText": "N/A"
+    },
+    "performance": {
+      "claimedRangeKM": 0,
+      "rangeText": "N/A",
+      "maxPowerBHP": 0,
+      "maxTorqueNM": 0,
+      "topSpeedKMH": 0,
+      "acceleration0to40Sec": 0
+    },
+    "dimensionsObj": {
+      "kerbWeightKG": 0,
+      "grossWeightKG": 0,
+      "bootSpaceLiters": 0,
+      "wheelSize": "N/A"
+    },
+    "imageUrl": "",
+    "galleryImages": [],
+    "media": {
+      "mainImage": "",
+      "gallery": []
+    }
   }
 ]

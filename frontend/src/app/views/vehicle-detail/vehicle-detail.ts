@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CarSpec, Category, BlogDataService } from '../../services/blog-data.service';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
@@ -81,7 +81,11 @@ interface OverviewData {
       } @else if (brand) {
         
         <div class="page-content" style="position: relative; z-index: 1;">
-          <app-breadcrumb [paths]="[
+          <app-breadcrumb [paths]="isTwoWheeler ? [
+            {label: 'Two-Wheelers', url: '/two-wheelers'},
+            {label: brand.name, url: '/two-wheelers'},
+            {label: modelName, url: ''}
+          ] : [
             {label: 'Browse EVs', url: '/evs'},
             {label: brand.name, url: '/evs'},
             {label: modelName, url: ''}
@@ -105,7 +109,7 @@ interface OverviewData {
                     <span class="icon">⚡</span>
                     <div class="highlight-text">
                       <strong>{{ overview.batteryOptions }}</strong>
-                      <span>{{ isUpcoming ? 'Expected Battery' : 'Battery Options' }}</span>
+                      <span>{{ isUpcoming ? 'Expected Battery' : (isTwoWheeler ? 'Battery Capacity' : 'Battery Options') }}</span>
                     </div>
                   </div>
                   <div class="highlight-item">
@@ -115,7 +119,29 @@ interface OverviewData {
                       <span>{{ isUpcoming ? 'Expected Range' : 'Claimed Range' }}</span>
                     </div>
                   </div>
-                  @if (!isUpcoming) {
+                  @if (isTwoWheeler) {
+                    <div class="highlight-item">
+                      <span class="icon">🚀</span>
+                      <div class="highlight-text">
+                        <strong>{{ selectedVariant?.topSpeed || '—' }}</strong>
+                        <span>Top Speed</span>
+                      </div>
+                    </div>
+                    <div class="highlight-item">
+                      <span class="icon">⚡</span>
+                      <div class="highlight-text">
+                        <strong>{{ selectedVariant?.acceleration0to40 || selectedVariant?.acceleration || '—' }}</strong>
+                        <span>0–40 km/h</span>
+                      </div>
+                    </div>
+                    <div class="highlight-item">
+                      <span class="icon">📅</span>
+                      <div class="highlight-text">
+                        <strong>{{ selectedVariant?.launchDate || effectiveLaunchDate || '—' }}</strong>
+                        <span>Launch</span>
+                      </div>
+                    </div>
+                  } @else if (!isUpcoming) {
                     <div class="highlight-item">
                       <span class="icon">🔌</span>
                       <div class="highlight-text">
@@ -355,154 +381,261 @@ interface OverviewData {
             } @else {
               <div id="aeo-specs" class="specs-grid animate-fade" style="animation-delay: 0.2s;">
                 
-                <!-- Master Specs Sections (Matching Admin 6-Section Layout) -->
-                <div class="spec-section">
-                  <!-- Section 2: Performance & Motor -->
-                  <div class="accordion-item" [class.expanded]="performanceExpanded">
-                    <div class="spec-row accordion-header" (click)="performanceExpanded = !performanceExpanded">
-                      <span class="spec-label">🏎️ Performance & Motor</span>
-                      <span class="accordion-icon">{{ performanceExpanded ? '▲' : '▼' }}</span>
+                @if (isTwoWheeler) {
+                  <!-- Two-Wheeler Specific Specs Layout -->
+                  <div class="spec-section">
+                    <!-- 2W Section 1: Motor & Performance -->
+                    <div class="accordion-item" [class.expanded]="performanceExpanded">
+                      <div class="spec-row accordion-header" (click)="performanceExpanded = !performanceExpanded">
+                        <span class="spec-label">🛵 Motor & Performance</span>
+                        <span class="accordion-icon">{{ performanceExpanded ? '▲' : '▼' }}</span>
+                      </div>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Max Power</span>
+                          <span class="spec-value">{{ selectedVariant.bhp || selectedVariant.maxPower || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Peak Torque</span>
+                          <span class="spec-value">{{ selectedVariant.torque || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Top Speed</span>
+                          <span class="spec-value">{{ selectedVariant.topSpeed || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Acceleration (0–40 km/h)</span>
+                          <span class="spec-value">{{ selectedVariant.acceleration0to40 || selectedVariant.acceleration || '-' }}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div class="accordion-content">
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Acceleration (0-100 km/h)</span>
-                        <span class="spec-value">{{ selectedVariant.acceleration || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Max Power</span>
-                        <span class="spec-value">{{ selectedVariant.maxPower || selectedVariant.bhpTorque || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Peak Torque</span>
-                        <span class="spec-value">{{ selectedVariant.torque || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Drivetrain Type</span>
-                        <span class="spec-value">{{ selectedVariant.drivetrain || '-' }}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <!-- Section 3: Battery & Charging -->
-                  <div class="accordion-item" [class.expanded]="chargingExpanded">
-                    <div class="spec-row accordion-header" (click)="chargingExpanded = !chargingExpanded">
-                      <span class="spec-label">🔋 Battery & Charging</span>
-                      <span class="accordion-icon">{{ chargingExpanded ? '▲' : '▼' }}</span>
+                    <!-- 2W Section 2: Battery & Charging -->
+                    <div class="accordion-item" [class.expanded]="chargingExpanded">
+                      <div class="spec-row accordion-header" (click)="chargingExpanded = !chargingExpanded">
+                        <span class="spec-label">🔋 Battery & Charging</span>
+                        <span class="accordion-icon">{{ chargingExpanded ? '▲' : '▼' }}</span>
+                      </div>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Battery Capacity</span>
+                          <span class="spec-value">{{ selectedVariant.batteryCapacity || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Claimed Range</span>
+                          <span class="spec-value">{{ selectedVariant.range || '-' }}</span>
+                        </div>
+                        @if (selectedVariant.acCharging) {
+                          <div class="spec-row sub-row">
+                            <span class="spec-label">Home / AC Charging</span>
+                            <span class="spec-value">{{ selectedVariant.acCharging }}</span>
+                          </div>
+                        }
+                        @if (selectedVariant.dcCharging) {
+                          <div class="spec-row sub-row">
+                            <span class="spec-label">Fast / DC Charging</span>
+                            <span class="spec-value">{{ selectedVariant.dcCharging }}</span>
+                          </div>
+                        }
+                      </div>
                     </div>
-                    <div class="accordion-content">
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Battery Capacity</span>
-                        <span class="spec-value">{{ selectedVariant.batteryCapacity || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Claimed Range</span>
-                        <span class="spec-value">{{ selectedVariant.range || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">AC Charging Speed</span>
-                        <span class="spec-value">{{ selectedVariant.acCharging || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">DC Fast Charging Speed</span>
-                        <span class="spec-value">{{ selectedVariant.dcCharging || '-' }}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <!-- Section 4: Safety & ADAS -->
-                  <div class="accordion-item" [class.expanded]="safetyExpanded">
-                    <div class="spec-row accordion-header" (click)="safetyExpanded = !safetyExpanded">
-                      <span class="spec-label">🛡️ Safety & ADAS</span>
-                      <span class="accordion-icon">{{ safetyExpanded ? '▲' : '▼' }}</span>
+                    <!-- 2W Section 3: Storage & Chassis -->
+                    <div class="accordion-item" [class.expanded]="dimensionsExpanded">
+                      <div class="spec-row accordion-header" (click)="dimensionsExpanded = !dimensionsExpanded">
+                        <span class="spec-label">📦 Storage & Chassis</span>
+                        <span class="accordion-icon">{{ dimensionsExpanded ? '▲' : '▼' }}</span>
+                      </div>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Under-seat Boot Storage</span>
+                          <span class="spec-value">{{ selectedVariant.bootSpace || selectedVariant.bootFrunkSpace || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Wheel / Rim Size</span>
+                          <span class="spec-value">{{ selectedVariant.wheelSize || selectedVariant.tyreSize || '-' }}</span>
+                        </div>
+                        @if (selectedVariant.kerbWeight || selectedVariant.weight) {
+                          <div class="spec-row sub-row">
+                            <span class="spec-label">Kerb Weight</span>
+                            <span class="spec-value">{{ selectedVariant.kerbWeight || selectedVariant.weight }}</span>
+                          </div>
+                        }
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Seating Capacity</span>
+                          <span class="spec-value">{{ selectedVariant.seating || '2 Seater' }}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div class="accordion-content">
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">NCAP Safety Rating</span>
-                        <span class="spec-value">{{ selectedVariant.safetyRating || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">ADAS Level</span>
-                        <span class="spec-value">{{ selectedVariant.adasLevel || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Number of Airbags</span>
-                        <span class="spec-value">{{ selectedVariant.airbags || '-' }}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <!-- Section 5: Dimensions & Weight -->
-                  <div class="accordion-item" [class.expanded]="dimensionsExpanded">
-                    <div class="spec-row accordion-header" (click)="dimensionsExpanded = !dimensionsExpanded">
-                      <span class="spec-label">📐 Dimensions & Weight</span>
-                      <span class="accordion-icon">{{ dimensionsExpanded ? '▲' : '▼' }}</span>
-                    </div>
-                    <div class="accordion-content">
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Body Style</span>
-                        <span class="spec-value">{{ selectedVariant.bodyStyle || '-' }}</span>
+                    <!-- 2W Section 4: Features & Highlights -->
+                    <div class="accordion-item" [class.expanded]="entertainmentExpanded">
+                      <div class="spec-row accordion-header" (click)="entertainmentExpanded = !entertainmentExpanded">
+                        <span class="spec-label">✨ Key Highlights & Features</span>
+                        <span class="accordion-icon">{{ entertainmentExpanded ? '▲' : '▼' }}</span>
                       </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Dimensions (L x W x H)</span>
-                        <span class="spec-value">{{ selectedVariant.dimensions || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Wheelbase</span>
-                        <span class="spec-value">{{ selectedVariant.wheelbase || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Ground Clearance</span>
-                        <span class="spec-value">{{ selectedVariant.groundClearance || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Boot / Frunk Space</span>
-                        <span class="spec-value">{{ selectedVariant.bootFrunkSpace || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Kerb Weight</span>
-                        <span class="spec-value">{{ selectedVariant.kerbWeight || selectedVariant.weight || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Gross Weight</span>
-                        <span class="spec-value">{{ selectedVariant.grossWeight || '-' }}</span>
-                      </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Tyre Size</span>
-                        <span class="spec-value">{{ selectedVariant.tyreSize || '-' }}</span>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Highlights</span>
+                          <span class="spec-value">{{ selectedVariant.keyHighlights || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Launch Status</span>
+                          <span class="spec-value">{{ selectedVariant.status || 'Launched' }}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
+                } @else {
+                  <!-- Car Specs Sections (Matching Admin 6-Section Layout) -->
+                  <div class="spec-section">
+                    <!-- Section 2: Performance & Motor -->
+                    <div class="accordion-item" [class.expanded]="performanceExpanded">
+                      <div class="spec-row accordion-header" (click)="performanceExpanded = !performanceExpanded">
+                        <span class="spec-label">🏎️ Performance & Motor</span>
+                        <span class="accordion-icon">{{ performanceExpanded ? '▲' : '▼' }}</span>
+                      </div>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Acceleration (0-100 km/h)</span>
+                          <span class="spec-value">{{ selectedVariant.acceleration || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Max Power</span>
+                          <span class="spec-value">{{ selectedVariant.maxPower || selectedVariant.bhpTorque || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Peak Torque</span>
+                          <span class="spec-value">{{ selectedVariant.torque || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Drivetrain Type</span>
+                          <span class="spec-value">{{ selectedVariant.drivetrain || '-' }}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                  <!-- Section 6: Entertainment & Interior -->
-                  <div class="accordion-item" [class.expanded]="entertainmentExpanded">
-                    <div class="spec-row accordion-header" (click)="entertainmentExpanded = !entertainmentExpanded">
-                      <span class="spec-label">🎵 Entertainment & Interior</span>
-                      <span class="accordion-icon">{{ entertainmentExpanded ? '▲' : '▼' }}</span>
+                    <!-- Section 3: Battery & Charging -->
+                    <div class="accordion-item" [class.expanded]="chargingExpanded">
+                      <div class="spec-row accordion-header" (click)="chargingExpanded = !chargingExpanded">
+                        <span class="spec-label">🔋 Battery & Charging</span>
+                        <span class="accordion-icon">{{ chargingExpanded ? '▲' : '▼' }}</span>
+                      </div>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Battery Capacity</span>
+                          <span class="spec-value">{{ selectedVariant.batteryCapacity || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Claimed Range</span>
+                          <span class="spec-value">{{ selectedVariant.range || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">AC Charging Speed</span>
+                          <span class="spec-value">{{ selectedVariant.acCharging || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">DC Fast Charging Speed</span>
+                          <span class="spec-value">{{ selectedVariant.dcCharging || '-' }}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div class="accordion-content">
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Seating Capacity</span>
-                        <span class="spec-value">{{ selectedVariant.seating || '-' }}</span>
+
+                    <!-- Section 4: Safety & ADAS -->
+                    <div class="accordion-item" [class.expanded]="safetyExpanded">
+                      <div class="spec-row accordion-header" (click)="safetyExpanded = !safetyExpanded">
+                        <span class="spec-label">🛡️ Safety & ADAS</span>
+                        <span class="accordion-icon">{{ safetyExpanded ? '▲' : '▼' }}</span>
                       </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Screen Display</span>
-                        <span class="spec-value">{{ selectedVariant.screen || '-' }}</span>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">NCAP Safety Rating</span>
+                          <span class="spec-value">{{ selectedVariant.safetyRating || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">ADAS Level</span>
+                          <span class="spec-value">{{ selectedVariant.adasLevel || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Number of Airbags</span>
+                          <span class="spec-value">{{ selectedVariant.airbags || '-' }}</span>
+                        </div>
                       </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Audio System</span>
-                        <span class="spec-value">{{ selectedVariant.audio || '-' }}</span>
+                    </div>
+
+                    <!-- Section 5: Dimensions & Weight -->
+                    <div class="accordion-item" [class.expanded]="dimensionsExpanded">
+                      <div class="spec-row accordion-header" (click)="dimensionsExpanded = !dimensionsExpanded">
+                        <span class="spec-label">📐 Dimensions & Weight</span>
+                        <span class="accordion-icon">{{ dimensionsExpanded ? '▲' : '▼' }}</span>
                       </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Connectivity</span>
-                        <span class="spec-value">{{ selectedVariant.connectivity || '-' }}</span>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Body Style</span>
+                          <span class="spec-value">{{ selectedVariant.bodyStyle || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Dimensions (L x W x H)</span>
+                          <span class="spec-value">{{ selectedVariant.dimensions || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Wheelbase</span>
+                          <span class="spec-value">{{ selectedVariant.wheelbase || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Ground Clearance</span>
+                          <span class="spec-value">{{ selectedVariant.groundClearance || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Boot / Frunk Space</span>
+                          <span class="spec-value">{{ selectedVariant.bootFrunkSpace || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Kerb Weight</span>
+                          <span class="spec-value">{{ selectedVariant.kerbWeight || selectedVariant.weight || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Gross Weight</span>
+                          <span class="spec-value">{{ selectedVariant.grossWeight || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Tyre Size</span>
+                          <span class="spec-value">{{ selectedVariant.tyreSize || '-' }}</span>
+                        </div>
                       </div>
-                      <div class="spec-row sub-row">
-                        <span class="spec-label">Key Highlights / Feature Upgrades</span>
-                        <span class="spec-value">{{ selectedVariant.keyHighlights || '-' }}</span>
+                    </div>
+
+                    <!-- Section 6: Entertainment & Interior -->
+                    <div class="accordion-item" [class.expanded]="entertainmentExpanded">
+                      <div class="spec-row accordion-header" (click)="entertainmentExpanded = !entertainmentExpanded">
+                        <span class="spec-label">🎵 Entertainment & Interior</span>
+                        <span class="accordion-icon">{{ entertainmentExpanded ? '▲' : '▼' }}</span>
+                      </div>
+                      <div class="accordion-content">
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Seating Capacity</span>
+                          <span class="spec-value">{{ selectedVariant.seating || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Screen Display</span>
+                          <span class="spec-value">{{ selectedVariant.screen || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Audio System</span>
+                          <span class="spec-value">{{ selectedVariant.audio || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Connectivity</span>
+                          <span class="spec-value">{{ selectedVariant.connectivity || '-' }}</span>
+                        </div>
+                        <div class="spec-row sub-row">
+                          <span class="spec-label">Key Highlights / Feature Upgrades</span>
+                          <span class="spec-value">{{ selectedVariant.keyHighlights || '-' }}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                }
                 
                 <!-- Vehicle Comment Section -->
                 <app-comment-section
@@ -1148,6 +1281,12 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
     return this.selectedVariant?.lifecycleStatus === 'Upcoming' || this.selectedVariant?.status === 'Upcoming';
   }
 
+  get isTwoWheeler(): boolean {
+    return (this.selectedVariant?.vehicleType === 'two-wheeler') ||
+           (this.siblingVariants.length > 0 && this.siblingVariants[0]?.vehicleType === 'two-wheeler') ||
+           (this.router.url.includes('/two-wheelers/'));
+  }
+
   getVehicleTargetId(): string {
     if (this.selectedVariant) {
       return this.selectedVariant.id || this.selectedVariant.modelId || (this.selectedVariant as any)._id || (this.currentBrandSlug && this.currentModelSlug ? `${this.currentBrandSlug}-${this.currentModelSlug}` : '');
@@ -1250,6 +1389,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private compareState: CompareStateService,
     private seoService: SeoService,
     private schemaService: SchemaService,
@@ -1592,16 +1732,22 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
   updateSEO() {
     if (!this.brand) return;
 
-    const path =
-      modelHref({
-        brandName: this.brand.name,
-        brandSlug: this.currentBrandSlug,
-        parentModel: this.modelName,
-        modelSlug: this.currentModelSlug
-      }) || `/ev/${this.currentBrandSlug}/${this.currentModelSlug}`;
-    const brandPath = brandBrowseHref(this.brand.name);
-    const title = `${this.brand.name} ${this.modelName} EV: Price, Range & Battery Options`;
-    const desc = buildVehicleSeoDescription(this.brand.name, this.modelName, this.overview);
+    const is2W = this.isTwoWheeler;
+    const path = is2W
+      ? `/two-wheelers/${this.currentBrandSlug}/${this.currentModelSlug}`
+      : (modelHref({
+          brandName: this.brand.name,
+          brandSlug: this.currentBrandSlug,
+          parentModel: this.modelName,
+          modelSlug: this.currentModelSlug
+        }) || `/ev/${this.currentBrandSlug}/${this.currentModelSlug}`);
+    const brandPath = is2W ? '/two-wheelers' : brandBrowseHref(this.brand.name);
+    const title = is2W
+      ? `${this.brand.name} ${this.modelName} Price, Range, Top Speed & Specs | EVCorn`
+      : `${this.brand.name} ${this.modelName} EV: Price, Range & Battery Options`;
+    const desc = is2W
+      ? `Check ${this.brand.name} ${this.modelName} electric two-wheeler specifications, price (${this.overview.priceRange}), battery (${this.overview.batteryOptions}), claimed range (${this.overview.claimedRange}), top speed, and features on EVCorn.`
+      : buildVehicleSeoDescription(this.brand.name, this.modelName, this.overview);
     const image = this.activeImageUrl
       ? this.getOptimizedUrl(this.activeImageUrl, 1200, this.modelName)
       : undefined;
@@ -1610,20 +1756,20 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       title,
       description: desc,
       image,
-      imageAlt: `${this.brand.name} ${this.modelName} electric vehicle`,
+      imageAlt: `${this.brand.name} ${this.modelName} electric ${is2W ? 'two-wheeler' : 'vehicle'}`,
       url: path,
       type: 'product'
     });
 
     // Entity graph → schema inputs (optional). LRU hit when AEO already built. Failure → Phase 7.1 only.
-    const entityGraph = getOrBuildVehiclePageGraph({
+    const entityGraph = is2W ? null : getOrBuildVehiclePageGraph({
       brand: this.brand,
       variants: this.siblingVariants,
       selectedVariant: this.selectedVariant,
       recommendedVehicles: this.relatedVehiclesForAeo,
       recommendedArticles: this.relatedArticlesForAeo
     });
-    const graphSchema = safeVehicleSchemaFromGraph(entityGraph);
+    const graphSchema = entityGraph ? safeVehicleSchemaFromGraph(entityGraph) : null;
 
     const vehicleSchema = this.schemaService.buildVehicle({
       name: `${this.brand.name} ${this.modelName}`,
@@ -1635,7 +1781,7 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
       range: this.overview.claimedRange,
       chargingTime: this.overview.charging,
       path,
-      bodyStyle: this.siblingVariants[0]?.bodyStyle,
+      bodyStyle: is2W ? 'Electric Two-Wheeler' : this.siblingVariants[0]?.bodyStyle,
       ...(graphSchema?.path ? { id: graphSchema.path } : { id: path }),
       ...(graphSchema?.brand
         ? {
@@ -1649,12 +1795,21 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
     });
 
     const schemas: any[] = [
-      this.schemaService.buildBreadcrumbs([
-        { name: 'Home', url: '/' },
-        { name: 'Browse EVs', url: evsIndexHref() },
-        { name: this.brand.name, url: brandPath },
-        { name: this.modelName, url: path }
-      ]),
+      this.schemaService.buildBreadcrumbs(
+        is2W
+          ? [
+              { name: 'Home', url: '/' },
+              { name: 'Two-Wheelers', url: '/two-wheelers' },
+              { name: this.brand.name, url: '/two-wheelers' },
+              { name: this.modelName, url: path }
+            ]
+          : [
+              { name: 'Home', url: '/' },
+              { name: 'Browse EVs', url: evsIndexHref() },
+              { name: this.brand.name, url: brandPath },
+              { name: this.modelName, url: path }
+            ]
+      ),
       this.schemaService.buildWebPage(title, desc, path),
       vehicleSchema
     ];
@@ -1717,7 +1872,13 @@ export class VehicleDetailComponent implements OnInit, OnDestroy {
 
   addToCompare() {
     if (this.selectedVariantId) {
-      this.compareState.addVehicle(this.selectedVariantId);
+      const vType = this.isTwoWheeler ? 'two-wheeler' : 'car';
+      this.compareState.addVehicle(this.selectedVariantId, vType);
+      if (this.isTwoWheeler) {
+        this.router.navigate(['/compare'], { queryParams: { type: 'two-wheeler', ids: this.selectedVariantId } });
+      } else {
+        this.router.navigate(['/compare'], { queryParams: { ids: this.selectedVariantId } });
+      }
     }
   }
 }

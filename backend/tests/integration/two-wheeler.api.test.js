@@ -51,8 +51,9 @@ describe('Two-Wheeler Vertical API Integration Tests', () => {
   });
 
   it('POST /api/categories allows authenticated admin to auto-create a new 2W brand', async () => {
+    const brandId = `river-test-${Date.now()}`;
     const brandPayload = {
-      id: 'river-mobility-test',
+      id: brandId,
       name: 'River Mobility'
     };
 
@@ -75,7 +76,7 @@ describe('Two-Wheeler Vertical API Integration Tests', () => {
 
     const payload = {
       name: 'River Indie::Standard',
-      categoryId: 'river-mobility-test',
+      categoryId: 'ather',
       vehicleType: 'two-wheeler',
       parentModel: 'Indie',
       variantName: 'Standard',
@@ -136,5 +137,41 @@ describe('Two-Wheeler Vertical API Integration Tests', () => {
     list.forEach(item => {
       expect(item.vehicleType).not.toBe('two-wheeler');
     });
+  });
+
+  it('GET /api/vehicles/compare allows comparing two two-wheelers', async () => {
+    const res = await request(app)
+      .get(`/api/vehicles/compare?ids=ather-450x-gen-3-pro,river-indie-standard&vehicleType=two-wheeler`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBe(2);
+    res.body.forEach(v => {
+      expect(v.vehicleType).toBe('two-wheeler');
+    });
+  });
+
+  it('GET /api/vehicles/compare rejects mixing a car and a two-wheeler with 400 Bad Request', async () => {
+    // Create a car test record first
+    await vehicleService.saveVehicle({
+      id: 'test-car-for-compare',
+      name: 'Tata Nexon EV::Creative',
+      categoryId: 'tata',
+      vehicleType: 'car',
+      price: '₹14.49 Lakh'
+    });
+
+    const res = await request(app)
+      .get(`/api/vehicles/compare?ids=test-car-for-compare,river-indie-standard`);
+    expect(res.status).toBe(400);
+    const msg = res.body.error?.message || res.body.message || '';
+    expect(msg).toContain('Cannot compare vehicles of different types');
+  });
+
+  it('GET /api/vehicles/compare rejects vehicleType mismatch with 400 Bad Request', async () => {
+    const res = await request(app)
+      .get(`/api/vehicles/compare?ids=test-car-for-compare&vehicleType=two-wheeler`);
+    expect(res.status).toBe(400);
+    const msg = res.body.error?.message || res.body.message || '';
+    expect(msg).toContain('not a two-wheeler');
   });
 });

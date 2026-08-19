@@ -1,21 +1,31 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Category, CarSpec, BlogDataService } from '../../services/blog-data.service';
 import { SeoService } from '../../services/seo.service';
 import { SchemaService } from '../../services/schema.service';
+import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { EvSearchComponent } from '../../components/ev-search/ev-search.component';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
+import { CompareTrayComponent } from '../../components/compare-tray/compare-tray';
 import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
 import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-formatter';
 
 @Component({
   selector: 'app-browse-two-wheelers',
   standalone: true,
-  imports: [CommonModule, BreadcrumbComponent, FormsModule, ErrorStateComponent, EvSearchComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    BreadcrumbComponent,
+    FormsModule,
+    ErrorStateComponent,
+    EvSearchComponent,
+    CompareTrayComponent
+  ],
   template: `
     <div class="browse-page animate-premium-fade">
       
@@ -76,50 +86,63 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
             <div class="models-grid">
               @for (bike of getFilteredModels(); track bike.id) {
                 <div class="model-card">
-                  <div class="model-image-container">
-                    <img [src]="getOptimizedUrl(bike.imageUrl, 600, bike.parentModel || bike.name)" 
-                         (error)="onImgError($event, bike)"
-                         loading="lazy"
-                         decoding="async"
-                         width="600"
-                         height="360"
-                         class="model-thumb"
-                         [alt]="getBrandName(bike.categoryId) + ' ' + (bike.parentModel || bike.name) + ' electric scooter'">
-                  </div>
-                  <div class="model-info">
-                    <div class="model-badge-row">
-                      <span class="brand-tag">{{ getBrandName(bike.categoryId) }}</span>
-                      @if (bike.lifecycleStatus === 'Upcoming' || bike.status === 'Upcoming') {
-                        <span class="badge badge-upcoming">🟡 Upcoming</span>
-                      }
+                  <a [routerLink]="['/two-wheelers', slugify(getBrandName(bike.categoryId)), slugify(bike.parentModel || bike.name)]" class="model-card-link">
+                    <div class="model-image-container">
+                      <img [src]="getOptimizedUrl(bike.imageUrl, 600, bike.parentModel || bike.name)" 
+                           (error)="onImgError($event, bike)"
+                           loading="lazy"
+                           decoding="async"
+                           width="600"
+                           height="360"
+                           class="model-thumb"
+                           [alt]="getBrandName(bike.categoryId) + ' ' + (bike.parentModel || bike.name) + ' electric scooter'">
                     </div>
-                    <h3 class="model-name">{{ bike.parentModel || bike.name }}</h3>
-                    <p class="variant-name">{{ bike.variantName || 'Base Variant' }}</p>
+                    <div class="model-info">
+                      <div class="model-badge-row">
+                        <span class="brand-tag">{{ getBrandName(bike.categoryId) }}</span>
+                        @if (bike.lifecycleStatus === 'Upcoming' || bike.status === 'Upcoming') {
+                          <span class="badge badge-upcoming">🟡 Upcoming</span>
+                        }
+                      </div>
+                      <h3 class="model-name">{{ bike.parentModel || bike.name }}</h3>
+                      <p class="variant-name">{{ bike.variantName || 'Base Variant' }}</p>
 
-                    <!-- Key Specs Row -->
-                    <div class="specs-pill-row">
-                      <div class="spec-item" *ngIf="bike.range && bike.range !== 'N/A'">
-                        <span class="spec-label">Range</span>
-                        <span class="spec-val">{{ formatRange(bike.range) }}</span>
+                      <!-- Key Specs Row -->
+                      <div class="specs-pill-row">
+                        <div class="spec-item" *ngIf="bike.range && bike.range !== 'N/A'">
+                          <span class="spec-label">Range</span>
+                          <span class="spec-val">{{ formatRange(bike.range) }}</span>
+                        </div>
+                        <div class="spec-item" *ngIf="bike.batteryCapacity && bike.batteryCapacity !== 'N/A'">
+                          <span class="spec-label">Battery</span>
+                          <span class="spec-val">{{ formatBattery(bike.batteryCapacity) }}</span>
+                        </div>
+                        <div class="spec-item" *ngIf="bike.topSpeed && bike.topSpeed !== 'N/A'">
+                          <span class="spec-label">Top Speed</span>
+                          <span class="spec-val">{{ bike.topSpeed }}</span>
+                        </div>
+                        <div class="spec-item" *ngIf="bike.bootSpace && bike.bootSpace !== 'N/A'">
+                          <span class="spec-label">Boot Space</span>
+                          <span class="spec-val">{{ bike.bootSpace }}</span>
+                        </div>
                       </div>
-                      <div class="spec-item" *ngIf="bike.batteryCapacity && bike.batteryCapacity !== 'N/A'">
-                        <span class="spec-label">Battery</span>
-                        <span class="spec-val">{{ formatBattery(bike.batteryCapacity) }}</span>
-                      </div>
-                      <div class="spec-item" *ngIf="bike.topSpeed && bike.topSpeed !== 'N/A'">
-                        <span class="spec-label">Top Speed</span>
-                        <span class="spec-val">{{ bike.topSpeed }}</span>
-                      </div>
-                      <div class="spec-item" *ngIf="bike.bootSpace && bike.bootSpace !== 'N/A'">
-                        <span class="spec-label">Boot Space</span>
-                        <span class="spec-val">{{ bike.bootSpace }}</span>
-                      </div>
-                    </div>
 
-                    <div class="price-row">
-                      <span class="price-tag">{{ bike.price || 'Price TBA' }}</span>
-                      <span class="price-type">Ex-Showroom</span>
+                      <div class="price-row">
+                        <span class="price-tag">{{ bike.price || 'Price TBA' }}</span>
+                        <span class="price-type">Ex-Showroom</span>
+                      </div>
                     </div>
+                  </a>
+                  <div class="model-card-actions">
+                    <a [routerLink]="['/two-wheelers', slugify(getBrandName(bike.categoryId)), slugify(bike.parentModel || bike.name)]" class="card-action-btn details-btn" [style.grid-column]="(bike.lifecycleStatus === 'Upcoming' || bike.status === 'Upcoming') ? '1 / -1' : 'auto'">View Details</a>
+                    <button
+                      *ngIf="bike.lifecycleStatus !== 'Upcoming' && bike.status !== 'Upcoming'"
+                      type="button"
+                      class="card-action-btn compare-btn"
+                      [class.selected]="isInCompare(bike.id)"
+                      (click)="toggleCompare(bike, $event)">
+                      {{ isInCompare(bike.id) ? 'In Compare' : 'Compare' }}
+                    </button>
                   </div>
                 </div>
               }
@@ -135,7 +158,7 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
               <h2 class="section-title">Top 5 Longest Range Electric Two-Wheelers</h2>
               <div class="top-evs-container">
                 @for (bike of topRangeBikes; track bike.id; let idx = $index) {
-                  <div class="top-ev-card" [class.highlight]="idx === 0">
+                  <a [routerLink]="['/two-wheelers', slugify(getBrandName(bike.categoryId)), slugify(bike.parentModel || bike.name)]" class="top-ev-card" [class.highlight]="idx === 0">
                     <div class="rank-badge">#{{ idx + 1 }}</div>
                     <div class="top-ev-image">
                       <img [src]="getOptimizedUrl(bike.imageUrl, 400, bike.parentModel || bike.name)" 
@@ -155,7 +178,7 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
                         <span class="stat-price">{{ bike.price }}</span>
                       </div>
                     </div>
-                  </div>
+                  </a>
                 }
               </div>
             </div>
@@ -167,50 +190,63 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
             <div class="models-grid">
               @for (bike of modelCards; track bike.id) {
                 <div class="model-card">
-                  <div class="model-image-container">
-                    <img [src]="getOptimizedUrl(bike.imageUrl, 600, bike.parentModel || bike.name)" 
-                         (error)="onImgError($event, bike)"
-                         loading="lazy"
-                         decoding="async"
-                         width="600"
-                         height="360"
-                         class="model-thumb"
-                         [alt]="getBrandName(bike.categoryId) + ' ' + (bike.parentModel || bike.name) + ' electric vehicle'">
-                  </div>
-                  <div class="model-info">
-                    <div class="model-badge-row">
-                      <span class="brand-tag">{{ getBrandName(bike.categoryId) }}</span>
-                      @if (bike.lifecycleStatus === 'Upcoming' || bike.status === 'Upcoming') {
-                        <span class="badge badge-upcoming">🟡 Upcoming</span>
-                      }
+                  <a [routerLink]="['/two-wheelers', slugify(getBrandName(bike.categoryId)), slugify(bike.parentModel || bike.name)]" class="model-card-link">
+                    <div class="model-image-container">
+                      <img [src]="getOptimizedUrl(bike.imageUrl, 600, bike.parentModel || bike.name)" 
+                           (error)="onImgError($event, bike)"
+                           loading="lazy"
+                           decoding="async"
+                           width="600"
+                           height="360"
+                           class="model-thumb"
+                           [alt]="getBrandName(bike.categoryId) + ' ' + (bike.parentModel || bike.name) + ' electric vehicle'">
                     </div>
-                    <h3 class="model-name">{{ bike.parentModel || bike.name }}</h3>
-                    <p class="variant-name">{{ bike.variantName || 'Base' }}</p>
+                    <div class="model-info">
+                      <div class="model-badge-row">
+                        <span class="brand-tag">{{ getBrandName(bike.categoryId) }}</span>
+                        @if (bike.lifecycleStatus === 'Upcoming' || bike.status === 'Upcoming') {
+                          <span class="badge badge-upcoming">🟡 Upcoming</span>
+                        }
+                      </div>
+                      <h3 class="model-name">{{ bike.parentModel || bike.name }}</h3>
+                      <p class="variant-name">{{ bike.variantName || 'Base' }}</p>
 
-                    <!-- Key Specs Row -->
-                    <div class="specs-pill-row">
-                      <div class="spec-item" *ngIf="bike.range && bike.range !== 'N/A'">
-                        <span class="spec-label">Range</span>
-                        <span class="spec-val">{{ formatRange(bike.range) }}</span>
+                      <!-- Key Specs Row -->
+                      <div class="specs-pill-row">
+                        <div class="spec-item" *ngIf="bike.range && bike.range !== 'N/A'">
+                          <span class="spec-label">Range</span>
+                          <span class="spec-val">{{ formatRange(bike.range) }}</span>
+                        </div>
+                        <div class="spec-item" *ngIf="bike.batteryCapacity && bike.batteryCapacity !== 'N/A'">
+                          <span class="spec-label">Battery</span>
+                          <span class="spec-val">{{ formatBattery(bike.batteryCapacity) }}</span>
+                        </div>
+                        <div class="spec-item" *ngIf="bike.topSpeed && bike.topSpeed !== 'N/A'">
+                          <span class="spec-label">Top Speed</span>
+                          <span class="spec-val">{{ bike.topSpeed }}</span>
+                        </div>
+                        <div class="spec-item" *ngIf="bike.bootSpace && bike.bootSpace !== 'N/A'">
+                          <span class="spec-label">Boot Space</span>
+                          <span class="spec-val">{{ bike.bootSpace }}</span>
+                        </div>
                       </div>
-                      <div class="spec-item" *ngIf="bike.batteryCapacity && bike.batteryCapacity !== 'N/A'">
-                        <span class="spec-label">Battery</span>
-                        <span class="spec-val">{{ formatBattery(bike.batteryCapacity) }}</span>
-                      </div>
-                      <div class="spec-item" *ngIf="bike.topSpeed && bike.topSpeed !== 'N/A'">
-                        <span class="spec-label">Top Speed</span>
-                        <span class="spec-val">{{ bike.topSpeed }}</span>
-                      </div>
-                      <div class="spec-item" *ngIf="bike.bootSpace && bike.bootSpace !== 'N/A'">
-                        <span class="spec-label">Boot Space</span>
-                        <span class="spec-val">{{ bike.bootSpace }}</span>
-                      </div>
-                    </div>
 
-                    <div class="price-row">
-                      <span class="price-tag">{{ bike.price || 'Price TBA' }}</span>
-                      <span class="price-type">Ex-Showroom</span>
+                      <div class="price-row">
+                        <span class="price-tag">{{ bike.price || 'Price TBA' }}</span>
+                        <span class="price-type">Ex-Showroom</span>
+                      </div>
                     </div>
+                  </a>
+                  <div class="model-card-actions">
+                    <a [routerLink]="['/two-wheelers', slugify(getBrandName(bike.categoryId)), slugify(bike.parentModel || bike.name)]" class="card-action-btn details-btn" [style.grid-column]="(bike.lifecycleStatus === 'Upcoming' || bike.status === 'Upcoming') ? '1 / -1' : 'auto'">View Details</a>
+                    <button
+                      *ngIf="bike.lifecycleStatus !== 'Upcoming' && bike.status !== 'Upcoming'"
+                      type="button"
+                      class="card-action-btn compare-btn"
+                      [class.selected]="isInCompare(bike.id)"
+                      (click)="toggleCompare(bike, $event)">
+                      {{ isInCompare(bike.id) ? 'In Compare' : 'Compare' }}
+                    </button>
                   </div>
                 </div>
               }
@@ -226,6 +262,8 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
         }
       }
     </div>
+
+    <app-compare-tray [vehicleType]="'two-wheeler'"></app-compare-tray>
   `,
   styles: [`
     .browse-page {
@@ -342,6 +380,14 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
       display: flex;
       gap: 12px;
       align-items: center;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+    }
+
+    .top-ev-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
     }
 
     .top-ev-card.highlight {
@@ -437,6 +483,61 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
     .model-card:hover {
       transform: translateY(-3px);
       box-shadow: 0 10px 24px rgba(0,0,0,0.05);
+    }
+
+    .model-card-link {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .model-card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #F1F5F9;
+    }
+
+    .card-action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .details-btn {
+      background: #F8FAFC;
+      color: #0F172A;
+      border-color: #E2E8F0;
+    }
+    .details-btn:hover {
+      border-color: #0088CC;
+      color: #0088CC;
+    }
+
+    .compare-btn {
+      background: rgba(0, 136, 204, 0.08);
+      color: #0088CC;
+      border-color: rgba(0, 136, 204, 0.25);
+    }
+    .compare-btn:hover {
+      background: rgba(0, 136, 204, 0.14);
+    }
+    .compare-btn.selected {
+      background: #0088CC;
+      color: white;
+      border-color: #0088CC;
     }
 
     .model-image-container {
@@ -628,12 +729,14 @@ export class BrowseTwoWheelersComponent implements OnInit, OnDestroy {
     private seoService: SeoService,
     private schemaService: SchemaService,
     private blogDataService: BlogDataService,
+    private compareState: CompareStateService,
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.compareState.setVehicleType('two-wheeler');
     this.seoService.updateSeo({
       title: 'Electric Two-Wheelers in India (2026) — Range, Specs & Prices | EVCorn',
       description: 'Explore the latest electric scooters and motorcycles in India. Compare Ather, Ola Electric, TVS iQube, Bajaj Chetak, and more with real-world specs, battery, and prices.',
@@ -764,6 +867,15 @@ export class BrowseTwoWheelersComponent implements OnInit, OnDestroy {
 
   formatBattery(val: any): string {
     return formatCardBattery(val);
+  }
+
+  isInCompare(bikeId: string): boolean {
+    return this.compareState.isSelected(bikeId);
+  }
+
+  toggleCompare(bike: any, event: Event): void {
+    event.stopPropagation();
+    this.compareState.toggleVehicle(bike.id, 'two-wheeler');
   }
 
   slugify(text: string): string {

@@ -9,7 +9,7 @@ const vehicleRepository = require('../repositories/vehicle.repository');
 const { deleteImage } = require('./upload.service');
 const { parseQueryParams, buildVehicleFilterQuery, formatResponse } = require('../utils/apiQuery');
 const { toVehicleDTO, toVehicleListDTO, toVehicleLightListDTO } = require('../dto/vehicle.dto');
-const { NotFoundError } = require('../errors/AppError');
+const { NotFoundError, BadRequestError } = require('../errors/AppError');
 const appCache = require('../utils/cache');
 
 // ─── Light Projection Fields ──────────────────────────────────────────────────
@@ -94,6 +94,41 @@ class VehicleService {
     const result = toVehicleDTO(doc);
     appCache.set(cacheKey, result, appCache.TTL.VEHICLE_SINGLE);
     return result;
+  }
+
+  async compareVehicles(idsInput, expectedType) {
+    if (!idsInput) {
+      throw new BadRequestError('Vehicle IDs are required for comparison');
+    }
+    const ids = Array.isArray(idsInput)
+      ? idsInput.map(id => String(id).trim()).filter(Boolean)
+      : String(idsInput).split(',').map(id => id.trim()).filter(Boolean);
+
+    if (ids.length === 0) {
+      throw new BadRequestError('At least one vehicle ID is required for comparison');
+    }
+
+    const docs = await Promise.all(ids.map(id => vehicleRepository.findById(id)));
+    const found = docs.filter(Boolean);
+
+    if (found.length === 0) {
+      throw new NotFoundError('None of the requested vehicles were found');
+    }
+
+    // Strict server-side vehicleType check: No mixing cars and two-wheelers
+    const vehicleTypes = new Set(found.map(doc => doc.vehicleType || 'car'));
+    if (vehicleTypes.size > 1) {
+      throw new BadRequestError('Cannot compare vehicles of different types (cars cannot be compared with two-wheelers)');
+    }
+
+    if (expectedType && expectedType !== 'all') {
+      const mismatched = found.find(doc => (doc.vehicleType || 'car') !== expectedType);
+      if (mismatched) {
+        throw new BadRequestError(`Vehicle "${mismatched.name}" is a ${mismatched.vehicleType || 'car'}, not a ${expectedType}`);
+      }
+    }
+
+    return found.map(doc => toVehicleDTO(doc));
   }
 
   async saveVehicle(vehicleData) {
