@@ -195,8 +195,14 @@ export interface CarSpec {
   kerbWeight?: string;
   grossWeight?: string;
   acceleration?: string;
+  acceleration0to40?: string;
   maxPower?: string;
+  bhp?: string;
   torque?: string;
+  topSpeed?: string;
+  bootSpace?: string;
+  wheelSize?: string;
+  vehicleType?: 'car' | 'two-wheeler';
 
   // Temporary Dual-Model Compatibility Layer (Deprecated - To be removed after consumer migration)
   pricing?: Pricing;

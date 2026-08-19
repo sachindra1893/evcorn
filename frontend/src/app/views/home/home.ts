@@ -10,11 +10,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
 import { UsageStatsComponent } from '../../components/usage-stats/usage-stats';
+import { EvSearchComponent } from '../../components/ev-search/ev-search.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, FormsModule, CommonModule, ErrorStateComponent, UsageStatsComponent],
+  imports: [RouterLink, FormsModule, CommonModule, ErrorStateComponent, UsageStatsComponent, EvSearchComponent],
   template: `
     <section class="hero">
       <!-- Animated Background and Vignette Overlay -->
@@ -31,60 +32,8 @@ import { UsageStatsComponent } from '../../components/usage-stats/usage-stats';
         
         <!-- Embedded Search Bar -->
         <div class="hero-search-block">
-          <div class="search-bar-container">
-            <div class="input-wrapper">
-              <input 
-                type="text" 
-                placeholder="Search EV specifications, articles, or brands..." 
-                (input)="onSearchInput($event)"
-                [value]="searchQuery"
-              >
-              <div class="search-icon">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </div>
-            </div>
-            
-            <!-- Floating Results Dropdown -->
-            @if (searchQuery.trim().length > 0) {
-              <div class="search-results-dropdown">
-                <!-- Articles Group -->
-                @if (matchingArticles.length > 0) {
-                  <div class="results-group">
-                    <div style="font-weight: 700; color: #64748B; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 0.5rem;">Articles</div>
-                    @for (art of matchingArticles; track art.id) {
-                      <a [routerLink]="['/articles', art.id]" (click)="clearSearch()">
-                        <div class="result-item article-item">
-                          @if (art.imageUrl) {
-                            <img 
-                              [src]="getOptimizedUrl(art.imageUrl, 200)" 
-                              class="result-img" 
-                              alt="{{art.title}}"
-                              loading="lazy"
-                              decoding="async"
-                              width="60"
-                              height="40"
-                              onerror="this.onerror=null; this.style.display='none'; const sibling = this.parentNode.querySelector('.result-placeholder'); if(sibling) sibling.style.display='flex';"
-                            >
-                          }
-                          <div class="result-placeholder" [style.display]="art.imageUrl ? 'none' : 'flex'">⚡</div>
-                          <div class="result-text">
-                            <span class="result-title">{{ art.title }}</span>
-                            <span class="result-desc">{{ art.description }}</span>
-                          </div>
-                        </div>
-                      </a>
-                    }
-                  </div>
-                }
-                
-                @if (matchingArticles.length === 0) {
-                  <div class="no-results">No matches found for "{{ searchQuery }}"</div>
-                }
-              </div>
-            }
+          <div style="flex: 1; min-width: 0;">
+            <app-ev-search scope="all" variant="hero" placeholder="Search EV specifications, two-wheelers, articles, or brands..."></app-ev-search>
           </div>
 
           <a routerLink="/compare" class="hero-compare-cta">Compare EVs</a>

@@ -62,5 +62,45 @@
   {
     "id": "mahindra",
     "name": "Mahindra"
+  },
+  {
+    "id": "ather",
+    "name": "Ather"
+  },
+  {
+    "id": "ola-electric",
+    "name": "Ola Electric"
+  },
+  {
+    "id": "tvs",
+    "name": "TVS"
+  },
+  {
+    "id": "bajaj",
+    "name": "Bajaj"
+  },
+  {
+    "id": "vida",
+    "name": "Hero Vida"
+  },
+  {
+    "id": "river",
+    "name": "River"
+  },
+  {
+    "id": "ultraviolette",
+    "name": "Ultraviolette"
+  },
+  {
+    "id": "revolt",
+    "name": "Revolt"
+  },
+  {
+    "id": "ampere",
+    "name": "Ampere"
+  },
+  {
+    "id": "chetak",
+    "name": "Chetak"
   }
 ]

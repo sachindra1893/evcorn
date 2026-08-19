@@ -95,6 +95,11 @@ function buildVehicleFilterQuery(query) {
     mongoQuery.categoryId = (query.brand || query.categoryId || query.category).toLowerCase();
   }
 
+  // Vehicle Type filter ('car' | 'two-wheeler')
+  if (query.vehicleType || query.type) {
+    mongoQuery.vehicleType = (query.vehicleType || query.type).toLowerCase();
+  }
+
   // Model filter
   if (query.model || query.parentModel) {
     const modelRaw = String(query.model || query.parentModel);

@@ -72,6 +72,7 @@ function buildSitemapXml(data = {}) {
   const staticRoutes = [
     { path: '/', priority: '1.0', changefreq: 'daily' },
     { path: '/evs', priority: '0.9', changefreq: 'daily' },
+    { path: '/two-wheelers', priority: '0.9', changefreq: 'daily' },
     { path: '/compare', priority: '0.8', changefreq: 'weekly' },
     { path: '/articles', priority: '0.9', changefreq: 'daily' },
     { path: '/about', priority: '0.6', changefreq: 'monthly' },

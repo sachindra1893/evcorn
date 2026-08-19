@@ -29,6 +29,7 @@ const PerformanceSchema = new mongoose.Schema({
   maxPowerBHP: { type: Number, min: 0, default: 0 },
   maxTorqueNM: { type: Number, min: 0, default: 0 },
   acceleration0to100Sec: { type: Number, min: 0, default: 0 },
+  acceleration0to40Sec: { type: Number, min: 0, default: 0 },
   topSpeedKMH: { type: Number, min: 0, default: 0 },
   drivetrain: { type: String, enum: ['FWD', 'RWD', 'AWD', 'FWD/AWD', 'N/A'], default: 'FWD' }
 }, { _id: false });
@@ -48,7 +49,8 @@ const DimensionsSchema = new mongoose.Schema({
   bootFrunkText: { type: String, default: 'N/A' },
   seatingCapacity: { type: Number, min: 1, max: 10, default: 5 },
   seatingText: { type: String, default: '5 Seater' },
-  tyreSize: { type: String, default: 'N/A' }
+  tyreSize: { type: String, default: 'N/A' },
+  wheelSize: { type: String, default: 'N/A' }
 }, { _id: false });
 
 const MediaSchema = new mongoose.Schema({
@@ -81,6 +83,7 @@ const VehicleSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   categoryId: { type: String, required: true, index: true },
+  vehicleType: { type: String, enum: ['car', 'two-wheeler'], default: 'car', index: true },
   // Stable Domain Hierarchy Slugs & Identifiers
   brandSlug: { type: String, default: '', index: true },
   modelId: { type: String, default: '', index: true },
@@ -98,6 +101,12 @@ const VehicleSchema = new mongoose.Schema({
   tyreSize: { type: String, default: 'N/A' },
   bootFrunkSpace: { type: String, default: 'N/A' },
   bhpTorque: { type: String, default: 'N/A' },
+  bhp: { type: String, default: 'N/A' },
+  torque: { type: String, default: 'N/A' },
+  topSpeed: { type: String, default: 'N/A' },
+  acceleration: { type: String, default: 'N/A' },
+  bootSpace: { type: String, default: 'N/A' },
+  wheelSize: { type: String, default: 'N/A' },
   kerbWeight: { type: String, default: 'N/A' },
   grossWeight: { type: String, default: 'N/A' },
   drivetrain: { type: String, default: 'N/A' },
@@ -130,10 +139,6 @@ const VehicleSchema = new mongoose.Schema({
   launchDate: { type: String, default: '' },
   isLaunchDateOverride: { type: Boolean, default: false },
 
-  // Root-Cause Cluster E fix: Browse EV's category chips (SUV/Hatchback/Sedan/
-  // MPV/Sports) filter on this field, and vehicle.service.js's LIGHT_PROJECTION
-  // already listed it, but it was never actually defined on the schema — so it
-  // was always undefined and every chip filter matched zero vehicles.
   bodyStyle: { type: String, enum: ['SUV', 'Hatchback', 'Sedan', 'MPV', 'Sports', null], default: null, index: true }
 }, {
   timestamps: true
@@ -142,13 +147,18 @@ const VehicleSchema = new mongoose.Schema({
 // ─── Compound Indexes (Pillar III — Production Query Optimisation) ─────────────
 // These match the exact query patterns executed in vehicle.service.js
 
+// Browse filter: vehicleType + brand + status sorted by range
+VehicleSchema.index({ vehicleType: 1, categoryId: 1, status: 1, 'performance.claimedRangeKM': -1 });
+
 // Browse filter: brand + status sorted by range (most common query on /evs page)
 VehicleSchema.index({ categoryId: 1, status: 1, 'performance.claimedRangeKM': -1 });
 
 // Price range filter + status (budget filter on browse page)
+VehicleSchema.index({ vehicleType: 1, 'pricing.exShowroomPriceINR': 1, status: 1 });
 VehicleSchema.index({ 'pricing.exShowroomPriceINR': 1, status: 1 });
 
-// Top-range EVs query — used on home page "Top 5 Longest Range EVs" widget
+// Top-range query
+VehicleSchema.index({ vehicleType: 1, 'performance.claimedRangeKM': -1, status: 1 });
 VehicleSchema.index({ 'performance.claimedRangeKM': -1, status: 1 });
 
 // Battery capacity filter + status

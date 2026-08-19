@@ -9,6 +9,7 @@ import { SchemaService } from '../../services/schema.service';
 import { CompareStateService } from '../../services/compare-state.service';
 import { BreadcrumbComponent } from '../../components/breadcrumb/breadcrumb';
 import { CompareTrayComponent } from '../../components/compare-tray/compare-tray';
+import { EvSearchComponent } from '../../components/ev-search/ev-search.component';
 import { getOptimizedImageUrl, handleImageError } from '../../utils/image.utils';
 import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-formatter';
 import { ErrorStateComponent } from '../../components/error-state/error-state.component';
@@ -16,42 +17,18 @@ import { ErrorStateComponent } from '../../components/error-state/error-state.co
 @Component({
   selector: 'app-browse-evs',
   standalone: true,
-  imports: [CommonModule, RouterLink, BreadcrumbComponent, FormsModule, ErrorStateComponent, CompareTrayComponent],
+  imports: [CommonModule, RouterLink, BreadcrumbComponent, FormsModule, ErrorStateComponent, CompareTrayComponent, EvSearchComponent],
   template: `
     <div class="browse-page animate-premium-fade">
       
       <div class="page-header animate-fade">
-        <app-breadcrumb [paths]="[{label: 'Browse EVs', url: '/evs'}]"></app-breadcrumb>
-        <h1>Browse Electric Vehicles</h1>
-        <p class="subtitle">Find any EV instantly.</p>
+        <app-breadcrumb [paths]="[{label: 'Cars', url: '/evs'}]"></app-breadcrumb>
+        <h1>Browse Electric Cars</h1>
+        <p class="subtitle">Explore electric cars in India with verified real-world range, specs, and on-road prices.</p>
       </div>
 
       <div class="search-container animate-fade">
-        <input 
-          type="text" 
-          placeholder="Search EVs, Brands or Variants..." 
-          [(ngModel)]="searchQuery" 
-          (input)="onSearchInput()" 
-          (focus)="loadVehiclesIndex()" 
-          class="search-input"
-        >
-        @if (searchResults.length > 0 && searchQuery) {
-          <div class="search-dropdown">
-            @for (res of searchResults; track res.trackId) {
-              <div class="search-result-item" (click)="onResultClick(res)">
-                @if (res.type === 'brand') {
-                  <div class="res-title" style="color: #0284C7; font-size: 1.25rem;">{{ res.name }}</div>
-                } @else if (res.type === 'model') {
-                  <div class="res-title" style="font-weight: 700;">{{ res.name }}</div>
-                  <div class="res-brand">{{ getBrandName(res.categoryId) }}</div>
-                } @else {
-                  <div class="res-title">{{ res.name }}</div>
-                  <div class="res-brand">{{ getBrandName(res.categoryId) }}</div>
-                }
-              </div>
-            }
-          </div>
-        }
+        <app-ev-search scope="car" placeholder="Search electric cars, brands or models..." (selectBrand)="selectBrand($event)"></app-ev-search>
       </div>
 
       @if (loading) {
@@ -775,7 +752,8 @@ export class BrowseEvsComponent implements OnInit, OnDestroy {
     this.loadingVehicles = true;
     this.vehiclesError = false;
     this.blogData.getVehiclesLight().subscribe({
-      next: (vehicles) => {
+      next: (allVehicles) => {
+        const vehicles = (allVehicles || []).filter(v => (v.vehicleType || 'car') === 'car');
         this.allVehiclesIndex = vehicles;
         
         // Create deduped model cards for grid display

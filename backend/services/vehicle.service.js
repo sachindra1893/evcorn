@@ -13,15 +13,17 @@ const { NotFoundError } = require('../errors/AppError');
 const appCache = require('../utils/cache');
 
 // ─── Light Projection Fields ──────────────────────────────────────────────────
-// CRITICAL FIX (Pillar IV): Original 'id name categoryId parentModel' was missing
-// imageUrl, batteryCapacity, bodyStyle, variantName — breaking browse-evs photo rendering.
+// Extended light=true projection to include imageUrl, bodyStyle, vehicleType, two-wheeler specs, etc.
 const LIGHT_PROJECTION = [
   'id', 'name', 'categoryId', 'parentModel', 'variantName',
-  'imageUrl', 'batteryCapacity', 'bodyStyle', 'status',
+  'imageUrl', 'batteryCapacity', 'bodyStyle', 'status', 'vehicleType',
+  'bhp', 'torque', 'topSpeed', 'acceleration', 'bootSpace', 'wheelSize',
   'pricing.exShowroomPriceINR', 'pricing.priceText',
   'performance.claimedRangeKM', 'performance.rangeText',
+  'performance.maxPowerBHP', 'performance.maxTorqueNM',
+  'performance.topSpeedKMH', 'performance.acceleration0to40Sec',
   'battery.capacityKWh',
-  'dimensionsObj.seatingCapacity',
+  'dimensionsObj.seatingCapacity', 'dimensionsObj.bootSpaceLiters',
   'media.mainImage', 'media.cloudinaryMainImage'
 ].join(' ');
 
@@ -99,10 +101,13 @@ class VehicleService {
       vehicleData.id = vehicleData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     }
 
+    // Ensure vehicleType default
+    vehicleData.vehicleType = vehicleData.vehicleType || 'car';
+
     // Helper numeric extractor
-    const num = str => (str && typeof str === 'string' ? parseFloat((str.match(/\d+(\.\d+)?/) || [0])[0]) : 0);
+    const num = str => (str && typeof str === 'string' ? parseFloat((str.match(/\d+(\.\d+)?/) || [0])[0]) : (typeof str === 'number' ? str : 0));
     const priceNum = num(vehicleData.price);
-    const priceINR = vehicleData.price?.toLowerCase().includes('lakh') ? Math.round(priceNum * 100000) : Math.round(priceNum);
+    const priceINR = vehicleData.price?.toString().toLowerCase().includes('lakh') ? Math.round(priceNum * 100000) : Math.round(priceNum);
 
     vehicleData.pricing = vehicleData.pricing || {
       exShowroomPriceINR: priceINR,
@@ -114,11 +119,17 @@ class VehicleService {
     };
     vehicleData.performance = vehicleData.performance || {
       claimedRangeKM: num(vehicleData.range),
-      rangeText: vehicleData.range || 'N/A'
+      rangeText: vehicleData.range || 'N/A',
+      maxPowerBHP: num(vehicleData.bhp || vehicleData.maxPower),
+      maxTorqueNM: num(vehicleData.torque),
+      topSpeedKMH: num(vehicleData.topSpeed),
+      acceleration0to40Sec: num(vehicleData.acceleration0to40 || vehicleData.acceleration)
     };
     vehicleData.dimensionsObj = vehicleData.dimensionsObj || {
       kerbWeightKG: num(vehicleData.kerbWeight),
-      grossWeightKG: num(vehicleData.grossWeight)
+      grossWeightKG: num(vehicleData.grossWeight),
+      bootSpaceLiters: num(vehicleData.bootSpace || vehicleData.bootFrunkSpace),
+      wheelSize: vehicleData.wheelSize || 'N/A'
     };
 
     const doc = await vehicleRepository.upsert(vehicleData);

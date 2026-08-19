@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { GlobalLocationComponent } from '../global-location/global-location.component';
@@ -7,7 +8,7 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, GlobalLocationComponent, GoogleSignInComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, GlobalLocationComponent, GoogleSignInComponent],
   template: `
     <!-- Top Header: Logo + Admin (if logged in) + Google Sign-In + Location Pill -->
     <div class="header-top-bar">
@@ -31,26 +32,57 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
     <header class="navbar desktop-nav">
       <nav class="nav-links">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
-        <a routerLink="/evs" routerLinkActive="active">Browse EVs</a>
+        <a routerLink="/evs" routerLinkActive="active">Cars</a>
+        <a routerLink="/two-wheelers" routerLinkActive="active">Two-Wheelers</a>
         <a routerLink="/articles" routerLinkActive="active">Articles</a>
       </nav>
     </header>
 
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="bottom-nav-item">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="bottom-nav-item" (click)="closeVehicleChooser()">
         <span class="nav-icon">🏠</span>
         <span class="nav-label">Home</span>
       </a>
-      <a routerLink="/evs" routerLinkActive="active" class="bottom-nav-item">
-        <span class="nav-icon">🔍</span>
-        <span class="nav-label">Browse</span>
-      </a>
-      <a routerLink="/articles" routerLinkActive="active" class="bottom-nav-item">
+      
+      <!-- Combined Vehicles Chooser Trigger -->
+      <button type="button" class="bottom-nav-item" [class.active]="isVehiclesActive() || showVehicleChooser" (click)="toggleVehicleChooser()">
+        <span class="nav-icon">🚗</span>
+        <span class="nav-label">Vehicles</span>
+      </button>
+
+      <a routerLink="/articles" routerLinkActive="active" class="bottom-nav-item" (click)="closeVehicleChooser()">
         <span class="nav-icon">📖</span>
         <span class="nav-label">Articles</span>
       </a>
     </nav>
+
+    <!-- Mobile Vehicle Chooser Bottom Sheet Modal -->
+    <div *ngIf="showVehicleChooser" class="vehicle-chooser-backdrop" (click)="closeVehicleChooser()">
+      <div class="vehicle-chooser-sheet" (click)="$event.stopPropagation()">
+        <div class="sheet-handle"></div>
+        <h3 class="sheet-title">Explore Electric Vehicles</h3>
+        <div class="chooser-options">
+          <a routerLink="/evs" class="chooser-card" (click)="closeVehicleChooser()">
+            <div class="chooser-icon">🚗</div>
+            <div class="chooser-info">
+              <span class="chooser-name">Electric Cars</span>
+              <span class="chooser-sub">SUVs, Sedans & Hatchbacks</span>
+            </div>
+            <span class="chooser-arrow">→</span>
+          </a>
+
+          <a routerLink="/two-wheelers" class="chooser-card" (click)="closeVehicleChooser()">
+            <div class="chooser-icon">🛵</div>
+            <div class="chooser-info">
+              <span class="chooser-name">Electric Two-Wheelers</span>
+              <span class="chooser-sub">Scooters & Motorcycles</span>
+            </div>
+            <span class="chooser-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
@@ -273,14 +305,140 @@ import { GoogleSignInComponent } from '../google-signin/google-signin.component'
       .bottom-nav-item.active .nav-label {
         font-weight: 800;
       }
+
+      /* Vehicle Chooser Modal Bottom Sheet */
+      .vehicle-chooser-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        animation: fadeInBackdrop 0.2s ease-out;
+      }
+
+      .vehicle-chooser-sheet {
+        background: white;
+        border-radius: 24px 24px 0 0;
+        padding: 16px 20px calc(24px + env(safe-area-inset-bottom)) 20px;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
+        animation: slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .sheet-handle {
+        width: 36px;
+        height: 4px;
+        background: #E2E8F0;
+        border-radius: 2px;
+        margin: 0 auto 16px auto;
+      }
+
+      .sheet-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0F172A;
+        margin: 0 0 14px 0;
+        text-align: center;
+      }
+
+      .chooser-options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .chooser-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: #F8FAFC;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 14px;
+        padding: 14px 16px;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.15s ease, transform 0.15s ease;
+      }
+
+      .chooser-card:active {
+        background: #F1F5F9;
+        transform: scale(0.98);
+      }
+
+      .chooser-icon {
+        font-size: 1.6rem;
+        width: 44px;
+        height: 44px;
+        background: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      }
+
+      .chooser-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chooser-name {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0F172A;
+      }
+
+      .chooser-sub {
+        font-size: 0.75rem;
+        color: #64748B;
+        margin-top: 1px;
+      }
+
+      .chooser-arrow {
+        color: #0088CC;
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+
+      @keyframes fadeInBackdrop {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes slideUpSheet {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
     }
   `]
 })
 export class Navbar {
+  showVehicleChooser = false;
+
   constructor(
     public authService: AuthService,
     private router: Router
   ) {}
+
+  toggleVehicleChooser() {
+    this.showVehicleChooser = !this.showVehicleChooser;
+  }
+
+  closeVehicleChooser() {
+    this.showVehicleChooser = false;
+  }
+
+  isVehiclesActive(): boolean {
+    const url = this.router.url;
+    return url.startsWith('/evs') || url.startsWith('/two-wheelers') || url.startsWith('/bikes') || url.startsWith('/ev/');
+  }
 
   onLogout(event: Event) {
     event.preventDefault();

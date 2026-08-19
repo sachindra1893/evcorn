@@ -229,8 +229,191 @@ import { firstValueFrom } from 'rxjs';
           <!-- EV Specs Form -->
           <div class="panel article-panel">
             <h3>{{ editingVehicleId ? 'Edit Vehicle Specs' : 'Add Vehicle Specs' }}</h3>
-            
-            <form (submit)="onSaveVehicle($event)" class="vertical-form scrollable-form">
+
+            <!-- Vehicle Form Switcher (Cars vs Two-Wheelers) -->
+            <div class="vehicle-type-switcher" style="display: flex; gap: 10px; margin-bottom: 20px;">
+              <button 
+                type="button" 
+                class="btn" 
+                [style.background]="adminVehicleTypeForm === 'car' ? '#0088CC' : '#1A252A'" 
+                [style.color]="adminVehicleTypeForm === 'car' ? '#FFFFFF' : '#A8B2B2'"
+                [style.border]="adminVehicleTypeForm === 'car' ? '1px solid #0088CC' : '1px solid rgba(0, 212, 255, 0.1)'"
+                style="padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s;"
+                (click)="setVehicleFormType('car')"
+              >
+                🚗 Car Specs Form
+              </button>
+              <button 
+                type="button" 
+                class="btn" 
+                [style.background]="adminVehicleTypeForm === 'two-wheeler' ? '#0088CC' : '#1A252A'" 
+                [style.color]="adminVehicleTypeForm === 'two-wheeler' ? '#FFFFFF' : '#A8B2B2'"
+                [style.border]="adminVehicleTypeForm === 'two-wheeler' ? '1px solid #0088CC' : '1px solid rgba(0, 212, 255, 0.1)'"
+                style="padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s;"
+                (click)="setVehicleFormType('two-wheeler')"
+              >
+                🛵 Two-Wheeler Specs Form
+              </button>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- DEDICATED STREAMLINED TWO-WHEELER FORM     -->
+            <!-- ========================================== -->
+            <form *ngIf="adminVehicleTypeForm === 'two-wheeler'" (submit)="onSaveTwoWheeler($event)" class="vertical-form scrollable-form">
+              <div class="form-group">
+                <label for="tw-status">Vehicle Status</label>
+                <select id="tw-status" name="tw-status" [(ngModel)]="vehLifecycleStatus">
+                  <option value="Launched">Launched</option>
+                  <option value="Upcoming">Upcoming</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="tw-brand">Brand / Category</label>
+                <input 
+                  type="text" 
+                  id="tw-brand" 
+                  name="tw-brand" 
+                  placeholder="e.g. Ather, Ola Electric, TVS, Bajaj, Hero Vida, River" 
+                  [(ngModel)]="vehBrandName"
+                  list="tw-brand-suggestions"
+                  autocomplete="off"
+                  required
+                >
+                <datalist id="tw-brand-suggestions">
+                  @for (cat of categories; track cat.id) {
+                    <option [value]="cat.name"></option>
+                  }
+                </datalist>
+              </div>
+
+              <div class="form-group">
+                <label for="tw-model">Model Name</label>
+                <input 
+                  type="text" 
+                  id="tw-model" 
+                  name="tw-model" 
+                  placeholder="e.g. 450X, S1 Pro, iQube, Chetak, River Indie, F77" 
+                  [(ngModel)]="vehParentModel"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="tw-variant">Variant Name</label>
+                <input 
+                  type="text" 
+                  id="tw-variant" 
+                  name="tw-variant" 
+                  placeholder="e.g. 3.7 kWh Pro, Gen 2, ST" 
+                  [(ngModel)]="vehVariantName"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="tw-price">Price (Ex-Showroom INR)</label>
+                <input 
+                  type="text" 
+                  id="tw-price" 
+                  name="tw-price" 
+                  placeholder="e.g. ₹1.45 Lakh or ₹1,45,000" 
+                  [(ngModel)]="vehPrice"
+                  required
+                >
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label for="tw-battery">Battery Capacity (kWh)</label>
+                  <input type="number" step="0.1" id="tw-battery" name="tw-battery" placeholder="e.g. 3.7" [(ngModel)]="vehBatteryCapacityNum">
+                </div>
+
+                <div class="form-group">
+                  <label for="tw-range">Claimed Range (km)</label>
+                  <input type="number" id="tw-range" name="tw-range" placeholder="e.g. 150" [(ngModel)]="vehRangeNum">
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label for="tw-bhp">Max Power (BHP)</label>
+                  <input type="number" step="0.1" id="tw-bhp" name="tw-bhp" placeholder="e.g. 8.6" [(ngModel)]="twBhp">
+                </div>
+
+                <div class="form-group">
+                  <label for="tw-torque">Peak Torque (Nm)</label>
+                  <input type="number" step="0.1" id="tw-torque" name="tw-torque" placeholder="e.g. 26" [(ngModel)]="twTorque">
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label for="tw-speed">Top Speed (km/h)</label>
+                  <input type="number" id="tw-speed" name="tw-speed" placeholder="e.g. 90" [(ngModel)]="twTopSpeed">
+                </div>
+
+                <div class="form-group">
+                  <label for="tw-acc">Acceleration (0-40 km/h in sec)</label>
+                  <input type="number" step="0.1" id="tw-acc" name="tw-acc" placeholder="e.g. 3.3" [(ngModel)]="twAcceleration0to40">
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label for="tw-boot">Boot Space (Underseat, Liters)</label>
+                  <input type="number" id="tw-boot" name="tw-boot" placeholder="e.g. 22" [(ngModel)]="twBootSpace">
+                </div>
+
+                <div class="form-group">
+                  <label for="tw-wheel">Wheel Size</label>
+                  <input type="text" id="tw-wheel" name="tw-wheel" placeholder="e.g. 12-inch Alloys" [(ngModel)]="twWheelSize">
+                </div>
+              </div>
+
+              <!-- Two-Wheeler Image Upload -->
+              <div class="form-group">
+                <label>Two-Wheeler Photos</label>
+                <div class="image-upload-wrapper" style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                  <input 
+                    type="file" 
+                    id="twImageFile" 
+                    accept="image/*" 
+                    (change)="onCarImageFileSelected($event)" 
+                    style="display: none;" 
+                    #twFileInput
+                  >
+                  <button type="button" class="btn secondary-btn upload-trigger-btn" (click)="twFileInput.click()" style="padding: 10px 16px; background: #E2E8F0; color: #2D3748; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
+                    📁 Choose Main Image
+                  </button>
+                  <span class="file-name-hint" style="color: #718096; font-size: 0.85rem;" *ngIf="selectedCarFileName">{{ selectedCarFileName }}</span>
+                </div>
+
+                <div class="image-preview-container" *ngIf="vehImageUrl" style="position: relative; width: 100%; max-width: 250px; margin-top: 10px;">
+                  <img [src]="vehImageUrl" class="image-preview" alt="Main Preview" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06);">
+                  <button type="button" class="btn delete-preview-btn" (click)="clearCarImagePreview()" style="margin-top: 6px; padding: 6px 12px; background: #FF4D4D; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">Remove Photo</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="tw-highlights">Key Highlights</label>
+                <textarea id="tw-highlights" name="tw-highlights" rows="2" placeholder="e.g. Fast charging, touch display, IP67 waterproof battery pack" [(ngModel)]="vehKeyHighlights"></textarea>
+              </div>
+
+              <div class="form-actions" style="margin-top: 20px;">
+                <button type="submit" class="btn primary-btn" [disabled]="saving" style="width: 100%; padding: 14px; font-size: 1rem;">
+                  {{ saving ? 'Saving Two-Wheeler...' : (editingVehicleId ? 'Update Two-Wheeler' : 'Save Two-Wheeler Specs') }}
+                </button>
+                <button *ngIf="editingVehicleId" type="button" class="btn secondary-btn" (click)="cancelEditVehicle()" style="width: 100%; margin-top: 8px;">
+                  Cancel Edit
+                </button>
+              </div>
+            </form>
+
+            <!-- ========================================== -->
+            <!-- COMPREHENSIVE CAR SPECS FORM               -->
+            <!-- ========================================== -->
+            <form *ngIf="adminVehicleTypeForm === 'car'" (submit)="onSaveVehicle($event)" class="vertical-form scrollable-form">
               <!-- Section 1: Overview & Pricing -->
               <div class="admin-form-card">
                 <div class="admin-card-header" (click)="adminSecOverview = !adminSecOverview">
@@ -1099,6 +1282,14 @@ export class AdminComponent implements OnInit {
   adminSecRelationships = false;
 
   // 2. Vehicle Form Properties
+  adminVehicleTypeForm: 'car' | 'two-wheeler' = 'car';
+  twBhp: number | null = null;
+  twTorque: number | null = null;
+  twTopSpeed: number | null = null;
+  twAcceleration0to40: number | null = null;
+  twBootSpace: number | null = null;
+  twWheelSize = '';
+
   editingVehicleId: string | null = null;
   vehName = '';
   vehCategoryId = '';
@@ -1538,6 +1729,122 @@ export class AdminComponent implements OnInit {
   // ==========================================
   // VEHICLE SPECS EVENT HANDLERS
   // ==========================================
+  setVehicleFormType(type: 'car' | 'two-wheeler') {
+    this.adminVehicleTypeForm = type;
+    this.cdr.detectChanges();
+  }
+
+  onSaveTwoWheeler(event: Event) {
+    event.preventDefault();
+    if (this.saving) return;
+
+    if (!this.vehParentModel.trim() || !this.vehVariantName.trim() || !this.vehBrandName.trim()) {
+      alert('Model (e.g. 450X), Variant (e.g. 3.7kWh Pro), and Brand Category are required!');
+      return;
+    }
+
+    const model = this.vehParentModel.trim();
+    const variant = this.vehVariantName.trim();
+    const brandNameTrimmed = this.vehBrandName.trim();
+
+    // Check if brand exists
+    const matchedBrand = this.categories.find(c => c.name.toLowerCase() === brandNameTrimmed.toLowerCase());
+    
+    if (matchedBrand) {
+      this.vehCategoryId = matchedBrand.id;
+      this._executeSaveTwoWheeler(model, variant);
+    } else {
+      this.saving = true;
+      const cleanId = brandNameTrimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      this.dataService.addCategory({ id: cleanId, name: brandNameTrimmed }).subscribe({
+        next: () => {
+          this.vehCategoryId = cleanId;
+          this.loadData();
+          this._executeSaveTwoWheeler(model, variant);
+        },
+        error: (err) => {
+          this.saving = false;
+          alert('Failed to auto-create brand: ' + err.message);
+        }
+      });
+    }
+  }
+
+  private _executeSaveTwoWheeler(model: string, variant: string) {
+    if (this.compareModels(model, variant)) {
+      alert('Validation Error: The Model name and Variant name cannot be exactly the same. Please give them different names.');
+      return;
+    }
+
+    const normModel = this.normalizeModel(model);
+    const fullName = `${normModel}::${variant.trim()}`;
+
+    const batText = this.vehBatteryCapacityNum ? `${this.vehBatteryCapacityNum} kWh` : (this.vehBatteryCapacity.trim() || 'N/A');
+    const rangeText = this.vehRangeNum ? `${this.vehRangeNum} km` : (this.vehRange.trim() || 'N/A');
+    const highlights = this.vehKeyHighlights.trim() || '';
+    
+    const powerStr = this.twBhp ? `${this.twBhp} bhp` : (this.vehMaxPower?.trim() || 'N/A');
+    const torqueStr = this.twTorque ? `${this.twTorque} Nm` : (this.vehTorque?.trim() || 'N/A');
+    const speedStr = this.twTopSpeed ? `${this.twTopSpeed} km/h` : 'N/A';
+    const accStr = this.twAcceleration0to40 ? `${this.twAcceleration0to40}s (0-40)` : 'N/A';
+    const bootStr = this.twBootSpace ? `${this.twBootSpace} L` : 'N/A';
+    const wheelStr = this.twWheelSize?.trim() || 'N/A';
+
+    const vehicleData: CarSpec = {
+      name: fullName,
+      categoryId: this.vehCategoryId,
+      vehicleType: 'two-wheeler',
+      parentModel: normModel,
+      variantName: variant.trim(),
+      price: this.vehPrice.trim() || 'N/A',
+      seating: '2 Seater',
+      dimensions: 'N/A',
+      groundClearance: 'N/A',
+      batteryCapacity: batText,
+      range: rangeText,
+      tyreSize: wheelStr,
+      bootFrunkSpace: bootStr,
+      bhpTorque: `${powerStr} / ${torqueStr}`,
+      bhp: powerStr,
+      torque: torqueStr,
+      topSpeed: speedStr,
+      acceleration: accStr,
+      acceleration0to40: accStr,
+      bootSpace: bootStr,
+      wheelSize: wheelStr,
+      maxPower: powerStr,
+      drivetrain: 'RWD',
+      safetyRating: 'N/A',
+      imageUrl: this.vehImageUrl.trim(),
+      galleryImages: this.vehGalleryImages.filter(u => u && u.trim().length > 10),
+      keyHighlights: highlights,
+      lifecycleStatus: this.vehLifecycleStatus,
+      status: this.vehLifecycleStatus,
+      launchDate: this.getFormattedLaunchDate(),
+      isLaunchDateOverride: this.vehLaunchDateOverride
+    };
+
+    if (this.editingVehicleId) {
+      vehicleData.id = this.editingVehicleId;
+    }
+
+    this.saving = true;
+
+    this.dataService.saveVehicle(vehicleData).subscribe({
+      next: () => {
+        this.saving = false;
+        alert(this.editingVehicleId ? 'Two-Wheeler specs updated successfully!' : 'Two-Wheeler specs saved successfully!');
+        this.dataService.clearVehicleCache();
+        this.cancelEditVehicle();
+        this.loadVehicles();
+      },
+      error: (err) => {
+        this.saving = false;
+        alert('Failed to save two-wheeler specifications: ' + err.message);
+      }
+    });
+  }
+
   onSaveVehicle(event: Event) {
     event.preventDefault();
     if (this.saving) return;
@@ -1690,6 +1997,23 @@ export class AdminComponent implements OnInit {
   startEditVehicle(veh: CarSpec) {
     this.editingVehicleId = veh.id || null;
     this.vehName = veh.name;
+
+    if (veh.vehicleType === 'two-wheeler') {
+      this.adminVehicleTypeForm = 'two-wheeler';
+      const num = (s?: string) => {
+        if (!s) return null;
+        const m = s.match(/(\d+(?:\.\d+)?)/);
+        return m ? parseFloat(m[1]) : null;
+      };
+      this.twBhp = num(veh.bhp || veh.maxPower);
+      this.twTorque = num(veh.torque);
+      this.twTopSpeed = num(veh.topSpeed);
+      this.twAcceleration0to40 = num(veh.acceleration0to40 || veh.acceleration);
+      this.twBootSpace = num(veh.bootSpace || veh.bootFrunkSpace);
+      this.twWheelSize = veh.wheelSize || veh.tyreSize || '';
+    } else {
+      this.adminVehicleTypeForm = 'car';
+    }
     
     let pModel = this.normalizeModel(veh.parentModel || veh.name);
     let vName = veh.variantName || veh.name;
@@ -2057,6 +2381,12 @@ export class AdminComponent implements OnInit {
     this.vehAirbags = '6 Airbags';
     this.vehSeating = '5 Seats';
     this.vehBodyStyle = 'SUV';
+    this.twBhp = null;
+    this.twTorque = null;
+    this.twTopSpeed = null;
+    this.twAcceleration0to40 = null;
+    this.twBootSpace = null;
+    this.twWheelSize = '';
   }
 
   onVehImageFileSelected(event: Event, slotIndex: number = 0) {
