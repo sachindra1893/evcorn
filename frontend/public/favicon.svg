@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- EVCorn Spectrum Brand Gradient: Cyan -> Purple -> Pink -> Orange -->
+    <linearGradient id="evcorn-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00D2FF"/>
+      <stop offset="35%" stop-color="#7952FF"/>
+      <stop offset="70%" stop-color="#FF007F"/>
+      <stop offset="100%" stop-color="#FF7F00"/>
+    </linearGradient>
+    <linearGradient id="evcorn-rim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00D2FF" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#7952FF" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#FF7F00" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="bg-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#111B2E"/>
+      <stop offset="100%" stop-color="#070C15"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Deep Obsidian Squircle Base -->
+  <rect width="512" height="512" rx="112" fill="url(#bg-dark)"/>
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="url(#evcorn-rim)" stroke-width="4"/>
+
+  <!-- EVCorn Electric Mark: Clean, High-Impact 'EV' Monogram -->
+  <g fill="url(#evcorn-grad)">
+    <!-- Letter 'E' -->
+    <path d="M 98 116 C 98 114 100 112 102 112 L 250 112 C 253 112 255 114 255 117 L 255 155 C 255 158 253 160 250 160 L 150 160 L 150 230 L 226 230 C 229 230 231 232 231 235 L 231 273 C 231 276 229 278 226 278 L 150 278 L 150 352 L 250 352 C 253 352 255 354 255 357 L 255 395 C 255 398 253 400 250 400 L 102 400 C 100 400 98 398 98 396 Z"/>
+    
+    <!-- Letter 'V' -->
+    <path d="M 276 114 C 276 113 277 112 279 112 L 328 112 C 330 112 332 113 333 115 L 380 304 L 427 115 C 428 113 430 112 432 112 L 481 112 C 483 112 484 113 484 114 C 484 115 484 116 483 117 L 409 397 C 408 400 405 402 402 402 L 358 402 C 355 402 352 400 351 397 L 277 117 C 276 116 276 115 276 114 Z"/>
+  </g>
+</svg>
