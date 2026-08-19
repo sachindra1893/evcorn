@@ -132,6 +132,17 @@ class VehicleService {
       wheelSize: vehicleData.wheelSize || 'N/A'
     };
 
+    const gallery = Array.isArray(vehicleData.galleryImages)
+      ? vehicleData.galleryImages.filter(u => u && typeof u === 'string' && u.trim().length > 10)
+      : (vehicleData.imageUrl && vehicleData.imageUrl.trim().length > 10 ? [vehicleData.imageUrl.trim()] : []);
+    const mainImg = (vehicleData.imageUrl && vehicleData.imageUrl.trim().length > 10) ? vehicleData.imageUrl.trim() : (gallery[0] || '');
+
+    vehicleData.imageUrl = mainImg;
+    vehicleData.galleryImages = gallery;
+    vehicleData.media = vehicleData.media || {};
+    vehicleData.media.mainImage = mainImg;
+    vehicleData.media.gallery = gallery;
+
     const doc = await vehicleRepository.upsert(vehicleData);
 
     // Synchronize launch date to non-overridden siblings

@@ -49,8 +49,8 @@ function toVehicleDTO(doc) {
     grossWeight: validVal(obj.dimensionsObj?.grossWeightKG ? `${obj.dimensionsObj.grossWeightKG} kg` : null, obj.grossWeight || 'N/A'),
     drivetrain: validVal(obj.performance?.drivetrain, obj.drivetrain || 'FWD'),
     safetyRating: validVal(obj.safety?.safetyRatingText, obj.safetyRating || 'N/A'),
-    imageUrl: obj.imageUrl || obj.media?.mainImage || '',
-    galleryImages: obj.galleryImages || obj.media?.gallery || [],
+    imageUrl: obj.imageUrl || obj.media?.mainImage || (obj.galleryImages && obj.galleryImages.length > 0 ? obj.galleryImages[0] : ''),
+    galleryImages: (obj.galleryImages && obj.galleryImages.length > 0) ? obj.galleryImages : (obj.media?.gallery || []),
     keyHighlights: obj.keyHighlights || '',
 
     // Cloudinary Metadata
@@ -92,7 +92,7 @@ function toVehicleLightDTO(doc) {
   const priceText = validVal(obj.pricing?.priceText, obj.price || 'N/A');
   const rangeText = validVal(obj.performance?.rangeText, obj.range || 'N/A');
   const batteryText = validVal(obj.battery?.capacityText, obj.batteryCapacity || 'N/A');
-  const imageUrl = obj.imageUrl || obj.media?.mainImage || '';
+  const imageUrl = obj.imageUrl || obj.media?.mainImage || (obj.galleryImages && obj.galleryImages.length > 0 ? obj.galleryImages[0] : '');
 
   const light = {
     id: obj.id,

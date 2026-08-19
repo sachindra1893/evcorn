@@ -56,19 +56,26 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return this.isAuthenticated();
+    return Boolean(this.getToken());
   }
 
   getToken(): string | null {
+    if (!this.token && typeof window !== 'undefined' && window.sessionStorage) {
+      this.token = sessionStorage.getItem(this.TOKEN_KEY);
+      if (this.token && !this.isAuthenticated()) {
+        this.isAuthenticated.set(true);
+      }
+    }
     return this.token;
   }
 
   /** Authorization headers for admin mutations (Bearer JWT only). */
   getAuthHeaders(): HttpHeaders {
-    if (!this.token) {
+    const token = this.getToken();
+    if (!token) {
       return new HttpHeaders();
     }
-    return new HttpHeaders({ Authorization: `Bearer ${this.token}` });
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
   private persistToken(token: string): void {

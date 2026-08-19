@@ -112,6 +112,7 @@ const VehicleSchema = new mongoose.Schema({
   drivetrain: { type: String, default: 'N/A' },
   safetyRating: { type: String, default: 'N/A' },
   imageUrl: { type: String, default: '' },
+  galleryImages: [{ type: String, default: [] }],
   keyHighlights: { type: String, default: '' },
 
   // Cloudinary Legacy Fields

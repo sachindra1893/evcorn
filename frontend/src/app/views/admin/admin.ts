@@ -371,27 +371,34 @@ import { firstValueFrom } from 'rxjs';
                 </div>
               </div>
 
-              <!-- Two-Wheeler Image Upload -->
+              <!-- Two-Wheeler Multi-Angle Image Upload (4 Slots) -->
               <div class="form-group">
-                <label>Two-Wheeler Photos</label>
-                <div class="image-upload-wrapper" style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                  <input 
-                    type="file" 
-                    id="twImageFile" 
-                    accept="image/*" 
-                    (change)="onVehImageFileSelected($event, 0)" 
-                    style="display: none;" 
-                    #twFileInput
-                  >
-                  <button type="button" class="btn secondary-btn upload-trigger-btn" (click)="twFileInput.click()" style="padding: 10px 16px; background: #E2E8F0; color: #2D3748; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
-                    📁 Choose Main Image
-                  </button>
-                  <span class="file-name-hint" style="color: #718096; font-size: 0.85rem;" *ngIf="vehImageProcessing">Uploading to Cloudinary...</span>
-                </div>
+                <label>Two-Wheeler Photos (Multi-Angle Gallery)</label>
+                <div class="photo-gallery-section" style="margin-top: 6px;">
+                  <div *ngIf="isBorrowedImage" style="background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; color: #00D4FF; margin-bottom: 10px;">
+                    ✓ Auto-linked photo gallery from {{ vehParentModel }} (No upload needed!)
+                  </div>
 
-                <div class="image-preview-container" *ngIf="vehImageUrl" style="position: relative; width: 100%; max-width: 250px; margin-top: 10px;">
-                  <img [src]="vehImageUrl" class="image-preview" alt="Main Preview" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06);">
-                  <button type="button" class="btn delete-preview-btn" (click)="clearVehImagePreview()" style="margin-top: 6px; padding: 6px 12px; background: #FF4D4D; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">Remove Photo</button>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                    @for (label of ['1. Front (Main)', '2. Side Profile', '3. Rear View', '4. Console / Cockpit']; track $index; let i = $index) {
+                      <div style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); padding: 10px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.75rem; color: #CBD5E1; font-weight: 600; margin-bottom: 6px;">{{ label }}</span>
+                        
+                        <div *ngIf="vehGalleryImages[i]" style="position: relative; width: 100%; aspect-ratio: 16/9; margin-bottom: 6px;">
+                          <img [src]="vehGalleryImages[i]" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px; background: white;">
+                        </div>
+
+                        <div style="display: flex; gap: 4px; width: 100%;">
+                          <label class="btn" style="flex: 1; cursor: pointer; background: #334155; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; text-align: center;">
+                            <input type="file" accept="image/*" (change)="onVehImageFileSelected($event, i)" style="display: none;">
+                            {{ vehGalleryImages[i] ? 'Change' : '+ Upload' }}
+                          </label>
+                          <button *ngIf="vehGalleryImages[i]" type="button" (click)="clearVehImageSlot(i)" style="background: #EF4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem;">✕</button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  <p class="form-hint" *ngIf="vehImageProcessing" style="color: #00D4FF; font-size: 0.85rem; margin-top: 8px;">Processing and uploading to Cloudinary...</p>
                 </div>
               </div>
 
@@ -1790,6 +1797,17 @@ export class AdminComponent implements OnInit {
     const bootStr = this.twBootSpace ? `${this.twBootSpace} L` : 'N/A';
     const wheelStr = this.twWheelSize?.trim() || 'N/A';
 
+    let finalGalleryUrls = this.vehGalleryImages.filter(u => u && u.trim().length > 10).join(';;;');
+    if (this.isBorrowedImage && !finalGalleryUrls) {
+      finalGalleryUrls = '';
+    }
+
+    const batEncoded = `${batText}||N/A||N/A||${finalGalleryUrls || 'N/A'}||${rangeText}||${highlights}||N/A`;
+
+    const mainImageUrl = (this.vehImageUrl && this.vehImageUrl.trim().length > 10)
+      ? this.vehImageUrl.trim()
+      : (this.vehGalleryImages.find(u => u && u.trim().length > 10) || '').trim();
+
     const vehicleData: CarSpec = {
       name: fullName,
       categoryId: this.vehCategoryId,
@@ -1800,7 +1818,7 @@ export class AdminComponent implements OnInit {
       seating: '2 Seater',
       dimensions: 'N/A',
       groundClearance: 'N/A',
-      batteryCapacity: batText,
+      batteryCapacity: batEncoded,
       range: rangeText,
       tyreSize: wheelStr,
       bootFrunkSpace: bootStr,
@@ -1815,7 +1833,7 @@ export class AdminComponent implements OnInit {
       maxPower: powerStr,
       drivetrain: 'RWD',
       safetyRating: 'N/A',
-      imageUrl: this.vehImageUrl.trim(),
+      imageUrl: mainImageUrl,
       galleryImages: this.vehGalleryImages.filter(u => u && u.trim().length > 10),
       keyHighlights: highlights,
       lifecycleStatus: this.vehLifecycleStatus,
@@ -2174,6 +2192,23 @@ export class AdminComponent implements OnInit {
     this.vehKeyHighlights = veh.keyHighlights || '';
     this.vehBodyStyle = veh.bodyStyle || 'SUV';
     this.isBorrowedImage = veh.imageBorrowed || false;
+
+    if (veh.vehicleType === 'two-wheeler') {
+      this.adminVehicleTypeForm = 'two-wheeler';
+      const twBhpMatch = (veh.bhp || veh.maxPower || '').match(/(\d+(?:\.\d+)?)/);
+      this.twBhp = twBhpMatch ? parseFloat(twBhpMatch[1]) : null;
+      const twTorqueMatch = (veh.torque || '').match(/(\d+(?:\.\d+)?)/);
+      this.twTorque = twTorqueMatch ? parseFloat(twTorqueMatch[1]) : null;
+      const twSpeedMatch = (veh.topSpeed || '').match(/(\d+(?:\.\d+)?)/);
+      this.twTopSpeed = twSpeedMatch ? parseFloat(twSpeedMatch[1]) : null;
+      const twAccMatch = (veh.acceleration0to40 || veh.acceleration || '').match(/(\d+(?:\.\d+)?)/);
+      this.twAcceleration0to40 = twAccMatch ? parseFloat(twAccMatch[1]) : null;
+      const twBootMatch = (veh.bootSpace || veh.bootFrunkSpace || '').match(/(\d+(?:\.\d+)?)/);
+      this.twBootSpace = twBootMatch ? parseFloat(twBootMatch[1]) : null;
+      this.twWheelSize = veh.wheelSize || veh.tyreSize || '';
+    } else {
+      this.adminVehicleTypeForm = 'car';
+    }
   }
 
   cancelEditVehicle() {
