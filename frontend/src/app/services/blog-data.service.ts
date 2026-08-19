@@ -231,7 +231,7 @@ export class BlogDataService {
   // Caches for read-heavy static data
   private categoriesCache$: Observable<Category[]> | null = null;
   private articlesLightCache$: Observable<Partial<Article>[]> | null = null;
-  private vehiclesLightCache$: Observable<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel'>[]> | null = null;
+  private vehiclesLightCache$: Observable<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel' | 'variantName' | 'imageUrl' | 'bodyStyle' | 'vehicleType' | 'range' | 'price' | 'status' | 'lifecycleStatus'>[]> | null = null;
 
   // Tracks whether the underlying network call for each cache has settled
   // (succeeded or failed) at least once, so AsyncState-aware consumers
@@ -528,20 +528,18 @@ export class BlogDataService {
       const settled$ = new BehaviorSubject<boolean>(false);
       this.brandVehiclesSettled.set(slug, settled$);
 
-      const subject = new BehaviorSubject<CarSpec[]>([]);
-      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?brand=${encodeURIComponent(slug)}&status=Launched`).pipe(
-        map(vehicles => {
-          const enriched = vehicles.map(v => this.enrichVehicle(v));
-          return this.applyImageFallback(enriched);
-        })
-      ).subscribe({
+      const cached = (this.loadCache(`brand_${slug}`) as CarSpec[]) || [];
+      const subject = new BehaviorSubject<CarSpec[]>(cached);
+
+      this.http.get<CarSpec[]>(`${this.apiUrl}/vehicles?brand=${encodeURIComponent(slug)}`).subscribe({
         next: (data) => {
+          this.saveCache(`brand_${slug}`, data);
           subject.next(data);
           settled$.next(true);
         },
         error: (err) => {
           settled$.next(true);
-          if (subject.value.length === 0) subject.error(err);
+          if (cached.length === 0) subject.error(err);
         }
       });
 
@@ -553,9 +551,9 @@ export class BlogDataService {
   /** AsyncState-aware version of getVehiclesByBrand() to load only vehicles for a specific brand. */
   getVehiclesByBrandState(brandSlug: string): Observable<AsyncState<CarSpec[]>> {
     const slug = brandSlug.toLowerCase();
-    const cache$ = this.getVehiclesByBrand(slug);
-    const settled$ = this.brandVehiclesSettled.get(slug) || of(true);
-    return this.toCachedAsyncState(cache$, settled$);
+    this.getVehiclesByBrand(slug);
+    const settled$ = this.brandVehiclesSettled.get(slug)!;
+    return this.toCachedAsyncState(this.getVehiclesByBrand(slug), settled$);
   }
 
   /**
@@ -563,7 +561,7 @@ export class BlogDataService {
    * getVehiclesState() when full nested specs are not needed — Phase 5.3
    * Compare uses light for pickers and getVehicleById for selected slots.
    */
-  getVehiclesLightState(): Observable<AsyncState<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel' | 'variantName' | 'imageUrl' | 'bodyStyle'>[]>> {
+  getVehiclesLightState(): Observable<AsyncState<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel' | 'variantName' | 'imageUrl' | 'bodyStyle' | 'vehicleType' | 'range' | 'price' | 'status' | 'lifecycleStatus'>[]>> {
     return this.toCachedAsyncState(this.getVehiclesLight() as Observable<any[]>, this.vehiclesLightSettled$);
   }
 
@@ -586,7 +584,7 @@ export class BlogDataService {
   }
 
   // Lightweight index — returns only id, name, categoryId for instant dropdown population
-  getVehiclesLight(): Observable<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel' | 'variantName' | 'imageUrl' | 'bodyStyle'>[]> {
+  getVehiclesLight(): Observable<Pick<CarSpec, 'id' | 'name' | 'categoryId' | 'parentModel' | 'variantName' | 'imageUrl' | 'bodyStyle' | 'vehicleType' | 'range' | 'price' | 'status' | 'lifecycleStatus'>[]> {
     if (!this.vehiclesLightCache$) {
       const cached = this.loadCache('vehiclesLight') || [];
       const subject = new BehaviorSubject<any[]>(cached);

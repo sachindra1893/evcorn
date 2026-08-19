@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink, Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Category, CarSpec, BlogDataService } from '../../services/blog-data.service';
@@ -15,7 +15,7 @@ import { formatCardRange, formatCardBattery } from '../../utils/vehicle-card-for
 @Component({
   selector: 'app-browse-two-wheelers',
   standalone: true,
-  imports: [CommonModule, RouterLink, BreadcrumbComponent, FormsModule, ErrorStateComponent, EvSearchComponent],
+  imports: [CommonModule, BreadcrumbComponent, FormsModule, ErrorStateComponent, EvSearchComponent],
   template: `
     <div class="browse-page animate-premium-fade">
       
@@ -637,10 +637,10 @@ export class BrowseTwoWheelersComponent implements OnInit, OnDestroy {
     this.seoService.updateSeo({
       title: 'Electric Two-Wheelers in India (2026) — Range, Specs & Prices | EVCorn',
       description: 'Explore the latest electric scooters and motorcycles in India. Compare Ather, Ola Electric, TVS iQube, Bajaj Chetak, and more with real-world specs, battery, and prices.',
-      canonicalUrl: 'https://evcorn.com/two-wheelers'
+      url: 'https://evcorn.com/two-wheelers'
     });
 
-    this.schemaService.setCustomSchema([
+    this.schemaService.setSchema([
       this.schemaService.buildBreadcrumbs([
         { name: 'Home', url: '/' },
         { name: 'Two-Wheelers', url: '/two-wheelers' }

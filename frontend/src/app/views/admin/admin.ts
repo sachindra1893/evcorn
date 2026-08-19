@@ -379,19 +379,19 @@ import { firstValueFrom } from 'rxjs';
                     type="file" 
                     id="twImageFile" 
                     accept="image/*" 
-                    (change)="onCarImageFileSelected($event)" 
+                    (change)="onVehImageFileSelected($event, 0)" 
                     style="display: none;" 
                     #twFileInput
                   >
                   <button type="button" class="btn secondary-btn upload-trigger-btn" (click)="twFileInput.click()" style="padding: 10px 16px; background: #E2E8F0; color: #2D3748; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
                     📁 Choose Main Image
                   </button>
-                  <span class="file-name-hint" style="color: #718096; font-size: 0.85rem;" *ngIf="selectedCarFileName">{{ selectedCarFileName }}</span>
+                  <span class="file-name-hint" style="color: #718096; font-size: 0.85rem;" *ngIf="vehImageProcessing">Uploading to Cloudinary...</span>
                 </div>
 
                 <div class="image-preview-container" *ngIf="vehImageUrl" style="position: relative; width: 100%; max-width: 250px; margin-top: 10px;">
                   <img [src]="vehImageUrl" class="image-preview" alt="Main Preview" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06);">
-                  <button type="button" class="btn delete-preview-btn" (click)="clearCarImagePreview()" style="margin-top: 6px; padding: 6px 12px; background: #FF4D4D; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">Remove Photo</button>
+                  <button type="button" class="btn delete-preview-btn" (click)="clearVehImagePreview()" style="margin-top: 6px; padding: 6px 12px; background: #FF4D4D; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">Remove Photo</button>
                 </div>
               </div>
 
